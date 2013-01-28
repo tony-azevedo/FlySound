@@ -11,7 +11,8 @@ if strcmp(protocol,'testPiezo')
     % configure AO
     staticDisp = 5; % staticDisp = static voltage output to piezo; should usually be set to 5V
                     % so that the medial and lateral directions can be used equally
-    AO = analogoutput ('nidaq', 'Dev1');
+    % AO = analogoutput ('nidaq', 'Dev1');
+    AO = analogoutput ('nidaq', 'Dev3');
     addchannel (AO, 0:1);
     set(AO, 'SampleRate', samprateout);
     set(AO, 'TriggerType', 'Manual');
@@ -27,8 +28,9 @@ elseif strcmp(protocol,'testFmAndCS') || strcmp(protocol,'testFc')
     AI = configureAI(sampratein);
     
     % configure AO
-    AO = analogoutput ('nidaq', 'Dev1');
-    addchannel (AO, 0:1);
+    AO = analogoutput ('nidaq', 'Dev3');
+    % addchannel (AO, 0:1);
+    addchannel (AO, 0);
     set(AO, 'SampleRate', samprateout);
     set(AO, 'TriggerType', 'Manual');
     
@@ -40,7 +42,7 @@ elseif strcmp(protocol,'testCurrentInj')
     AI = configureAI(sampratein);
     
     % configure one AO channel (for both Ihpulse and current injection)
-    AO = analogoutput ('nidaq', 'Dev1');
+    AO = analogoutput ('nidaq', 'Dev3');
     addchannel (AO, 1);
     set(AO, 'SampleRate', samprateout);
     set(AO, 'TriggerType', 'Manual');
@@ -53,7 +55,7 @@ elseif strcmp(protocol,'testwind')
     AI = configureAI(sampratein);
     
     % configure analog output
-    AO = analogoutput ('nidaq', 'Dev1');
+    AO = analogoutput ('nidaq', 'Dev3');
     addchannel (AO, 1);
     set(AO, 'SampleRate', samprateout);
     set(AO, 'TriggerType', 'Manual');
@@ -62,7 +64,7 @@ end
 %% configure AI
 function AI = configureAI(sampratein)
 
-AI = analoginput ('nidaq', 'Dev1');
+AI = analoginput ('nidaq', 'Dev3');
 addchannel (AI, 0:2);  % initialize channels A0,A1,A2 (10Vm_out, I_out, and scaled output, respectively)
 set(AI, 'SampleRate', sampratein);
 set(AI, 'SamplesPerTrigger', inf);
