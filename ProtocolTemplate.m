@@ -1,9 +1,9 @@
-classdef PiezoStep < FlySoundProtocol
+classdef ProtocolTemplate < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'PiezoStep'
+        protocol = 'FlySoundProtocol';
     end
-
+    
     properties (Hidden)
     end
     
@@ -17,27 +17,32 @@ classdef PiezoStep < FlySoundProtocol
     
     methods
         
-        function obj = PiezoStep(varargin)
+        function obj = ProtocolTemplate(varargin)
             % In case more construction is needed
-            obj = obj@FlySoundProtocol(varargin{:});
-            obj.createDataStructBoilerPlate();  % protocol specific Params
+            % obj = obj@FlySoundProtocol(varargin);
         end
+
+        function stim = generateStimulus(obj,varargin)
+            p = inputParser;
+            addRequired(p,'obj');
+            addOptional(p,'famN');
+            parse(p,varargin{:});
+        end
+
         
-        function run(obj,varargin)
+        function run(obj,famN,varargin)
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             p = inputParser;
-            addOptional(p,'famN',1);
-            p.addParamValue('displ',10,@(x) isnumeric(x) && x<25);
-            p.addParamValue('dur',1,@isnumeric)
-            p.addParamValue('pre',0.2,@isnumeric)
-
-            parse(p,varargin{:});
-            famN = p.Results.famN;
+            addRequired(p,'famN');
+            addOptional(p,'vm_id',0);
+            parse(p,famN,varargin{:});
             
             % stim_mat = generateStimFamily(obj);
             trialdata = obj.dataBoilerPlate;
-            trialdata.durSweep = 1;
+            trialdata.Vm_id = p.Results.vm_id;
+            
+            trialdata.durSweep = 2;
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
             
@@ -66,29 +71,38 @@ classdef PiezoStep < FlySoundProtocol
                         obj.y = voltage;
                         obj.y_units = 'mV';
                 end
-                                
+                
+                obj.saveData(trialdata,current,voltage)% save data(n)
+                
+                obj.displayTrial()
             end
-            [trialdata.Rinput,trialdata.Rseries,trialdata.Cm] = obj.displayRun();
-            obj.saveData(trialdata,current,voltage)% save data(n)
-
         end
                 
-        function varargout = displayRun(obj)
+        function displayTrial(obj)
+            figure(1);
+            redlines = findobj(1,'Color',[1, 0, 0]);
+            set(redlines,'color',[1 .8 .8]);
+            line(obj.x,obj.y,'color',[1 0 0],'linewidth',1);
+            box off; set(gca,'TickDir','out');
+            switch obj.rec_mode
+                case 'VClamp'
+                    ylabel('I (pA)'); %xlim([0 max(t)]);
+                case 'IClamp'
+                    ylabel('V_m (mV)'); %xlim([0 max(t)]);
+            end
+            xlabel('Time (s)'); %xlim([0 max(t)]);
         end
 
     end % methods
     
     methods (Access = protected)
                         
-        function createDataStructBoilerPlate(obj)
-            createDataStructBoilerPlate@FlySoundProtocol(obj);
-            dbp = obj.dataBoilerPlate;
-            
-            % Set Boiler plate params
-            % going to need a conversion from V to distance
-            dbp.displFactor = 10/30; %um/V
-            
-            obj.dataBoilerPlate = dbp;
+        function createSubDataStructBoilerPlate(obj)
+            % TODO, make this a map.Container array, so you can add
+            % whatever keys you want.  Or cell array of maps?  Or a java
+            % hashmap?
+            sdbp;
+            obj.subDataBoilerPlate = dbp;
         end
                 
         function stim_mat = generateStimFamily(obj)

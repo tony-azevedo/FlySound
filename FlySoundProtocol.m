@@ -1,20 +1,28 @@
 classdef FlySoundProtocol < handle
     
+    properties (Constant, Abstract) 
+        protocolName;
+    end
+    
     properties (Hidden)
-        
+        n               % current trial
+        x               % current x
+        y               % current y
+        x_units
+        y_units
+        D               % main directory
+        dataFileName    % filename for data struct
+        data
     end
     
     % The following properties can be set only by class methods
-    properties (SetAccess = private)
+    properties (SetAccess = protected)
         modusOperandi   % simulate or run?
         fly_genotype
         fly_number
         cell_number
-        rec_gain
-        rec_mode
-        D               % main directory
-        dataFileName
-        data
+        rec_gain        % amp gain
+        rec_mode        % amp mode
         dataBoilerPlate
         aiSession
         aoSession
@@ -43,25 +51,48 @@ classdef FlySoundProtocol < handle
             % first assign the saved values
             if ispref('AcquisitionPrefs')
                 acquisitionPrefs = getpref('AcquisitionPrefs');
-                obj.fly_genotype = acquisitionPrefs.fly_genotype;
-                obj.fly_number = acquisitionPrefs.fly_number;
-                obj.cell_number = acquisitionPrefs.cell_number;
+            else
+                acquisitionPrefs.fly_genotype = [];
+                acquisitionPrefs.fly_number = [];
+                acquisitionPrefs.cell_number = [];
             end
             
             % assign updated values of input parameters
             if isfield(p.Results,'fly_genotype') && isempty(p.Results.fly_genotype)
-                p.Results.fly_genotype = input('Enter Fly Genotype:  ');                
+                while isempty(obj.fly_genotype)
+                    obj.fly_genotype = input(sprintf('Enter Fly Genotype (current - %s):  ',acquisitionPrefs.fly_genotype),'s');
+                    if ~isempty(acquisitionPrefs.fly_genotype)
+                        obj.fly_genotype = acquisitionPrefs.fly_genotype;
+                    end
+                end
+            elseif isfield(p.Results,'fly_genotype') && ~isempty(p.Results.fly_genotype)
+                obj.fly_genotype = p.Results.fly_genotype;
             end
-            obj.fly_genotype = p.Results.fly_genotype;
-            if isfield(p.Results,'fly_number') && isempty(p.Results.fly_number)
-                p.Results.fly_genotype = input('Enter Fly Number:  ');                
-            end
-            obj.fly_genotype = p.Results.fly_genotype;
-            if isfield(p.Results,'cell_number') && isempty(p.Results.cell_number)
-                p.Results.fly_genotype = input('Enter Cell Number:  ');                
-            end
-            obj.fly_genotype = p.Results.fly_genotype;
             
+            % assign updated values of input parameters
+            if isfield(p.Results,'fly_number') && isempty(p.Results.fly_number)
+                while isempty(obj.fly_number)
+                    obj.fly_number = input(sprintf('Enter Fly Number (current - %s):  ',acquisitionPrefs.fly_number),'s');
+                    if ~isempty(acquisitionPrefs.fly_number)
+                        obj.fly_number = acquisitionPrefs.fly_number;
+                    end
+                end
+            elseif isfield(p.Results,'fly_number') && ~isempty(p.Results.fly_number)
+                obj.fly_number = p.Results.fly_number;
+            end
+            
+            % assign updated values of input parameters
+            if isfield(p.Results,'cell_number') && isempty(p.Results.cell_number)
+                while isempty(obj.cell_number)
+                    obj.cell_number = input(sprintf('Enter Cell Number (current - %s):  ',acquisitionPrefs.cell_number),'s');
+                    if ~isempty(acquisitionPrefs.cell_number)
+                        obj.cell_number = acquisitionPrefs.cell_number;
+                    end
+                end
+            elseif isfield(p.Results,'cell_number') && ~isempty(p.Results.cell_number)
+                obj.cell_number = p.Results.cell_number;
+            end
+                        
             % then set preferences to current values
             setpref('AcquisitionPrefs',...
                 {'fly_genotype','fly_number','cell_number'},...
@@ -70,15 +101,19 @@ classdef FlySoundProtocol < handle
             obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',date,'\',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number];
             
-            obj.dataFileName = dir([obj.D,'\WCwaveform_',...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat']);
+            obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
+                date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
             
             obj.rec_gain = readGain();
             obj.rec_mode = readMode();
-            createAIAOSessions();
+            obj.createAIAOSessions();
             obj.aiSession.Rate = p.Results.aiSamprate;
-            obj.dataBoilerPlate = createDataMatBoilerPlate(obj);
-            obj.data = obj.loadData();
+            obj.createDataStructBoilerPlate();  % Standard Params.  This can be updated in other protocols
+            obj.loadData();
+            obj.x = [];              % current x
+            obj.y = [];              % current y
+            obj.x_units = [];
+            obj.y_units = [];
 
         end
 
@@ -95,46 +130,46 @@ classdef FlySoundProtocol < handle
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             p = inputParser;
-            addRequired(p,'obj');
             addRequired(p,'famN');
             addOptional(p,'vm_id',0);
-            parse(p,varargin{:});
-
+            parse(p,famN,varargin{:});
+            
             % stim_mat = generateStimFamily(obj);
             trialdata = obj.dataBoilerPlate;
             trialdata.Vm_id = p.Results.vm_id;
 
             obj.rec_gain = readGain();
             obj.rec_mode = readMode();
-            trialdata.rec_gain = obj.rec_gain;
-            trialdata.rec_mode = obj.rec_mode;
+            trialdata.recgain = obj.rec_gain;
+            trialdata.recmode = obj.rec_mode;
+            if strcmp(obj.rec_mode,'IClamp')
+                trialdata.currentscale = obj.rec_gain; %%???????
+                trialdata.voltagescale = obj.rec_gain; %10.3 when output gain is 100; % scaling factor for voltage (mV)
+            elseif strcmp(obj.rec_mode,'VClamp')
+                trialdata.currentscale = obj.rec_gain*trialdata.headstagegain; %200                             % scaling factor for current (pA)
+                trialdata.voltagescale = 20; %10.3 when output gain is 100;   % scaling factor for voltage (mV)
+            end
+            trialdata.currentoffset= -0.0335;                                 % What is this?
+            trialdata.voltageoffset = 0*trialdata.voltagescale;                 % offset for voltage
             
-            obj.aiSession.Rate = trialdata.trial;
+            trialdata.durSweep = 2;
+            obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
             
             obj.x = ((1:obj.aiSession.Rate*obj.aiSession.DurationInSeconds) - 1)/obj.aiSession.Rate;
+            obj.x_units = 's';
             
             for fam = 1:famN
-                addTrialParametersDataStruct();
-                addStimToAOSession();
-                
+                %addTrialParametersDataStruct();
+                %addStimToAOSession();
+
+                fprintf('Trial %d\n',obj.n);
+
                 trialdata.trial = obj.n;
-                trialdata.durSweep = 2;
-                    
-                if strcmp(obj.rec_mode,'IClamp')
-                    trialdata.currentscale = obj.rec_gain; %%???????
-                    trialdata.voltagescale = obj.rec_gain; %10.3 when output gain is 100; % scaling factor for voltage (mV)
-                elseif strcmp(obj.rec_mode,'VClamp')
-                    trialdata.currentscale = obj.rec_gain*trialdata.headstagegain; %200                             % scaling factor for current (pA)
-                    trialdata.voltagescale = 20; %10.3 when output gain is 100;   % scaling factor for voltage (mV)
-                end
-                trialdata.currentoffset= -0.0335;                                 % What is this?
-                trialdata.voltageoffset = 0*trialdata.voltagescale;                 % offset for voltage
-                
-                
-                y = obj.aiSession.startForeground; %plot(x); drawnow
-                voltage = y;
-                current = y;
+
+                obj.y = obj.aiSession.startForeground; %plot(x); drawnow
+                voltage = obj.y;
+                current = obj.y;
                 
                 % apply scaling factors
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
@@ -142,30 +177,24 @@ classdef FlySoundProtocol < handle
                 
                 switch obj.rec_mode
                     case 'VClamp'
-                        y = current;
+                        obj.y = current;
+                        obj.y_units = 'pA';
                     case 'IClamp'
-                        y = voltage;
+                        obj.y = voltage;
+                        obj.y_units = 'mV';
                 end
                 
-                saveData(trialdata,current,voltage)% save data(n)
+                obj.saveData(trialdata,current,voltage)% save data(n)
                 
-                displayTrial(y)
+                obj.displayTrial()
             end
         end
-        
-        function saveData(obj,trialdata,current,voltage)
-            % For speed test appending to data;
-            obj.data(obj.n) = trialdata;
-
-            save(obj.dataFileName,'obj.data');
-            save([obj.D,'\Raw_WCwaveform_', ...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
-                num2str(obj.n)],'current','voltage');
-        end
-        
-        function displayTrial(obj,y)
+                
+        function displayTrial(obj)
             figure(1);
-            plot(obj.x,y,'r','linewidth',1);
+            redlines = findobj(1,'Color',[1, 0, 0]);
+            set(redlines,'color',[1 .8 .8]);
+            line(obj.x,obj.y,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.rec_mode
                 case 'VClamp'
@@ -173,6 +202,7 @@ classdef FlySoundProtocol < handle
                 case 'IClamp'
                     ylabel('V_m (mV)'); %xlim([0 max(t)]);
             end
+            xlabel('Time (s)'); %xlim([0 max(t)]);
         end
 
     end % methods
@@ -183,27 +213,38 @@ classdef FlySoundProtocol < handle
             % configureAIAO is to start an acquisition routine
             
             obj.aiSession = daq.createSession('ni');
-            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage')
+            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage');
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            % aoSession.addAnalogOutputChannel('Dev1',0:2, 'Voltage')
+            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage');
             
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger')
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger')
+            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
         
-        function trialdata = createDataMatBoilerPlate(obj)
-            trialdata.protocol = mfilename('class');
-            trialdata.date = date;
-            trialdata.flynumber = obj.fly_number;
-            trialdata.flygenotype = obj.fly_genotype;
-            trialdata.cellnumber = obj.cell_number;
-            trialdata.sampratein = obj.aiSession.Rate;
-            trialdata.recmode = obj.rec_mode;
-            trialdata.recgain = obj.rec_gain;
-            trialdata.headstagegain = 1;
-            trialdata.samprateout = obj.aoSession.Rate;
+        function createDataStructBoilerPlate(obj)
+            % TODO, make this a map.Container array, so you can add
+            % whatever keys you want.  Or cell array of maps?  Or a java
+            % hashmap?
+            dbp.protocolName = obj.protocolName;
+            dbp.date = date;
+            dbp.flynumber = obj.fly_number;
+            dbp.flygenotype = obj.fly_genotype;
+            dbp.cellnumber = obj.cell_number;
+            dbp.sampratein = obj.aiSession.Rate;
+            dbp.samprateout = obj.aoSession.Rate;
+            dbp.recmode = obj.rec_mode;
+            dbp.recgain = obj.rec_gain;
+            dbp.headstagegain = 1;
+            dbp.Vm_id = 0;
+            dbp.currentscale = 1000/(obj.rec_gain*dbp.headstagegain); % mV/gainsetting gives pA
+            dbp.voltagescale = 1000/(obj.rec_gain); % mV/gainsetting gives pA; % mV/gainsetting gives mV
+            dbp.currentoffset= -0.0335;                                 % What is this?
+            dbp.voltageoffset = 0*dbp.voltagescale;                 % offset for voltage
+            dbp.trial = [];
+            dbp.durSweep = [];
+            obj.dataBoilerPlate = dbp;
         end
         
         function loadData(obj)
@@ -213,18 +254,19 @@ classdef FlySoundProtocol < handle
             end
             
             % check whether a saved data file exists with today's date
-            if isempty(dir(obj.D))
+            if isempty(dir(obj.dataFileName))
                 % if no saved data exists then this is the first trial
-                obj.data(1) = obj.dataBoilerPlate;
+                obj.data = obj.dataBoilerPlate;
                 obj.data = obj.data(1:end-1);
                 obj.n = length(obj.data)+1;
             else
                 %load current data file
-                obj.data = load(obj.dataFileName,'data');
+                temp = load(obj.dataFileName,'data');
+                obj.data = temp.data;
                 obj.n = length(obj.data)+1;
 
             end
-            fprintf('Fly %s, Cell %s currently has %d trials',obj.fly_number,obj.cell_number,length(obj.data));
+            fprintf('Fly %s, Cell %s currently has %d trials\n',obj.fly_number,obj.cell_number,length(obj.data));
             
         end
         
@@ -234,6 +276,19 @@ classdef FlySoundProtocol < handle
             end
         end
 
+        function saveData(obj,trialdata,current,voltage)
+            save([obj.D,'\',obj.protocolName,'_Raw_', ...
+                date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
+                num2str(obj.n)],'current','voltage');
+
+            % TODO: For speed test appending to data;
+            obj.data(obj.n) = trialdata;
+            data = obj.data;
+            save(obj.dataFileName,'data');
+
+            obj.n = length(obj.data)+1;
+        end
+        
         
     end % protected methods
     

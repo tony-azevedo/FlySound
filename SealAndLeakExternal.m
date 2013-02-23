@@ -1,7 +1,7 @@
-classdef PiezoStep < FlySoundProtocol
+classdef SealAndLeakExternal < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'PiezoStep'
+        protocolName = 'SealAndLeakExternal'
     end
 
     properties (Hidden)
@@ -17,7 +17,7 @@ classdef PiezoStep < FlySoundProtocol
     
     methods
         
-        function obj = PiezoStep(varargin)
+        function obj = SealAndLeakExternal(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
             obj.createDataStructBoilerPlate();  % protocol specific Params
@@ -28,10 +28,7 @@ classdef PiezoStep < FlySoundProtocol
             % preassign space in data for all the trialdata structs
             p = inputParser;
             addOptional(p,'famN',1);
-            p.addParamValue('displ',10,@(x) isnumeric(x) && x<25);
-            p.addParamValue('dur',1,@isnumeric)
-            p.addParamValue('pre',0.2,@isnumeric)
-
+            addOptional(p,'vm_id',0);
             parse(p,varargin{:});
             famN = p.Results.famN;
             
@@ -74,6 +71,63 @@ classdef PiezoStep < FlySoundProtocol
         end
                 
         function varargout = displayRun(obj)
+            a = gradient(obj.y);
+            aa = gradient(a);
+            pulseon_crit1 = a > max(a)/2;
+            pulseon_crit2 = aa < min(aa)/2;
+            
+            pulseon = pulseon_crit1(1:end-1) & pulseon_crit2(2:end);
+            pulseon(end+1) = false;
+            pulseon = [0;diff(pulseon)];
+            pulseon = pulseon>0;
+            
+            ind = find(pulseon);
+            deltax = min(diff(ind));
+            ind = ind(1:end-1);
+            if ind(1) < 10
+                ind = ind(2:end);
+            end
+            
+            pulse_t = obj.x(ind(1)-8+1:ind(1)+deltax)-obj.x(ind(1));
+            pulse_t = pulse_t(:);
+            mat = nan(deltax+9,length(ind));
+            for i = 1:length(ind)
+                mat(:,i) = obj.y(ind(i)-9+1:ind(i)+deltax);
+            end
+            diffmat = diff(mat);
+            for i = 1:length(ind)
+                rise = find(diffmat(1:60,i)==max(diffmat(1:60,i)));
+                diffmat(:,i) = mat(rise-8+1:rise+deltax,i);
+                %RCtau = nlinfit(obj.x
+            end
+            
+            figure(1);
+            plot(pulse_t,diffmat,'color',[1 .7 .7])
+            pulseresp = mean(diffmat,2);
+            base = mean(pulseresp(1:6));
+            pulseresp = pulseresp-base;
+            Icoeff = nlinfit(...
+                pulse_t(pulse_t>.0004 & pulse_t<.007),...
+                pulseresp(pulse_t>.0004 & pulse_t<.007),...
+                @exponential,...
+                [pulseresp(1),max(pulseresp),0.004]);
+
+            RCcoeff = Icoeff; RCcoeff(1:2) = 0.005./(RCcoeff(1:2)*1e-12);
+            line(pulse_t,pulseresp+base,'color',[.7 0 0],'linewidth',1);
+            box off; set(gca,'TickDir','out');
+            line(pulse_t(pulse_t>.0004 & pulse_t<.007),...
+                exponential(Icoeff,pulse_t(pulse_t>.0004 & pulse_t<.007))+base,...
+                'color',[.7 0 0],'linewidth',3);
+            text(0.001,exponential(Icoeff,0.0004),sprintf('Ri=%.2e, Rs=%.2e, Cm = %.2e',RCcoeff(1),RCcoeff(2),RCcoeff(3)/RCcoeff(2)));
+            switch obj.rec_mode
+                case 'VClamp'
+                    ylabel('I (pA)'); %xlim([0 max(t)]);
+                case 'IClamp'
+                    ylabel('V_m (mV)'); %xlim([0 max(t)]);
+            end
+            xlim([-0.0005 0.007]);
+            xlabel('Time (s)'); %xlim([0 max(t)]);
+            varargout = {RCcoeff(1),RCcoeff(2),RCcoeff(3)/RCcoeff(2)};
         end
 
     end % methods
@@ -83,11 +137,9 @@ classdef PiezoStep < FlySoundProtocol
         function createDataStructBoilerPlate(obj)
             createDataStructBoilerPlate@FlySoundProtocol(obj);
             dbp = obj.dataBoilerPlate;
-            
-            % Set Boiler plate params
-            % going to need a conversion from V to distance
-            dbp.displFactor = 10/30; %um/V
-            
+            dbp.Rinput = [];
+            dbp.Rseries = [];
+            dbp.Cm = [];
             obj.dataBoilerPlate = dbp;
         end
                 
