@@ -24,6 +24,7 @@ classdef FlySoundProtocol < handle
         rec_gain        % amp gain
         rec_mode        % amp mode
         dataBoilerPlate
+        params
         aiSession
         aoSession
     end
@@ -204,6 +205,37 @@ classdef FlySoundProtocol < handle
             end
             xlabel('Time (s)'); %xlim([0 max(t)]);
         end
+        
+        function setparams(obj,varargin)
+            
+        end
+        function showparams(obj,varargin)
+            
+        end
+
+        function setdefaults(obj,varargin)
+            p = inputParser;
+            names = fieldnames(obj.dataBoilerPlate);
+            for name = names
+                addOptional(p,name{1});
+            end
+            parse(p,varargin{:});
+            results = fielnames(p.Results);
+            for r = results
+                setpref(['defaults',obj.protocolName],...
+                    ['default',r{1}],...
+                    p.Results.(r{1}));
+            end
+        end
+        
+        function showdefaults(obj)
+            disp('');
+            disp(getpref(['defaults',obj.protocolName]));
+        end
+        
+        function defaults = getdefaults(obj)
+            defaults = getpref(['defaults',obj.protocolName]);
+        end
 
     end % methods
     
@@ -275,7 +307,7 @@ classdef FlySoundProtocol < handle
                 stim_mat = generateStimulus;
             end
         end
-
+        
         function saveData(obj,trialdata,current,voltage)
             save([obj.D,'\',obj.protocolName,'_Raw_', ...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...

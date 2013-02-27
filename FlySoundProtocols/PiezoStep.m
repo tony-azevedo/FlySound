@@ -87,7 +87,10 @@ classdef PiezoStep < FlySoundProtocol
             % Set Boiler plate params
             % going to need a conversion from V to distance
             dbp.displFactor = 10/30; %um/V
-            
+            dbp.displacement = 1; % um
+            dbp.stepDurInSec = .5; 
+            dbp.preDurInSec = .5; 
+            dbp.preDurInSec = .5; 
             obj.dataBoilerPlate = dbp;
         end
                 
