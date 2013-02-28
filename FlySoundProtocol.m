@@ -21,8 +21,8 @@ classdef FlySoundProtocol < handle
         fly_genotype
         fly_number
         cell_number
-        rec_gain        % amp gain
-        rec_mode        % amp mode
+        recgain        % amp gain
+        recmode        % amp mode
         dataBoilerPlate
         params
         aiSession
@@ -105,17 +105,20 @@ classdef FlySoundProtocol < handle
             obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
             
-            obj.rec_gain = readGain();
-            obj.rec_mode = readMode();
+            obj.recgain = readGain();
+            obj.recmode = readMode();
             obj.createAIAOSessions();
             obj.aiSession.Rate = p.Results.aiSamprate;
-            obj.createDataStructBoilerPlate();  % Standard Params.  This can be updated in other protocols
+
+            obj.defineParameters();  % Saving Params.  This can be updated in other protocols
+            obj.createDataStructBoilerPlate();  % Saving Params.  This can be updated in other protocols
+
             obj.loadData();
             obj.x = [];              % current x
             obj.y = [];              % current y
             obj.x_units = [];
             obj.y_units = [];
-
+            obj.showDefaults
         end
 
         function stim = generateStimulus(obj,varargin)
@@ -125,8 +128,7 @@ classdef FlySoundProtocol < handle
             parse(p,varargin{:});
 
         end
-
-        
+       
         function run(obj,famN,varargin)
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
@@ -139,15 +141,15 @@ classdef FlySoundProtocol < handle
             trialdata = obj.dataBoilerPlate;
             trialdata.Vm_id = p.Results.vm_id;
 
-            obj.rec_gain = readGain();
-            obj.rec_mode = readMode();
-            trialdata.recgain = obj.rec_gain;
-            trialdata.recmode = obj.rec_mode;
-            if strcmp(obj.rec_mode,'IClamp')
-                trialdata.currentscale = obj.rec_gain; %%???????
-                trialdata.voltagescale = obj.rec_gain; %10.3 when output gain is 100; % scaling factor for voltage (mV)
-            elseif strcmp(obj.rec_mode,'VClamp')
-                trialdata.currentscale = obj.rec_gain*trialdata.headstagegain; %200                             % scaling factor for current (pA)
+            obj.recgain = readGain();
+            obj.recmode = readMode();
+            trialdata.recgain = obj.recgain;
+            trialdata.recmode = obj.recmode;
+            if strcmp(obj.recmode,'IClamp')
+                trialdata.currentscale = obj.recgain; %%???????
+                trialdata.voltagescale = obj.recgain; %10.3 when output gain is 100; % scaling factor for voltage (mV)
+            elseif strcmp(obj.recmode,'VClamp')
+                trialdata.currentscale = obj.recgain*trialdata.headstagegain; %200                             % scaling factor for current (pA)
                 trialdata.voltagescale = 20; %10.3 when output gain is 100;   % scaling factor for voltage (mV)
             end
             trialdata.currentoffset= -0.0335;                                 % What is this?
@@ -176,7 +178,7 @@ classdef FlySoundProtocol < handle
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
                 voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
                 
-                switch obj.rec_mode
+                switch obj.recmode
                     case 'VClamp'
                         obj.y = current;
                         obj.y_units = 'pA';
@@ -197,7 +199,7 @@ classdef FlySoundProtocol < handle
             set(redlines,'color',[1 .8 .8]);
             line(obj.x,obj.y,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
-            switch obj.rec_mode
+            switch obj.recmode
                 case 'VClamp'
                     ylabel('I (pA)'); %xlim([0 max(t)]);
                 case 'IClamp'
@@ -206,34 +208,47 @@ classdef FlySoundProtocol < handle
             xlabel('Time (s)'); %xlim([0 max(t)]);
         end
         
-        function setparams(obj,varargin)
-            
-        end
-        function showparams(obj,varargin)
-            
-        end
-
-        function setdefaults(obj,varargin)
+        function setParams(obj,varargin)
             p = inputParser;
-            names = fieldnames(obj.dataBoilerPlate);
-            for name = names
-                addOptional(p,name{1});
+            names = fieldnames(obj.params);
+            for i = 1:length(names)
+                p.addParamValue(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
             end
             parse(p,varargin{:});
-            results = fielnames(p.Results);
-            for r = results
+            results = fieldnames(p.Results);
+            for r = 1:length(results)
+                obj.params.(results{r}) = p.Results.(results{r});
+            end
+            obj.showParams
+        end
+        
+        function showParams(obj,varargin)
+            disp('')
+            disp(obj.params);
+        end
+
+        function setDefaults(obj,varargin)
+            p = inputParser;
+            names = fieldnames(obj.params);
+            for i = 1:length(names)
+                addOptional(p,names{i},obj.params.(names{i}));
+            end
+            parse(p,varargin{:});
+            results = fieldnames(p.Results);
+            for r = 1:length(results)
                 setpref(['defaults',obj.protocolName],...
-                    ['default',r{1}],...
-                    p.Results.(r{1}));
+                    [results{r}],...
+                    p.Results.(results{r}));
             end
         end
         
-        function showdefaults(obj)
+        function showDefaults(obj)
             disp('');
+            disp('DefaultParameters');
             disp(getpref(['defaults',obj.protocolName]));
         end
         
-        function defaults = getdefaults(obj)
+        function defaults = getDefaults(obj)
             defaults = getpref(['defaults',obj.protocolName]);
         end
 
@@ -255,6 +270,26 @@ classdef FlySoundProtocol < handle
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
         
+        function defineParameters(obj)
+            p = obj.params;
+            p.sampratein = 10000;
+            p.samprateout = 10000;
+            p.durSweep = [];
+            p.Vm_id = 0;
+            p.recmode = readMode();
+            p.recgain = readGain();
+
+            defaults = obj.getDefaults;
+            if ~isempty(defaults)
+                dnames = fieldnames(defaults);
+                for d = 1:length(defaults)
+                    p.(dnames{d}) = defaults.(dnames{d});
+                end
+            end
+            obj.params = p;
+            obj.setDefaults;
+        end
+        
         function createDataStructBoilerPlate(obj)
             % TODO, make this a map.Container array, so you can add
             % whatever keys you want.  Or cell array of maps?  Or a java
@@ -264,18 +299,14 @@ classdef FlySoundProtocol < handle
             dbp.flynumber = obj.fly_number;
             dbp.flygenotype = obj.fly_genotype;
             dbp.cellnumber = obj.cell_number;
-            dbp.sampratein = obj.aiSession.Rate;
-            dbp.samprateout = obj.aoSession.Rate;
-            dbp.recmode = obj.rec_mode;
-            dbp.recgain = obj.rec_gain;
             dbp.headstagegain = 1;
-            dbp.Vm_id = 0;
-            dbp.currentscale = 1000/(obj.rec_gain*dbp.headstagegain); % mV/gainsetting gives pA
-            dbp.voltagescale = 1000/(obj.rec_gain); % mV/gainsetting gives pA; % mV/gainsetting gives mV
+            dbp.vclampoutputfactor = 100;  %mV/V in V clamp;
+            dbp.iclampoutputfactor = 2/dbp.headstagegain;  %nA/V in V clamp;
+            dbp.currentscale = 1000/(obj.recgain*dbp.headstagegain); % mV/gainsetting gives pA
+            dbp.voltagescale = 1000/(obj.recgain); % mV/gainsetting gives pA; % mV/gainsetting gives mV
             dbp.currentoffset= -0.0335;                                 % What is this?
             dbp.voltageoffset = 0*dbp.voltagescale;                 % offset for voltage
             dbp.trial = [];
-            dbp.durSweep = [];
             obj.dataBoilerPlate = dbp;
         end
         
@@ -288,7 +319,7 @@ classdef FlySoundProtocol < handle
             % check whether a saved data file exists with today's date
             if isempty(dir(obj.dataFileName))
                 % if no saved data exists then this is the first trial
-                obj.data = obj.dataBoilerPlate;
+                obj.data = appendStructure(obj.dataBoilerPlate,obj.params);
                 obj.data = obj.data(1:end-1);
                 obj.n = length(obj.data)+1;
             else
@@ -313,7 +344,9 @@ classdef FlySoundProtocol < handle
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
                 num2str(obj.n)],'current','voltage');
 
-            % TODO: For speed test appending to data;
+            % TODO: For speed, test appending to data; It is O(n^2) right
+            % now
+            trialdata.trial = obj.n;
             obj.data(obj.n) = trialdata;
             data = obj.data;
             save(obj.dataFileName,'data');

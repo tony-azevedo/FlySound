@@ -33,7 +33,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
             famN = p.Results.famN;
             
             % stim_mat = generateStimFamily(obj);
-            trialdata = obj.dataBoilerPlate;
+            trialdata = appendStructure(obj.dataBoilerPlate,obj.params);
             trialdata.durSweep = 1;
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
@@ -55,7 +55,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
                 voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
                 
-                switch obj.rec_mode
+                switch obj.recmode
                     case 'VClamp'
                         obj.y = current;
                         obj.y_units = 'pA';
@@ -119,7 +119,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 exponential(Icoeff,pulse_t(pulse_t>.0004 & pulse_t<.007))+base,...
                 'color',[.7 0 0],'linewidth',3);
             text(0.001,exponential(Icoeff,0.0004),sprintf('Ri=%.2e, Rs=%.2e, Cm = %.2e',RCcoeff(1),RCcoeff(2),RCcoeff(3)/RCcoeff(2)));
-            switch obj.rec_mode
+            switch obj.recmode
                 case 'VClamp'
                     ylabel('I (pA)'); %xlim([0 max(t)]);
                 case 'IClamp'

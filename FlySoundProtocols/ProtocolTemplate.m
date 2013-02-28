@@ -1,7 +1,7 @@
 classdef ProtocolTemplate < FlySoundProtocol
     
     properties (Constant)
-        protocol = 'FlySoundProtocol';
+        protocolName = 'ProtocolTemplate';
     end
     
     properties (Hidden)
@@ -28,30 +28,27 @@ classdef ProtocolTemplate < FlySoundProtocol
             addOptional(p,'famN');
             parse(p,varargin{:});
         end
-
         
-        function run(obj,famN,varargin)
+        function run(obj,varargin)
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             p = inputParser;
-            addRequired(p,'famN');
-            addOptional(p,'vm_id',0);
-            parse(p,famN,varargin{:});
+            addOptional(p,'repeats',1);
+            addOptional(p,'vm_id',obj.params.Vm_id);
+            parse(p,varargin{:});
             
             % stim_mat = generateStimFamily(obj);
-            trialdata = obj.dataBoilerPlate;
+            trialdata = appendStructure(obj.dataBoilerPlate,obj.params);
             trialdata.Vm_id = p.Results.vm_id;
             
-            trialdata.durSweep = 2;
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
             
             obj.x = ((1:obj.aiSession.Rate*obj.aiSession.DurationInSeconds) - 1)/obj.aiSession.Rate;
             obj.x_units = 's';
             
-            for fam = 1:famN
-                %addTrialParametersDataStruct();
-                %addStimToAOSession();
+            for repeat = 1:p.Results.repeats
+
                 fprintf('Trial %d\n',obj.n);
 
                 trialdata.trial = obj.n;
@@ -64,7 +61,7 @@ classdef ProtocolTemplate < FlySoundProtocol
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
                 voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
                 
-                switch obj.rec_mode
+                switch obj.recmode
                     case 'VClamp'
                         obj.y = current;
                         obj.y_units = 'pA';
@@ -85,7 +82,7 @@ classdef ProtocolTemplate < FlySoundProtocol
             set(redlines,'color',[1 .8 .8]);
             line(obj.x,obj.y,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
-            switch obj.rec_mode
+            switch obj.recmode
                 case 'VClamp'
                     ylabel('I (pA)'); %xlim([0 max(t)]);
                 case 'IClamp'
@@ -98,71 +95,29 @@ classdef ProtocolTemplate < FlySoundProtocol
     
     methods (Access = protected)
                         
-        function createProtocolDataStructBoilerPlate(obj)
+        function createDataStructBoilerPlate(obj)
             % TODO, make this a map.Container array, so you can add
             % whatever keys you want.  Or cell array of maps?  Or a java
-            % hashmap?
-            pdbp;
-            dbp.date = date;
-            dbp.flynumber = obj.fly_number;
-            dbp.flygenotype = obj.fly_genotype;
-            dbp.cellnumber = obj.cell_number;
-            dbp.sampratein = obj.aiSession.Rate;
-            dbp.samprateout = obj.aoSession.Rate;
-            dbp.recmode = obj.rec_mode;
-            dbp.recgain = obj.rec_gain;
-            dbp.headstagegain = 1;
-            dbp.Vm_id = 0;
-            dbp.currentscale = 1000/(obj.rec_gain*dbp.headstagegain); % mV/gainsetting gives pA
-            dbp.voltagescale = 1000/(obj.rec_gain); % mV/gainsetting gives pA; % mV/gainsetting gives mV
-            dbp.currentoffset= -0.0335;                                 % What is this?
-            dbp.voltageoffset = 0*dbp.voltagescale;                 % offset for voltage
-            dbp.trial = [];
-            dbp.durSweep = [];
+            % hashmap?            
+            createDataStructBoilerPlate@FlySoundProtocol(obj);
+            dbp = obj.dataBoilerPlate;
             obj.dataBoilerPlate = dbp;
         end
         
-        function loadData(obj)
-            % make a directory if one does not exist
-            if ~isdir(obj.D)
-                mkdir(obj.D);
-            end
-            
-            % check whether a saved data file exists with today's date
-            if isempty(dir(obj.dataFileName))
-                % if no saved data exists then this is the first trial
-                obj.data = obj.dataBoilerPlate;
-                obj.data = obj.data(1:end-1);
-                obj.n = length(obj.data)+1;
-            else
-                %load current data file
-                obj.data = load(obj.dataFileName,'data');
-                obj.n = length(obj.data)+1;
-
-            end
-            fprintf('Fly %s, Cell %s currently has %d trials\n',obj.fly_number,obj.cell_number,length(obj.data));
-            
+        function defineParameters(obj)
+            defineParameters@FlySoundProtocol(obj);
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
+            obj.params.durSweep = 2;
+            obj.params.Vm_id = 0;
+            obj.setDefaults;
         end
-        
+                
         function stim_mat = generateStimFamily(obj)
             for paramsToVary = obj.params
                 stim_mat = generateStimulus;
             end
         end
-
-        function saveData(obj,trialdata,current,voltage)
-            save([obj.D,'\',obj.protocol,'_Raw_', ...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
-                num2str(obj.n)],'current','voltage');
-
-            % TODO: For speed test appending to data;
-            obj.data(obj.n) = trialdata;
-            data = obj.data;
-            save(obj.dataFileName,'data');
-
-            obj.n = length(obj.data)+1;
-        end
-        
         
     end % protected methods
     
