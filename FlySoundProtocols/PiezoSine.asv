@@ -1,7 +1,7 @@
-classdef ProtocolTemplate < FlySoundProtocol
+classdef PiezoSine < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'ProtocolTemplate';
+        protocolName = 'PiezoSine';
     end
     
     properties (Hidden)
@@ -18,22 +18,33 @@ classdef ProtocolTemplate < FlySoundProtocol
     
     methods
         
-        function obj = ProtocolTemplate(varargin)
+        function obj = PiezoSine(varargin)
             % In case more construction is needed
-            obj = obj@FlySoundProtocol(varargin{:});
-            obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.samprateout;
-            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.sampratein;
+            % obj = obj@FlySoundProtocol(varargin);
         end
 
-        function varargout = generateStimulus(obj,varargin)
-            global globalPiezoChirpStimulus
-            global freqstart
-            global freqstop
-            global ramptime
+        function stim = generateStimulus(obj,varargin)
+            global globalPiezoSineStimulus
+            global freq
+            global cycles
             
-            stim = globalPiezoChirpStimulus * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
-            stim = stim + obj.params.displacementOffset;
-            varargout = {stim,obj.x};
+            if isempty(globalPiezoSineStimulus) ||...
+                    length(globalPiezoSineStimulus) ~= obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec) || ...
+                    isempty(freq) || isempty(cycles) || ...
+                    freq ~= obj.params.freq || cycles ~= obj.params.cycles
+                freq = obj.params.freq;
+                cycles = obj.params.cycles;
+
+                globalPiezoSineStimulus = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
+                globalPiezoSineStimulus = globalPiezoSineStimulus(:);
+                globalPiezoSineStimulus(:) = 0;
+                stimpnts = obj.params.samprateout*obj.params.preDurInSec+1:...
+                    obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec);
+                stimtime = (stimpnts - stimpnts(1)+1)/obj.params.samprateout;
+                globalPiezoSineStimulus(stimpnts) = sin(2*pi*obj.params.freq*stimtime);
+            end            
+            stim = globalPiezoSineStimulus* obj.params.displacement*obj.dataBoilerPlate.displFactor;
+            stim = stim+obj.params.displOffset;
         end
         
         function run(obj,varargin)
@@ -53,16 +64,14 @@ classdef ProtocolTemplate < FlySoundProtocol
 
             obj.aoSession.Rate = trialdata.samprateout;
 
-            stim = nan(length(obj.generateStimulus()),length((obj.aoSession.Channels)));
-
+            obj.x = ((1:obj.aiSession.Rate*obj.aiSession.DurationInSeconds) - 1)/obj.aiSession.Rate;
+            obj.x_units = 's';
+            
             for repeat = 1:p.Results.repeats
 
                 fprintf('Trial %d\n',obj.n);
                 
-                stim(:,1) = obj.generateStimulus();
-                stim(:,2) = obj.generateStimulus();
-                
-                obj.aoSession.queueOutputData(stim)                
+                obj.aoSession.queueOutputData(obj.generateStimulus())                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
                 
@@ -91,14 +100,10 @@ classdef ProtocolTemplate < FlySoundProtocol
                 
         function displayTrial(obj)
             figure(1);
-            ax1 = subplot(4,4,[1 2 3 5 6 7 9 10 11]);
+            ax1 = subplot(4,1,[1 2 3]);
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
-            bluelines = findobj(1,'Color',[0, 0, 1]);
-            set(bluelines,'color',[.8 .8 1]);
-
-            line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
             line(obj.x,obj.y(:,2),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
@@ -109,31 +114,13 @@ classdef ProtocolTemplate < FlySoundProtocol
             end
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
-            ax2 = subplot(4,4,[13 14 15]);
-            line(obj.stimx,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+            ax2 = subplot(4,1,4);
+            bluelines = findobj(1,'Color',[0, 0, 1]);
+            set(bluelines,'color',[.8 .8 1]);
+            line(obj.x,obj.generateStimulus/obj.dataBoilerPlate.displFactor,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
-            ax3 = subplot(1,4,4);
-
-            sgsvalue = obj.y(:,2);
-            sgsfft = real(fft(sgsvalue).*conj(fft(sgsvalue)));
-            sgsf = obj.params.sampratein/length(sgsvalue)*[0:length(sgsvalue)/2]; sgsf = [sgsf, fliplr(sgsf(2:end-1))];
-            
-            stim = obj.generateStimulus;
-            stimfft = real(fft(stim).*conj(fft(stim)));
-            stimf = obj.params.samprateout/length(stim)*[0:length(stim)/2]; stimf = [stimf, fliplr(stimf(2:end-1))];
-
-            [C,IA,IB] = intersect(sgsf,stimf);
-            stimratio = sgsfft(IA)./stimfft(IB);
-            
-            loglog(stimf,stimfft/max(stimfft(stimf>obj.params.freqstart & stimf<obj.params.freqstop))), hold on;
-            loglog(sgsf,sgsfft/max(sgsfft(sgsf>obj.params.freqstart & sgsf<obj.params.freqstop)),'r'), hold on;
-%             loglog(C,stimratio/max(stimratio(C>obj.params.freqstart & C<obj.params.freqstop/2)),'k'), hold on;
-            
-            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
-            box off; set(gca,'TickDir','out');
-            xlim([obj.params.freqstart obj.params.freqstop*.95])
         end
 
     end % methods
@@ -150,7 +137,6 @@ classdef ProtocolTemplate < FlySoundProtocol
             % configure AO
             obj.aoSession = daq.createSession('ni');
             obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage');
-            obj.aoSession.addAnalogOutputChannel('Dev1',1, 'Voltage');
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
@@ -166,14 +152,13 @@ classdef ProtocolTemplate < FlySoundProtocol
         
         function defineParameters(obj)
             defineParameters@FlySoundProtocol(obj);
-            obj.params.displacementOffset = 0;
+            obj.params.displOffset;
             obj.params.sampratein = 10000;
-            obj.params.samprateout = 40000;
+            obj.params.samprateout = 10000;
             obj.params.displacement = 1;
-            obj.params.ramptime = 0.1; %sec;
-            obj.params.freqstart = 10; %Hz;
-            obj.params.freqstop = 1000; %Hz
-            obj.params.stimDurInSec = 5;
+            obj.params.cycles = 10; 
+            obj.params.freq = 10; % Hz
+            obj.params.stimDurInSec = obj.params.cycles/obj.params.freq;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;

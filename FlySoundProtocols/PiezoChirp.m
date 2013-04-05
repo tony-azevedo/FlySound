@@ -1,7 +1,7 @@
-classdef ProtocolTemplate < FlySoundProtocol
+classdef PiezoChirp < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'ProtocolTemplate';
+        protocolName = 'PiezoChirp';
     end
     
     properties (Hidden)
@@ -18,7 +18,7 @@ classdef ProtocolTemplate < FlySoundProtocol
     
     methods
         
-        function obj = ProtocolTemplate(varargin)
+        function obj = PiezoChirp(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.samprateout;
@@ -31,6 +31,34 @@ classdef ProtocolTemplate < FlySoundProtocol
             global freqstop
             global ramptime
             
+            if isempty(globalPiezoChirpStimulus) ||...
+                    length(globalPiezoChirpStimulus) ~= obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec) || ...
+                    isempty(freqstart) || isempty(freqstop) || isempty(ramptime) || ...
+                    freqstart ~= obj.params.freqstart || freqstop ~= obj.params.freqstop || ramptime ~= obj.params.ramptime
+
+                freqstart = obj.params.freqstart;
+                freqstop = obj.params.freqstop;
+                ramptime = obj.params.ramptime;
+                
+                globalPiezoChirpStimulus = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
+                globalPiezoChirpStimulus = globalPiezoChirpStimulus(:);
+                globalPiezoChirpStimulus(:) = 0;
+                
+                stimpnts = obj.params.samprateout*obj.params.preDurInSec+1:...
+                    obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec);
+                
+                w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
+                w = [w(1:obj.params.ramptime*obj.params.samprateout);...
+                    ones(length(stimpnts)-length(w),1);...
+                    w(obj.params.ramptime*obj.params.samprateout+1:end)];
+                
+                stimtime = (stimpnts - stimpnts(1)+1)/obj.params.samprateout;
+                
+                globalPiezoChirpStimulus(stimpnts) = ...
+                    w.*...
+                    chirp(stimtime,obj.params.freqstart,stimtime(end),obj.params.freqstop)';
+                
+            end            
             stim = globalPiezoChirpStimulus * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
             stim = stim + obj.params.displacementOffset;
             varargout = {stim,obj.x};

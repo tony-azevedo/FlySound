@@ -7,6 +7,7 @@ classdef FlySoundProtocol < handle
     properties (Hidden)
         n               % current trial
         x               % current x
+        stimx           % stimulus x
         y               % current y
         x_units
         y_units

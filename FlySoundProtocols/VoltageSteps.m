@@ -1,11 +1,14 @@
-classdef ProtocolTemplate < FlySoundProtocol
+classdef VoltageSteps < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'ProtocolTemplate';
+        protocolName = 'VoltageSteps';
     end
     
     properties (Hidden)
         sensorMonitor
+        stimx
+        stim
+        x
     end
     
     % The following properties can be set only by class methods
@@ -18,21 +21,20 @@ classdef ProtocolTemplate < FlySoundProtocol
     
     methods
         
-        function obj = ProtocolTemplate(varargin)
+        function obj = VoltageSteps(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.samprateout;
+            obj.stim = zeros(size(obj.stimx));
+            obj.stim(obj.params.sampratein*(obj.params.preDurInSec)+1: obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
             obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.sampratein;
         end
 
         function varargout = generateStimulus(obj,varargin)
-            global globalPiezoChirpStimulus
-            global freqstart
-            global freqstop
-            global ramptime
-            
-            stim = globalPiezoChirpStimulus * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
-            stim = stim + obj.params.displacementOffset;
+            if nargin>1
+                v = varargin{1};
+            end
+            stim = obj.stim * v; %*obj.dataBoilerPlate.displFactor;
             varargout = {stim,obj.x};
         end
         
@@ -60,7 +62,7 @@ classdef ProtocolTemplate < FlySoundProtocol
                 fprintf('Trial %d\n',obj.n);
                 
                 stim(:,1) = obj.generateStimulus();
-                stim(:,2) = obj.generateStimulus();
+                %stim(:,2) = obj.generateStimulus();
                 
                 obj.aoSession.queueOutputData(stim)                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
@@ -68,7 +70,6 @@ classdef ProtocolTemplate < FlySoundProtocol
                 
                 voltage = obj.y(:,1);
                 current = obj.y(:,1);
-                obj.sensorMonitor = obj.y(:,2);
                 
                 % apply scaling factors
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
@@ -145,12 +146,10 @@ classdef ProtocolTemplate < FlySoundProtocol
             
             obj.aiSession = daq.createSession('ni');
             obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
-            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % PZT Sensor monitor
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage');
-            obj.aoSession.addAnalogOutputChannel('Dev1',1, 'Voltage');
+            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage');
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
@@ -166,14 +165,10 @@ classdef ProtocolTemplate < FlySoundProtocol
         
         function defineParameters(obj)
             defineParameters@FlySoundProtocol(obj);
-            obj.params.displacementOffset = 0;
             obj.params.sampratein = 10000;
-            obj.params.samprateout = 40000;
-            obj.params.displacement = 1;
-            obj.params.ramptime = 0.1; %sec;
-            obj.params.freqstart = 10; %Hz;
-            obj.params.freqstop = 1000; %Hz
-            obj.params.stimDurInSec = 5;
+            obj.params.samprateout = 10000;
+            obj.params.steps = [-30 -20 -10 0 10 20 30];
+            obj.params.stimDurInSec = 0.5;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;

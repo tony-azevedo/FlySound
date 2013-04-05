@@ -108,49 +108,21 @@ function slider1_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 popupval = get(handles.popupmenu1,'Value');
-handles.stimvals(popupval) = get(handles.slider1,'Value');
-handles.stimval = handles.stimvals(popupval);
+stimval = get(handles.slider1,'Value');
 
 aoSession = handles.sessions{popupval};
-try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
+try aoSession.queueOutputData(handles.stim(:)*stimval);
+    aoSession.startBackground
+    handles.sessions{popupval} = aoSession;
+    
+    set(handles.edit1,'String',num2str(handles.stimval));
+    handles.stimvals(popupval) = get(handles.slider1,'Value');
+    handles.stimval = handles.stimvals(popupval);
+
 catch ME
-    try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-    catch ME
-        try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-        catch ME
-            try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-            catch ME
-                try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                catch ME
-                    try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                    catch ME
-                        try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                        catch ME
-                            try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                            catch ME
-                                try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                                catch ME
-                                    try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                                    catch ME
-                                        try aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                                        catch ME
-                                            aoSession.queueOutputData(handles.stim(:)*handles.stimval);
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+    set(handles.slider1,'Value',stimval);
 end
 
-aoSession.startBackground
-handles.sessions{popupval} = aoSession;
-
-set(handles.edit1,'String',num2str(handles.stimval));
 guidata(gcbo,handles);
 
 

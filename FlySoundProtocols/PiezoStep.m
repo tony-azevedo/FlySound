@@ -5,6 +5,7 @@ classdef PiezoStep < FlySoundProtocol
     end
     
     properties (Hidden)
+        sensorMonitor
     end
     
     % The following properties can be set only by class methods
@@ -24,9 +25,11 @@ classdef PiezoStep < FlySoundProtocol
 
         function stim = generateStimulus(obj,varargin)
             global globalPiezoStepStimulus
+            
             if isempty(globalPiezoStepStimulus) ||...
                     length(globalPiezoStepStimulus) ~= obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec+obj.params.postDurInSec) ||...
                     sum(globalPiezoStepStimulus)~= obj.params.samprateout*obj.params.stepDurInSec;
+            
                 globalPiezoStepStimulus = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec+obj.params.postDurInSec));
                 globalPiezoStepStimulus = globalPiezoStepStimulus(:);
                 globalPiezoStepStimulus(:) = 0;
@@ -34,10 +37,7 @@ classdef PiezoStep < FlySoundProtocol
                     obj.params.samprateout*obj.params.preDurInSec+1:...
                     obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec)) = 1;
             end
-            obj.params.displacement = 1;
-            obj.dataBoilerPlate.displFactor = 10/30; %V/um
-            
-            stim = globalPiezoStepStimulus* obj.params.displacement*obj.dataBoilerPlate.displFactor;
+            stim = globalPiezoStepStimulus* obj.params.displacement;%*obj.dataBoilerPlate.displFactor;
         end
         
         function run(obj,varargin)
@@ -66,9 +66,11 @@ classdef PiezoStep < FlySoundProtocol
                 
                 obj.aoSession.queueOutputData(obj.generateStimulus())                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
-                obj.y = obj.aiSession.startForeground; %plot(x); drawnow
-                voltage = obj.y;
-                current = obj.y;
+                obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
+                
+                voltage = obj.y(:,1);
+                current = obj.y(:,1);
+                obj.sensorMonitor = obj.y(:,2);
                 
                 % apply scaling factors
                 current = (current-trialdata.currentoffset)*trialdata.currentscale;
@@ -83,7 +85,7 @@ classdef PiezoStep < FlySoundProtocol
                         obj.y_units = 'mV';
                 end
                 
-                obj.saveData(trialdata,current,voltage)% save data(n)
+                obj.saveData(trialdata,current,voltage) % TODO: save signal monitor
                 
                 obj.displayTrial()
             end
@@ -95,7 +97,7 @@ classdef PiezoStep < FlySoundProtocol
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
-            line(obj.x,obj.y,'parent',ax1,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(:,2),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
@@ -106,7 +108,12 @@ classdef PiezoStep < FlySoundProtocol
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,4);
-            line(obj.x,obj.generateStimulus,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            bluelines = findobj(1,'Color',[0, 0, 1]);
+            set(bluelines,'color',[.8 .8 1]);
+            line(obj.x,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            box off; set(gca,'TickDir','out');
+
         end
 
     end % methods
@@ -117,7 +124,8 @@ classdef PiezoStep < FlySoundProtocol
             % configureAIAO is to start an acquisition routine
             
             obj.aiSession = daq.createSession('ni');
-            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage');
+            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
+            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % PZT Sensor monitor
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
