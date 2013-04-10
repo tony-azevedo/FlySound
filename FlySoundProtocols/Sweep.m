@@ -23,23 +23,14 @@ classdef Sweep < FlySoundProtocol
         end
 
         function stim = generateStimulus(obj,varargin)
-            p = inputParser;
-            addRequired(p,'obj');
-            addOptional(p,'famN');
-            parse(p,varargin{:});
+            % no stimulus for a sweep
+            stim = [];
         end
         
         function run(obj,varargin)
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
-            p = inputParser;
-            addOptional(p,'repeats',1);
-            addOptional(p,'vm_id',obj.params.Vm_id);
-            parse(p,varargin{:});
-            
-            % stim_mat = generateStimFamily(obj);
-            trialdata = appendStructure(obj.dataBoilerPlate,obj.params);
-            trialdata.Vm_id = p.Results.vm_id;
+            trialdata = runtimeParameters(obj,varargin{:});
             
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
@@ -47,7 +38,7 @@ classdef Sweep < FlySoundProtocol
             obj.x = ((1:obj.aiSession.Rate*obj.aiSession.DurationInSeconds) - 1)/obj.aiSession.Rate;
             obj.x_units = 's';
             
-            for repeat = 1:p.Results.repeats
+            for repeat = 1:trialdata.repeats
 
                 fprintf('Trial %d\n',obj.n);
 
@@ -94,23 +85,40 @@ classdef Sweep < FlySoundProtocol
     end % methods
     
     methods (Access = protected)
-                        
+        
+        function createAIAOSessions(obj)
+            % configureAIAO is to start an acquisition routine
+            
+            obj.aiSession = daq.createSession('ni');
+            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
+            
+            % configure AO
+            % obj.aoSession = daq.createSession('ni');
+            % obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage');
+            % obj.aoSession.addAnalogOutputChannel('Dev1',1, 'Voltage');
+            %
+            % obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
+            % obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+        end
+        
         function createDataStructBoilerPlate(obj)
             % TODO, make this a map.Container array, so you can add
             % whatever keys you want.  Or cell array of maps?  Or a java
             % hashmap?            
             createDataStructBoilerPlate@FlySoundProtocol(obj);
             dbp = obj.dataBoilerPlate;
+            
             obj.dataBoilerPlate = dbp;
         end
         
         function defineParameters(obj)
-            defineParameters@FlySoundProtocol(obj);
+            % This will set up parameters only for the first time, then
+            % will use defaults
             obj.params.sampratein = 10000;
             obj.params.samprateout = 10000;
             obj.params.durSweep = 2;
             obj.params.Vm_id = 0;
-            obj.setDefaults;
+            obj.params = obj.getDefaults;
         end
                 
         function stim_mat = generateStimFamily(obj)

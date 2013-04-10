@@ -1,14 +1,10 @@
-classdef VoltageSteps < FlySoundProtocol
+classdef CurrentSteps < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'VoltageSteps';
+        protocolName = 'CurrentSteps';
     end
     
     properties (Hidden)
-        sensorMonitor
-        stimx
-        stim
-        x
     end
     
     % The following properties can be set only by class methods
@@ -21,27 +17,31 @@ classdef VoltageSteps < FlySoundProtocol
     
     methods
         
-        function obj = VoltageSteps(varargin)
+        function obj = CurrentSteps(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
-            obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.samprateout;
-            obj.stim = zeros(size(obj.stimx));
-            obj.stim(obj.params.sampratein*(obj.params.preDurInSec)+1: obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
-            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec)/obj.params.sampratein;
         end
-
+        
         function varargout = generateStimulus(obj,varargin)
             if nargin>1
-                mV = varargin{1};
+                nA = varargin{1};
+            else
+                nA = obj.params.step;
             end
-            trialstim = obj.stim * mV; 
             
-            varargout = {trialstim,obj.x};
+            DAQ_out_voltage = nA/(obj.dataBoilerPlate.iclampextcontrolfactor/obj.dataBoilerPlate.vdividerfactor); %nA / [nA/V] / [Vout/Vin] = Vin
+            trialstim = obj.stim * DAQ_out_voltage ; 
+            % dbp.vdivideroffset = 0.00292; % offest for the ext command.
+            
+            varargout = {trialstim,obj.stimx};
         end
         
         function run(obj,varargin)
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
+            if ~strcmp(readMode(),'IClamp')
+                error('Not in current clamp (IClamp)');
+            end
             trialdata = runtimeParameters(obj,varargin{:});
             
             obj.aiSession.Rate = trialdata.sampratein;
@@ -54,20 +54,25 @@ classdef VoltageSteps < FlySoundProtocol
             for repeat = 1:trialdata.repeats
                 for vi = 1:length(obj.params.steps)
                     fprintf('Trial %d\n',obj.n);
-                    
-                    trialstim(:,1) = obj.generateStimulus(obj.params.steps(vi));
+                    obj.params.step = obj.params.steps(vi);
+                    trialdata.step = obj.params.step;
+                    trialstim(:,1) = obj.generateStimulus();
                     %stim(:,2) = obj.generateStimulus();
-                    
+                    tic
+                    obj.aoSession.wait;
                     obj.aoSession.queueOutputData(trialstim)
+                    toc
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
-                    obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
+                    obj.y = obj.aiSession.startForeground; % 
                     
                     voltage = obj.y(:,1);
                     current = obj.y(:,1);
                     
                     % apply scaling factors
-                    current = (current-trialdata.currentoffset)*trialdata.currentscale;
-                    voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
+                    % current = (current-trialdata.currentoffset)*trialdata.currentscale;
+                    current = current*trialdata.currentscale;
+                    % voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
+                    voltage = voltage*trialdata.voltagescale;
                     
                     switch obj.recmode
                         case 'VClamp'
@@ -82,21 +87,22 @@ classdef VoltageSteps < FlySoundProtocol
                     
                     obj.displayTrial()
                 end
-                obj.displayFamily()
+                % obj.displayFamily()
             end
         end
                 
         function displayTrial(obj)
             figure(1);
-            ax1 = subplot(4,4,[1 2 3 5 6 7 9 10 11]);
+            ax1 = subplot(4,1,[2 3 4]);
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
 
+
             line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
-            line(obj.x,obj.y(:,2),'parent',ax1,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
@@ -106,31 +112,11 @@ classdef VoltageSteps < FlySoundProtocol
             end
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
-            ax2 = subplot(4,4,[13 14 15]);
+            ax2 = subplot(4,1,1);
             line(obj.stimx,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
-            ax3 = subplot(1,4,4);
-
-            sgsvalue = obj.y(:,2);
-            sgsfft = real(fft(sgsvalue).*conj(fft(sgsvalue)));
-            sgsf = obj.params.sampratein/length(sgsvalue)*[0:length(sgsvalue)/2]; sgsf = [sgsf, fliplr(sgsf(2:end-1))];
-            
-            stim = obj.generateStimulus;
-            stimfft = real(fft(stim).*conj(fft(stim)));
-            stimf = obj.params.samprateout/length(stim)*[0:length(stim)/2]; stimf = [stimf, fliplr(stimf(2:end-1))];
-
-            [C,IA,IB] = intersect(sgsf,stimf);
-            stimratio = sgsfft(IA)./stimfft(IB);
-            
-            loglog(stimf,stimfft/max(stimfft(stimf>obj.params.freqstart & stimf<obj.params.freqstop))), hold on;
-            loglog(sgsf,sgsfft/max(sgsfft(sgsf>obj.params.freqstart & sgsf<obj.params.freqstop)),'r'), hold on;
-%             loglog(C,stimratio/max(stimratio(C>obj.params.freqstart & C<obj.params.freqstop/2)),'k'), hold on;
-            
-            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
-            box off; set(gca,'TickDir','out');
-            xlim([obj.params.freqstart obj.params.freqstop*.95])
         end
 
     end % methods
@@ -169,14 +155,27 @@ classdef VoltageSteps < FlySoundProtocol
             obj.params.Vm_id = 0;
             
             obj.params.steps = [-30 -20 -10 0 10 20 30];
+            obj.params.step = obj.params.steps(1);
             
             obj.params.stimDurInSec = 0.5;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.params = obj.getDefaults;
+            obj.params.recmode = readMode();
+            obj.params.recgain = readGain();
+
         end
-                
+        
+        function setupStimulus(obj,varargin)
+            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
+            obj.stim = zeros(size(obj.stimx));
+            obj.stim(obj.params.sampratein*(obj.params.preDurInSec)+1: obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.sampratein;
+            obj.y = obj.x;
+        end
+        
         function stim_mat = generateStimFamily(obj)
             for paramsToVary = obj.params
                 stim_mat = generateStimulus;
