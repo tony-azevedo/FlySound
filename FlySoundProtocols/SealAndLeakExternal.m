@@ -81,41 +81,44 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 ind = ind(2:end);
             end
             
+            pulse_t = obj.x(ind(1)-pre+1:ind(1)+deltax)-obj.x(ind(1));
+            pulse_t = pulse_t(:);
             mat = nan(deltax+pre,length(ind));
             for i = 1:length(ind)
                 mat(:,i) = obj.y(ind(i)-pre+1:ind(i)+deltax);
             end
-            diffmat = diff(mat);
-            rise = ind;
-            for i = 1:length(ind)
-                rise(i) = find(diffmat(1:(pre*8),i)==max(diffmat(1:(pre*8),i)));
+            if obj.params.sampratein <= 10000
+                pulse_t = obj.x(ind(1)-(pre-1)+1:ind(1)+deltax)-obj.x(ind(1));
+                pulse_t = pulse_t(:);
+                
+                diffmat = diff(mat);
+                for i = 1:length(ind)
+                    rise = find(diffmat(1:(pre*8),i)==max(diffmat(1:(pre*8),i)));
+                    diffmat(:,i) = mat(rise-pre+1:rise+deltax,i);
+                    %RCtau = nlinfit(obj.x
+                end
+            else
+                diffmat = mat;
             end
-            
-            pulse_t = obj.x(ind(1)-(pre-1)+1:ind(1)+deltax)-obj.x(ind(1));
-            pulse_t = pulse_t(:);
 
-            slope = min(rise);
-            for i = 1:length(ind)
-                diffmat(:,i) = mat(rise(i)-slope+1:rise(i)-slope+(pre-1)+deltax,i);
-            end
-
-            
             figure(1);
             plot(pulse_t,diffmat,'color',[1 .7 .7])
             pulseresp = mean(diffmat,2);
             base = mean(pulseresp(1:6));
             pulseresp = pulseresp-base;
+            start = .0002;
+            finit = .007; %s
             Icoeff = nlinfit(...
-                pulse_t(pulse_t>.0004 & pulse_t<.007),...
-                pulseresp(pulse_t>.0004 & pulse_t<.007),...
+                pulse_t(pulse_t>start & pulse_t<finit),...
+                pulseresp(pulse_t>start & pulse_t<finit),...
                 @exponential,...
                 [pulseresp(1),max(pulseresp),0.004]);
 
             RCcoeff = Icoeff; RCcoeff(1:2) = 0.005./(RCcoeff(1:2)*1e-12); % 5 mV step/I_i or I_f
             line(pulse_t,pulseresp+base,'color',[.7 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
-            line(pulse_t(pulse_t>.0004 & pulse_t<.007),...
-                exponential(Icoeff,pulse_t(pulse_t>.0004 & pulse_t<.007))+base,...
+            line(pulse_t(pulse_t>start & pulse_t<finit),...
+                exponential(Icoeff,pulse_t(pulse_t>start & pulse_t<finit))+base,...
                 'color',[.7 0 0],'linewidth',3);
             ylims = get(gca,'ylim');
             text(0.001, base+.9*(max(ylims)-base),sprintf('Ri=%.2e, Rs=%.2e, Cm = %.2e',RCcoeff(1),RCcoeff(2),RCcoeff(3)/RCcoeff(2)));
@@ -125,7 +128,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 case 'IClamp'
                     ylabel('V_m (mV)'); %xlim([0 max(t)]);
             end
-            xlim([-0.0005 0.007]);
+            xlim([-0.0005 finit]);
             xlabel('Time (s)'); %xlim([0 max(t)]);
             varargout = {RCcoeff(1),RCcoeff(2),RCcoeff(3)/RCcoeff(2)};
         end

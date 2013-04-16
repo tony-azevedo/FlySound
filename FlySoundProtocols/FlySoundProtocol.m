@@ -161,10 +161,11 @@ classdef FlySoundProtocol < handle
         end
 
         function defaults = getDefaults(obj)
-            defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
             defaults = getpref(['defaults',obj.protocolName]);
             if isempty(defaults)
+                defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
                 obj.setDefaults(defaultsnew{:});
+                defaults = obj.params;
             end
         end
         

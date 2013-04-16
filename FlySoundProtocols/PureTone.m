@@ -1,7 +1,7 @@
-classdef CurrentSteps < FlySoundProtocol
+classdef PureTones < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'CurrentSteps';
+        protocolName = 'PureTone';
     end
     
     properties (Hidden)
