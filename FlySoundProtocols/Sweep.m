@@ -19,9 +19,9 @@ classdef Sweep < FlySoundProtocol
         
         function obj = Sweep(varargin)
             % In case more construction is needed
-            % obj = obj@FlySoundProtocol(varargin);
+            obj = obj@FlySoundProtocol(varargin{:});
         end
-
+        
         function stim = generateStimulus(obj,varargin)
             % no stimulus for a sweep
             stim = [];
@@ -120,7 +120,13 @@ classdef Sweep < FlySoundProtocol
             obj.params.Vm_id = 0;
             obj.params = obj.getDefaults;
         end
-                
+       
+        function setupStimulus(obj,varargin)
+            obj.stimx = [];
+            obj.stim = [];
+            obj.x = ((1:obj.params.sampratein*obj.params.durSweep) - 1)/obj.params.sampratein;
+        end
+        
         function stim_mat = generateStimFamily(obj)
             for paramsToVary = obj.params
                 stim_mat = generateStimulus;

@@ -95,8 +95,9 @@ classdef SealAndLeakExternal < FlySoundProtocol
             pulse_t = pulse_t(:);
 
             slope = min(rise);
+            deltax = 
             for i = 1:length(ind)
-                diffmat(:,i) = mat(rise(i)-slope+1:rise(i)-slope+(pre-1)+deltax,i);
+                diffmat(:,i) = mat(rise(i)-slope+1:pre+deltax,i);
             end
 
             

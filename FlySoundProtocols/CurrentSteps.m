@@ -148,10 +148,6 @@ classdef CurrentSteps < FlySoundProtocol
         function defineParameters(obj)
             obj.params.sampratein = 10000;
             obj.params.samprateout = 10000;
-            obj.params.recmode = readMode();
-            obj.params.recgain = readGain();
-            obj.params.currentscale = 1000/(obj.params.recgain*obj.dataBoilerPlate.headstagegain); % mV/gainsetting gives pA
-            obj.params.voltagescale = 1000/(obj.params.recgain); % mV/gainsetting gives mV
             obj.params.Vm_id = 0;
             
             obj.params.steps = [-30 -20 -10 0 10 20 30];
@@ -162,8 +158,6 @@ classdef CurrentSteps < FlySoundProtocol
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.params = obj.getDefaults;
-            obj.params.recmode = readMode();
-            obj.params.recgain = readGain();
 
         end
         

@@ -239,10 +239,7 @@ classdef FlySoundProtocol < handle
         function setupStimulus(obj,varargin)
             try obj.stimx = ((1:obj.params.samprateout*obj.params.durSweep))/obj.params.samprateout;
             catch e
-                if ~isfield(obj.params,'samprateout');
-                    obj.stimx = [];
-                end
-            end
+                if 
             obj.stim = zeros(size(obj.stimx));
             obj.x = ((1:obj.params.sampratein*obj.params.durSweep) - 1)/obj.params.sampratein;
         end
