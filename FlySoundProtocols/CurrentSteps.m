@@ -66,7 +66,7 @@ classdef CurrentSteps < FlySoundProtocol
                     obj.y = obj.aiSession.startForeground; % 
                     
                     voltage = obj.y(:,1);
-                    current = obj.y(:,1);
+                    current = obj.y(:,2);
                     
                     % apply scaling factors
                     % current = (current-trialdata.currentoffset)*trialdata.currentscale;
@@ -100,9 +100,8 @@ classdef CurrentSteps < FlySoundProtocol
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
 
-
-            line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
-            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
+            %line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
+            line(obj.x,obj.y(1:length(obj.x),1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
@@ -128,6 +127,7 @@ classdef CurrentSteps < FlySoundProtocol
             
             obj.aiSession = daq.createSession('ni');
             obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
+            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % from amp
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
