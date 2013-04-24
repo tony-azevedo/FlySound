@@ -210,10 +210,6 @@ classdef FlySoundProtocol < handle
             dbp.flynumber = obj.fly_number;
             dbp.flygenotype = obj.fly_genotype;
             dbp.cellnumber = obj.cell_number;
-            dbp.trial = [];
-            dbp.repeats = [];
-            dbp.recgain = readGain();
-            dbp.recmode = readMode();
             dbp.headstagegain = 1;
             
             dbp.daqCurrentOffset = 0.0045; %nA There is some current offset when Vdaq = 0 
@@ -226,7 +222,12 @@ classdef FlySoundProtocol < handle
             dbp.daqout_to_current = 0.1199709; % m, multiply DAQ voltage to get nA injected
             dbp.daqout_to_current_offset = -0.00150;  % b, add to DAQ voltage to get the right offset
 
-            dbp.rearcurrentswitchval = 1; % [mV/V]/gainsetting gives pA;                                 % What is this?
+            % dbp.rearcurrentswitchval = 100; % [mV/V]/gainsetting gives pA;                                 % What is this?
+            dbp.trial = [];
+            dbp.repeats = [];
+            dbp.recgain = readGain();
+            dbp.recmode = readMode();
+
             dbp.hardcurrentscale = 1000/(dbp.rearcurrentswitchval*dbp.headstagegain); % [mV/V]/gainsetting gives pA;                                 % What is this?
 
             dbp.currentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA

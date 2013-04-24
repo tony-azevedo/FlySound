@@ -23,25 +23,20 @@ classdef CurrentSteps < FlySoundProtocol
         end
         
         function varargout = generateStimulus(obj,varargin)
-            if nargin>2
+            if nargin>1
                 nA = varargin{1};
             else
                 nA = obj.params.step;
             end
-            
-            DAQ_out_voltage = (nA-obj.dataBoilerPlate.daqout_to_current_offset)/obj.dataBoilerPlate.daqout_to_current; 
+            DAQ_out_voltage = (nA-dbp.daqout_to_current_offset)/dbp.daqout_to_current; 
 
-            % subtract some voltage to remove the static current
-            DAQ_V_to_subtract_static_current = obj.dataBoilerPlate.daqCurrentOffset/obj.dataBoilerPlate.daqout_to_current;
-            trialstim = obj.stim * DAQ_out_voltage - DAQ_V_to_subtract_static_current; 
-            
-            if nargin>1
-                current_units = varargin{1};
-                if current_units == 1
-                    trialstim = obj.stim*DAQ_out_voltage;
-                end
-            end
+            % subtract some voltage to  equivalent current
+            V_eo_daq = obj.dataBoilerPlate.daqCurrentOffset//dbp.daqout_to_current;
 
+            trialstim = obj.stim * DAQ_out_voltage - ; 
+            %trialstim = trialstim - obj.dataBoilerPlate.analogoutputoffset;
+            % dbp.vdivideroffset = 0.00292; % offest for the ext command.
+            
             varargout = {trialstim,obj.stimx};
         end
         
@@ -76,11 +71,13 @@ classdef CurrentSteps < FlySoundProtocol
                     
                     voltage = obj.y(:,1);
                     current = obj.y(:,2);
-                    %hardvoltage = obj.y(:,3);
+                    hardvoltage = obj.y(:,3);
                     
                     % apply scaling factors
+                    current = (current-trialdata.hardcurrentoffset)*trialdata.hardcurrentscale;
+                    %current = current*trialdata.hardcurrentscale;
+                    hardvoltage = hardvoltage*trialdata.hardvoltagescale-trialdata.hardvoltageoffset;
                     voltage = voltage*trialdata.voltagescale;
-                    current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset;
                     
                     switch obj.recmode
                         case 'VClamp'
@@ -121,7 +118,7 @@ classdef CurrentSteps < FlySoundProtocol
             
             ax2 = subplot(4,1,1);
             line(obj.stimx,obj.params.step*obj.generateStimulus(1),'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            line(obj.stimx,obj.y,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+            line(obj.stimx,current,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 

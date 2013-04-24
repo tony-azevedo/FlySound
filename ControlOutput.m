@@ -111,17 +111,14 @@ popupval = get(handles.popupmenu1,'Value');
 stimval = get(handles.slider1,'Value');
 
 aoSession = handles.sessions{popupval};
-try aoSession.queueOutputData(handles.stim(:)*stimval);
-    aoSession.startBackground
-    handles.sessions{popupval} = aoSession;
-    
-    set(handles.edit1,'String',num2str(handles.stimval));
-    handles.stimvals(popupval) = get(handles.slider1,'Value');
-    handles.stimval = handles.stimvals(popupval);
+aoSession.wait;
+aoSession.queueOutputData(handles.stim(:)*stimval);
+aoSession.startBackground
+handles.sessions{popupval} = aoSession;
 
-catch ME
-    set(handles.slider1,'Value',stimval);
-end
+set(handles.edit1,'String',num2str(handles.stimval));
+handles.stimvals(popupval) = get(handles.slider1,'Value');
+handles.stimval = handles.stimvals(popupval);
 
 guidata(gcbo,handles);
 
