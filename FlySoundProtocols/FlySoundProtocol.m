@@ -64,7 +64,7 @@ classdef FlySoundProtocol < handle
             if isfield(p.Results,'fly_genotype') && isempty(p.Results.fly_genotype)
                 while isempty(obj.fly_genotype)
                     obj.fly_genotype = input(sprintf('Enter Fly Genotype (current - %s):  ',acquisitionPrefs.fly_genotype),'s');
-                    if isempty(obj.fly_number) && ~isempty(acquisitionPrefs.fly_genotype)
+                    if isempty(obj.fly_genotype) && ~isempty(acquisitionPrefs.fly_genotype)
                         obj.fly_genotype = acquisitionPrefs.fly_genotype;
                     end
                 end
@@ -229,8 +229,10 @@ classdef FlySoundProtocol < handle
             dbp.rearcurrentswitchval = 1; % [V/nA];
             dbp.hardcurrentscale = 1/(dbp.rearcurrentswitchval*dbp.headstagegain); % [V]/current scal gives nA;
 
-            dbp.currentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA
-            dbp.voltagescale = 1000/(dbp.recgain); % mV/gainsetting gives mV
+            dbp.scaledcurrentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA
+            dbp.scaledcurrentoffset = -0.00890326; % [mV/V]/gainsetting gives pA
+            dbp.scaledvoltagescale = 1000/(dbp.recgain); % mV/gainsetting gives mV
+            dbp.scaledvoltageoffset = 0; % mV/gainsetting gives mV
 
             obj.dataBoilerPlate = dbp;
        end
@@ -261,9 +263,9 @@ classdef FlySoundProtocol < handle
             obj.dataBoilerPlate.recgain = obj.recgain;
             obj.dataBoilerPlate.recmode = obj.recmode;
             
-            obj.dataBoilerPlate.currentscale = 1000/(obj.recgain*obj.dataBoilerPlate.headstagegain); % mV/gainsetting gives pA
-            obj.dataBoilerPlate.voltagescale = 1000/(obj.recgain); % mV/gainsetting gives mV
-    
+            obj.dataBoilerPlate.scaledcurrentscale = 1000/(obj.recgain*obj.dataBoilerPlate.headstagegain); % [mV/V]/gainsetting gives pA
+            obj.dataBoilerPlate.scaledvoltagescale = 1000/(obj.recgain); % mV/gainsetting gives mV
+            
             p = inputParser;
             addOptional(p,'repeats',1);
             addOptional(p,'vm_id',obj.params.Vm_id);

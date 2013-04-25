@@ -44,8 +44,8 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 current = obj.y;
                 
                 % apply scaling factors
-                current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
-                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
+                current = (current-trialdata.currentoffset)*trialdata.currentscale;
+                voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
                 
                 switch obj.recmode
                     case 'VClamp'
@@ -112,7 +112,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 pulse_t(pulse_t>start & pulse_t<finit),...
                 pulseresp(pulse_t>start & pulse_t<finit),...
                 @exponential,...
-                [max(pulseresp)/3,max(pulseresp),0.004]);
+                [pulseresp(1),max(pulseresp),0.004]);
 
             RCcoeff = Icoeff; RCcoeff(1:2) = 0.005./(RCcoeff(1:2)*1e-12); % 5 mV step/I_i or I_f
             line(pulse_t,pulseresp+base,'color',[.7 0 0],'linewidth',1);

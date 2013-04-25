@@ -49,8 +49,8 @@ classdef Sweep < FlySoundProtocol
                 current = obj.y;
                 
                 % apply scaling factors
-                current = (current-trialdata.currentoffset)*trialdata.currentscale;
-                voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
+                current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
+                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
                 
                 switch obj.recmode
                     case 'VClamp'

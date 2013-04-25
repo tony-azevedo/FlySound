@@ -74,7 +74,9 @@ classdef CurrentSteps < FlySoundProtocol
                     %hardvoltage = obj.y(:,3);
                     
                     % apply scaling factors
-                    voltage = voltage*trialdata.voltagescale;
+                    voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
+                    % Note: collecting hard current here, not scaled
+                    % current
                     current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
                     current = current*1000;
                     

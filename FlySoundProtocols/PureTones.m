@@ -64,10 +64,8 @@ classdef PureTones < FlySoundProtocol
                     current = obj.y(:,1);
                     
                     % apply scaling factors
-                    % current = (current-trialdata.currentoffset)*trialdata.currentscale;
-                    current = current*trialdata.currentscale;
-                    % voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
-                    voltage = voltage*trialdata.voltagescale;
+                    current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
+                    voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
                     
                     switch obj.recmode
                         case 'VClamp'
