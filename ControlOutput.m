@@ -111,14 +111,18 @@ popupval = get(handles.popupmenu1,'Value');
 stimval = get(handles.slider1,'Value');
 
 aoSession = handles.sessions{popupval};
-aoSession.wait;
-aoSession.queueOutputData(handles.stim(:)*stimval);
-aoSession.startBackground
-handles.sessions{popupval} = aoSession;
 
-set(handles.edit1,'String',num2str(handles.stimval));
-handles.stimvals(popupval) = get(handles.slider1,'Value');
-handles.stimval = handles.stimvals(popupval);
+try aoSession.queueOutputData(handles.stim(:)*stimval);
+    aoSession.startBackground
+    handles.sessions{popupval} = aoSession;
+    
+    set(handles.edit1,'String',num2str(stimval));
+    handles.stimvals(popupval) = get(handles.slider1,'Value');
+    handles.stimval = handles.stimvals(popupval); 
+catch ME
+    set(handles.slider1,'Value',handles.stimval);
+    set(handles.edit1,'String',num2str(handles.stimval));
+end
 
 guidata(gcbo,handles);
 
@@ -228,7 +232,19 @@ slider1_Callback(handles.slider1, eventdata, handles)
 
 function ControlOutput_KeyPressFcn(src,eventdata,hObject)
 handles = guidata(hObject);
-if strcmp(eventdata.Character,' ')
+if strcmp(eventdata.Character,' ') && handles.stimval>0
+    fprintf('Hit space bar again to activate\n');
+    handles.setval = handles.stimval;
+    handles.stimval = 0;
+    set(handles.slider1,'Value',handles.stimval);
+    guidata(hObject, handles);
+    slider1_Callback(handles.slider1, eventdata, handles)
+elseif strcmp(eventdata.Character,' ') && handles.stimval==0 && isfield(handles,'setval')
+    fprintf('Activated\n');
+    handles.stimval = handles.setval;
+    set(handles.slider1,'Value',handles.stimval);
+    guidata(hObject, handles);
+    slider1_Callback(handles.slider1, eventdata, handles)
 end
 
 function ControlOutput_ClosingFcn(src,eventdata,hObject)
