@@ -23,20 +23,25 @@ classdef CurrentSteps < FlySoundProtocol
         end
         
         function varargout = generateStimulus(obj,varargin)
-            if nargin>1
-                nA = varargin{1};
+            if nargin>2
+                nA = varargin{2}/1000;
             else
-                nA = obj.params.step;
+                nA = obj.params.step/1000;
             end
-            DAQ_out_voltage = (nA-dbp.daqout_to_current_offset)/dbp.daqout_to_current; 
-
-            % subtract some voltage to  equivalent current
-            V_eo_daq = obj.dataBoilerPlate.daqCurrentOffset//dbp.daqout_to_current;
-
-            trialstim = obj.stim * DAQ_out_voltage - ; 
-            %trialstim = trialstim - obj.dataBoilerPlate.analogoutputoffset;
-            % dbp.vdivideroffset = 0.00292; % offest for the ext command.
             
+            DAQ_out_voltage = (nA-obj.dataBoilerPlate.daqout_to_current_offset)/obj.dataBoilerPlate.daqout_to_current; 
+
+            % subtract some voltage to remove the static current
+            DAQ_V_to_subtract_static_current = obj.dataBoilerPlate.daqCurrentOffset/obj.dataBoilerPlate.daqout_to_current;
+            trialstim = obj.stim * DAQ_out_voltage - DAQ_V_to_subtract_static_current; 
+            
+            if nargin>1
+                current_units = varargin{1};
+                if current_units == 1
+                    trialstim = obj.stim*nA*1000;
+                end
+            end
+
             varargout = {trialstim,obj.stimx};
         end
         
@@ -71,22 +76,15 @@ classdef CurrentSteps < FlySoundProtocol
                     
                     voltage = obj.y(:,1);
                     current = obj.y(:,2);
-                    hardvoltage = obj.y(:,3);
+                    %hardvoltage = obj.y(:,3);
                     
                     % apply scaling factors
-                    current = (current-trialdata.hardcurrentoffset)*trialdata.hardcurrentscale;
-                    %current = current*trialdata.hardcurrentscale;
-                    hardvoltage = hardvoltage*trialdata.hardvoltagescale-trialdata.hardvoltageoffset;
                     voltage = voltage*trialdata.voltagescale;
+                    current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
                     
-                    switch obj.recmode
-                        case 'VClamp'
-                            obj.y = current;
-                            obj.y_units = 'pA';
-                        case 'IClamp'
-                            obj.y = voltage;
-                            obj.y_units = 'mV';
-                    end
+                    obj.y(:,1) = voltage;
+                    obj.y(:,2) = current;
+                    obj.y_units = 'mV';
                     
                     obj.saveData(trialdata,current,voltage) % TODO: save signal monitor
                     
@@ -104,6 +102,8 @@ classdef CurrentSteps < FlySoundProtocol
             set(redlines,'color',[1 .8 .8]);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
+            bluelines = findobj(1,'Color',[0, 0, 1]);
+            set(bluelines,'color',[.8 .8 1]);
 
             %line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
             line(obj.x,obj.y(1:length(obj.x),1),'parent',ax1,'color',[1 0 0],'linewidth',1);
@@ -117,8 +117,8 @@ classdef CurrentSteps < FlySoundProtocol
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,1);
+            line(obj.stimx,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             line(obj.stimx,obj.params.step*obj.generateStimulus(1),'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            line(obj.stimx,current,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
@@ -138,7 +138,7 @@ classdef CurrentSteps < FlySoundProtocol
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            obj.aoSession.addAnalogOutputChannel('Dev1',3, 'Voltage');
+            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage');
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
