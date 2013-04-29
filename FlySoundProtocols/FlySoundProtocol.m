@@ -15,6 +15,8 @@ classdef FlySoundProtocol < handle
         D               % main directory
         dataFileName    % filename for data struct
         data
+        notesFileName
+        notesFileID
     end
     
     % The following properties can be set only by class methods
@@ -58,6 +60,7 @@ classdef FlySoundProtocol < handle
                 acquisitionPrefs.fly_genotype = [];
                 acquisitionPrefs.fly_number = [];
                 acquisitionPrefs.cell_number = [];
+                acquisitionPrefs.notes_file_name = [];
             end
             
             % assign updated values of input parameters
@@ -106,6 +109,8 @@ classdef FlySoundProtocol < handle
             
             obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
+            
+            obj.openNotesFile();
             
             obj.recgain = readGain();
             obj.recmode = readMode();
@@ -320,6 +325,19 @@ classdef FlySoundProtocol < handle
             obj.n = length(obj.data)+1;
         end
         
+        function openNotesFile(obj)
+            curnotesfn = [obj.D,'\notes_',...
+                date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
+            
+            obj.notesFileName = curnotesfn;
+            obj.notesFileID = fopen(obj.notesFileName,'a');    
+        end
+        
+        function writePrologueNotes(obj)
+        end
+        
+        function writeTrialNotes(obj)
+        end
         
     end % protected methods
     
