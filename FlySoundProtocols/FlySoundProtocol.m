@@ -110,7 +110,7 @@ classdef FlySoundProtocol < handle
             obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
             
-            obj.openNotesFile();
+            % obj.openNotesFile();
             
             obj.recgain = readGain();
             obj.recmode = readMode();
@@ -334,9 +334,12 @@ classdef FlySoundProtocol < handle
         end
         
         function writePrologueNotes(obj)
+%             '\t%s',obj.protocolName,obj.recMode,
+%             '
         end
         
         function writeTrialNotes(obj)
+            
         end
         
     end % protected methods

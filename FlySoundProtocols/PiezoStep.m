@@ -20,47 +20,25 @@ classdef PiezoStep < FlySoundProtocol
         
         function obj = PiezoStep(varargin)
             % In case more construction is needed
-            % obj = obj@FlySoundProtocol(varargin);
+            obj = obj@FlySoundProtocol(varargin{:});
         end
 
-        function stim = generateStimulus(obj,varargin)
-            global globalPiezoStepStimulus
-            
-            if isempty(globalPiezoStepStimulus) ||...
-                    length(globalPiezoStepStimulus) ~= obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec+obj.params.postDurInSec) ||...
-                    sum(globalPiezoStepStimulus)~= obj.params.samprateout*obj.params.stepDurInSec;
-            
-                globalPiezoStepStimulus = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec+obj.params.postDurInSec));
-                globalPiezoStepStimulus = globalPiezoStepStimulus(:);
-                globalPiezoStepStimulus(:) = 0;
-                globalPiezoStepStimulus(...
-                    obj.params.samprateout*obj.params.preDurInSec+1:...
-                    obj.params.samprateout*(obj.params.preDurInSec+obj.params.stepDurInSec)) = 1;
-            end
-            stim = globalPiezoStepStimulus* obj.params.displacement;%*obj.dataBoilerPlate.displFactor;
+        function varargout = generateStimulus(obj,varargin)
+            trialstim = obj.stim* obj.params.displacement;%*obj.dataBoilerPlate.displFactor;
+            varargout = {trialstim,obj.stimx};
         end
         
         function run(obj,varargin)
-            % Runtime routine for the protocol. obj.run(numRepeats)
-            % preassign space in data for all the trialdata structs
-            p = inputParser;
-            addOptional(p,'repeats',1);
-            addOptional(p,'vm_id',obj.params.Vm_id);
-            parse(p,varargin{:});
-            
-            % stim_mat = generateStimFamily(obj);
-            trialdata = appendStructure(obj.dataBoilerPlate,obj.params);
-            trialdata.Vm_id = p.Results.vm_id;
+            trialdata = runtimeParameters(obj,varargin{:});
             
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 
             obj.aoSession.Rate = trialdata.samprateout;
 
-            obj.x = ((1:obj.aiSession.Rate*obj.aiSession.DurationInSeconds) - 1)/obj.aiSession.Rate;
             obj.x_units = 's';
             
-            for repeat = 1:p.Results.repeats
+            for repeat = 1:trialdata.repeats
 
                 fprintf('Trial %d\n',obj.n);
                 
@@ -69,21 +47,20 @@ classdef PiezoStep < FlySoundProtocol
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
                 
                 voltage = obj.y(:,1);
-                current = obj.y(:,1);
-                obj.sensorMonitor = obj.y(:,2);
+                current = obj.y(:,2);
+                obj.sensorMonitor = obj.y(:,3);
                 
                 % apply scaling factors
-                current = (current-trialdata.currentoffset)*trialdata.currentscale;
-                voltage = voltage*trialdata.voltagescale-trialdata.voltageoffset;
-                
-                switch obj.recmode
-                    case 'VClamp'
-                        obj.y = current;
-                        obj.y_units = 'pA';
-                    case 'IClamp'
-                        obj.y = voltage;
-                        obj.y_units = 'mV';
-                end
+                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
+                % Note: collecting hard current here, not scaled
+                % current
+                current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
+                current = current*1000;
+                                
+                obj.y(:,1) = voltage;
+                obj.y(:,2) = current;
+                obj.y(:,3) = obj.sensorMonitor;
+                obj.y_units = 'mV';
                 
                 obj.saveData(trialdata,current,voltage) % TODO: save signal monitor
                 
@@ -97,7 +74,7 @@ classdef PiezoStep < FlySoundProtocol
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
-            line(obj.x,obj.y(:,2),'parent',ax1,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
@@ -111,7 +88,7 @@ classdef PiezoStep < FlySoundProtocol
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
             line(obj.x,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
         end
@@ -125,7 +102,8 @@ classdef PiezoStep < FlySoundProtocol
             
             obj.aiSession = daq.createSession('ni');
             obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
-            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % PZT Sensor monitor
+            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % from amp
+            obj.aiSession.addAnalogInputChannel('Dev1',5, 'Voltage'); % PZT Sensor monitor
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
@@ -144,20 +122,31 @@ classdef PiezoStep < FlySoundProtocol
         end
         
         function defineParameters(obj)
-            defineParameters@FlySoundProtocol(obj);
             obj.params.sampratein = 10000;
             obj.params.samprateout = 10000;
             obj.params.displacement = 1;
-            obj.params.stepDurInSec = .5;
+            obj.params.stimDurInSec = .5;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
-            obj.params.durSweep = obj.params.stepDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
 
             obj.params.Vm_id = 0;
 
-            obj.setDefaults;
+            obj.params = obj.getDefaults;
         end
-                
+        
+        function setupStimulus(obj,varargin)
+            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
+            obj.stimx = obj.stimx(:);
+            obj.stim = zeros(size(obj.stimx));
+            obj.stim(obj.params.sampratein*(obj.params.preDurInSec)+1: obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.sampratein;
+            obj.x = obj.x(:);
+            obj.y = obj.x;
+        end
+
+        
         function stim_mat = generateStimFamily(obj)
             for paramsToVary = obj.params
                 stim_mat = generateStimulus;
