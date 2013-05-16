@@ -26,6 +26,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             trialdata = runtimeParameters(obj,varargin{:});
+            obj.writePrologueNotes()
 
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
@@ -34,8 +35,6 @@ classdef SealAndLeakExternal < FlySoundProtocol
             obj.x_units = 's';
             
             for repeat = 1:trialdata.repeats
-
-                fprintf('Trial %d\n',obj.n);
 
                 trialdata.trial = obj.n;
 
@@ -59,6 +58,7 @@ classdef SealAndLeakExternal < FlySoundProtocol
             end
             [trialdata.Rinput,trialdata.Rseries,trialdata.Cm] = obj.displayRun();
             obj.saveData(trialdata,current,voltage)% save data(n)
+            obj.writeTrialNotes(trialdata.Rinput,trialdata.Rseries,trialdata.Cm)
 
         end
                 
@@ -167,6 +167,14 @@ classdef SealAndLeakExternal < FlySoundProtocol
                 stim_mat = generateStimulus;
             end
         end
+        
+        function writeTrialNotes(obj,Rinput,Rseries,Cm)
+            % In case more construction is needed
+            writeTrialNotes@FlySoundProtocol(obj);
+            fprintf(obj.notesFileID,'\t**** Rinput = %.2e, Rseries = %.2e, Cm = %.2e\n',Rinput,Rseries,Cm);
+            fprintf(1,'\t**** Rinput = %.2e, Rseries = %.2e, Cm = %.2e\n',Rinput,Rseries,Cm);
+        end
+
         
     end % protected methods
     

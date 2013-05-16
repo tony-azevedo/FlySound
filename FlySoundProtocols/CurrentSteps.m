@@ -47,7 +47,8 @@ classdef CurrentSteps < FlySoundProtocol
             if ~strcmp(readMode(),'IClamp')
                 error('Not in current clamp (IClamp)');
             end
-            
+            obj.writePrologueNotes()
+
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 
@@ -57,15 +58,17 @@ classdef CurrentSteps < FlySoundProtocol
 
             for repeat = 1:trialdata.repeats
                 for vi = 1:length(obj.params.steps)
-                    fprintf('Trial %d\n',obj.n);
                     obj.params.step = obj.params.steps(vi);
                     trialdata.step = obj.params.step;
+
+                    obj.writeTrialNotes('step');
+
                     trialstim(:,1) = obj.generateStimulus();
                     %stim(:,2) = obj.generateStimulus();
-                    tic
+                    %tic
                     obj.aoSession.wait;
                     obj.aoSession.queueOutputData(trialstim)
-                    toc
+                    %toc
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     obj.y = obj.aiSession.startForeground; % 
                     

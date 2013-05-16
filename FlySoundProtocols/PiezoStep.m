@@ -30,7 +30,8 @@ classdef PiezoStep < FlySoundProtocol
         
         function run(obj,varargin)
             trialdata = runtimeParameters(obj,varargin{:});
-            
+            obj.writePrologueNotes()
+
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 
@@ -40,7 +41,7 @@ classdef PiezoStep < FlySoundProtocol
             
             for repeat = 1:trialdata.repeats
 
-                fprintf('Trial %d\n',obj.n);
+                obj.writeTrialNotes('displacement');
                 
                 obj.aoSession.queueOutputData(obj.generateStimulus())                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first

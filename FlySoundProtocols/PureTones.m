@@ -38,7 +38,8 @@ classdef PureTones < FlySoundProtocol
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             trialdata = runtimeParameters(obj,varargin{:});
-            
+            obj.writePrologueNotes()
+
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 
@@ -48,15 +49,17 @@ classdef PureTones < FlySoundProtocol
 
             for repeat = 1:trialdata.repeats
                 for vi = 1:length(obj.params.tones)
-                    fprintf('Trial %d\n',obj.n);
                     obj.params.tone = obj.params.tones(vi);
+
+                    obj.writeTrialNotes('tone','amplitude');
+                    
                     trialdata.tone = obj.params.tone;
                     trialstim(:,1) = obj.generateStimulus();
                     %trialstim(:,2) = obj.generateStimulus();
-                    tic
+                    %tic
                     obj.aoSession.wait;
                     obj.aoSession.queueOutputData(trialstim)
-                    toc
+                    %toc
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     obj.y = obj.aiSession.startForeground; % 
                     

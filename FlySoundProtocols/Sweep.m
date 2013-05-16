@@ -31,6 +31,7 @@ classdef Sweep < FlySoundProtocol
             % Runtime routine for the protocol. obj.run(numRepeats)
             % preassign space in data for all the trialdata structs
             trialdata = runtimeParameters(obj,varargin{:});
+            obj.writePrologueNotes()
             
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
@@ -40,13 +41,13 @@ classdef Sweep < FlySoundProtocol
             
             for repeat = 1:trialdata.repeats
 
-                fprintf('Trial %d\n',obj.n);
+                obj.writeTrialNotes('durSweep');
 
                 trialdata.trial = obj.n;
 
                 obj.y = obj.aiSession.startForeground; %plot(x); drawnow
-                voltage = obj.y;
-                current = obj.y;
+                voltage = obj.y(:,1);
+                current = obj.y(:,2);
                 
                 % apply scaling factors
                 current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
@@ -91,7 +92,9 @@ classdef Sweep < FlySoundProtocol
             
             obj.aiSession = daq.createSession('ni');
             obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
-            
+            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % 100 beta mV/pA
+            obj.aiSession.addAnalogInputChannel('Dev1',4, 'Voltage'); % 10 Vm
+
             % configure AO
             % obj.aoSession = daq.createSession('ni');
             % obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage');

@@ -110,7 +110,7 @@ classdef FlySoundProtocol < handle
             obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
             
-            % obj.openNotesFile();
+            obj.openNotesFile();
             
             obj.recgain = readGain();
             obj.recmode = readMode();
@@ -311,9 +311,10 @@ classdef FlySoundProtocol < handle
         end
         
         function saveData(obj,trialdata,current,voltage)
-            save([obj.D,'\',obj.protocolName,'_Raw_', ...
+            name = [obj.D,'\',obj.protocolName,'_Raw_', ...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
-                num2str(obj.n)],'current','voltage');
+                num2str(obj.n)];
+            save(name,'current','voltage','name');
 
             % TODO: For speed, test appending to data; It is O(n^2) right
             % now
@@ -326,20 +327,60 @@ classdef FlySoundProtocol < handle
         end
         
         function openNotesFile(obj)
+            global notestrialnum
             curnotesfn = [obj.D,'\notes_',...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
-            
+                date,'_F',obj.fly_number,'_C',obj.cell_number,'.txt'];
+            % if the file does not exist, restart the current trial number
+            if ~exist(curnotesfn,'file')
+                notestrialnum = 1;
+            end
             obj.notesFileName = curnotesfn;
             obj.notesFileID = fopen(obj.notesFileName,'a');    
         end
         
         function writePrologueNotes(obj)
-%             '\t%s',obj.protocolName,obj.recMode,
-%             '
+            fprintf(obj.notesFileID,'\n\t%s - %s\n',obj.protocolName,datestr(clock,13));
+            fprintf(1,'\n\t%s - %s\n',obj.protocolName,datestr(clock,13));
+            fprintf(obj.notesFileID,'\t%s',obj.recmode);
+            fprintf(1,'\t%s',obj.recmode);
+            paramnames = fieldnames(obj.params);
+            for i = 1:length(paramnames);
+                val = obj.params.(paramnames{i});
+                if length(val)>1
+                    val = ['[' num2str(val) ']'];
+                else
+                    val = num2str(val);
+                end
+                fprintf(obj.notesFileID,', %s=%s', paramnames{i},val);
+                fprintf(1,', %s=%s', paramnames{i},val);
+            end
+            fprintf(obj.notesFileID,'\n');
+            fprintf(1,'\n');
         end
         
-        function writeTrialNotes(obj)
-            
+        function writeTrialNotes(obj,varargin)
+            global notestrialnum
+            fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
+                notestrialnum,...
+                obj.protocolName,...
+                obj.n);
+            fprintf(1,'\t\t%d, %s trial %d',notestrialnum, obj.protocolName,obj.n);
+            if nargin>1
+                paramnames = varargin;
+                for i = 1:length(paramnames);
+                    val = obj.params.(paramnames{i});
+                    if length(val)>1
+                        val = ['[' num2str(val) ']'];
+                    else
+                        val = num2str(val);
+                    end
+                    fprintf(obj.notesFileID,', %s=%s', paramnames{i},val);
+                    fprintf(1,', %s=%s', paramnames{i},val);
+                end
+            end
+            fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
+            fprintf(1,', %s\n',datestr(clock,13));
+            notestrialnum = notestrialnum+1;
         end
         
     end % protected methods
