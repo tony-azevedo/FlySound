@@ -195,6 +195,13 @@ classdef FlySoundProtocol < handle
             disp(getpref(['defaults',obj.protocolName]));
         end
         
+        function comment(obj)
+            com = inputdlg('Enter comment:', 'Comment', [1 50]);
+            com = strcat(com{:});
+            fprintf(obj.notesFileID,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
+            fprintf(1,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
+        end
+        
     end % methods
     
     methods (Access = protected)
@@ -339,6 +346,7 @@ classdef FlySoundProtocol < handle
         end
         
         function writePrologueNotes(obj)
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\n\t%s - %s\n',obj.protocolName,datestr(clock,13));
             fprintf(1,'\n\t%s - %s\n',obj.protocolName,datestr(clock,13));
             fprintf(obj.notesFileID,'\t%s',obj.recmode);
