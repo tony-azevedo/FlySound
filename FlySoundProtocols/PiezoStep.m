@@ -42,11 +42,19 @@ classdef PiezoStep < FlySoundProtocol
             for repeat = 1:trialdata.repeats
 
                 obj.writeTrialNotes('displacement');
+                
+                stim = obj.generateStimulus();
+                disp(size(stim))
                 obj.aoSession.wait;
-
-                obj.aoSession.queueOutputData(obj.generateStimulus())                
+                obj.aoSession.queueOutputData(stim)
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
+                disp(size(obj.y))
+                if size(obj.y,1)~= length(obj.x)
+                    obj.y = obj.y(2:1+length(obj.x));
+                else
+                    disp('***** vectors are same length!  aiSession produces variable input sizes')
+                end
                 
                 voltage = obj.y(:,1);
                 current = obj.y(:,2);
