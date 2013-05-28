@@ -126,7 +126,7 @@ classdef FlySoundProtocol < handle
             obj.setupStimulus();            
             obj.x_units = [];
             obj.y_units = [];
-            obj.showDefaults
+            obj.showParams;
         end
         
         function stim = generateStimulus(obj,varargin)
@@ -317,12 +317,25 @@ classdef FlySoundProtocol < handle
             end
         end
         
-        function saveData(obj,trialdata,current,voltage)
+        function saveData(obj,trialdata,current,voltage,varargin)
             name = [obj.D,'\',obj.protocolName,'_Raw_', ...
                 date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
                 num2str(obj.n)];
-            save(name,'current','voltage','name');
-
+            if nargin>4
+                if  mod(length(varargin),2)
+                    error('Need key value pairs to save data')
+                end
+                savestr = 'save(name,''current'',''voltage'',''name''';
+                for ex = 1:2:length(varargin)
+                    extraname = varargin{ex};
+                    eval([extraname '=varargin{ex+1};']);
+                    savestr = [savestr ',''' extraname ''''];
+                end
+                savestr = [savestr ')'];
+                eval(savestr);
+            else
+                save(name,'current','voltage','name');
+            end
             % TODO: For speed, test appending to data; It is O(n^2) right
             % now
             trialdata.trial = obj.n;

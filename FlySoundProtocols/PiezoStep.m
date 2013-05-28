@@ -42,7 +42,8 @@ classdef PiezoStep < FlySoundProtocol
             for repeat = 1:trialdata.repeats
 
                 obj.writeTrialNotes('displacement');
-                
+                obj.aoSession.wait;
+
                 obj.aoSession.queueOutputData(obj.generateStimulus())                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
@@ -63,7 +64,7 @@ classdef PiezoStep < FlySoundProtocol
                 obj.y(:,3) = obj.sensorMonitor;
                 obj.y_units = 'mV';
                 
-                obj.saveData(trialdata,current,voltage) % TODO: save signal monitor
+                obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
                 
                 obj.displayTrial()
             end
@@ -75,7 +76,7 @@ classdef PiezoStep < FlySoundProtocol
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
-            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(1:length(obj.x),1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
@@ -88,8 +89,9 @@ classdef PiezoStep < FlySoundProtocol
             ax2 = subplot(4,1,4);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
-            line(obj.x,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            y = obj.generateStimulus;
+            line(obj.stimx,y(1:length(obj.stimx)),'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+            line(obj.x,obj.sensorMonitor(1:length(obj.x)),'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
         end
