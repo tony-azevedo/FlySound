@@ -40,18 +40,16 @@ classdef PiezoStep < FlySoundProtocol
             obj.x_units = 's';
             
             for repeat = 1:trialdata.repeats
-
+                tic
                 obj.writeTrialNotes('displacement');
                 
                 stim = obj.generateStimulus();
-                disp(size(stim))
                 obj.aoSession.wait;
                 obj.aoSession.queueOutputData(stim)
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
-                disp(size(obj.y))
                 if size(obj.y,1)~= length(obj.x)
-                    obj.y = obj.y(2:1+length(obj.x));
+                    obj.y = obj.y(2:1+length(obj.x),:);
                 else
                     disp('***** vectors are same length!  aiSession produces variable input sizes')
                 end
@@ -75,6 +73,7 @@ classdef PiezoStep < FlySoundProtocol
                 obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
                 
                 obj.displayTrial()
+                toc
             end
         end
                 
@@ -151,8 +150,8 @@ classdef PiezoStep < FlySoundProtocol
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
             obj.stimx = obj.stimx(:);
             obj.stim = zeros(size(obj.stimx));
-            obj.stim(obj.params.sampratein*(obj.params.preDurInSec)+1: obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
-            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.sampratein;
+            obj.stim(obj.params.samprateout*(obj.params.preDurInSec)+1: obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+            obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.sampratein)/obj.params.sampratein;
             obj.x = obj.x(:);
             obj.y = obj.x;
         end

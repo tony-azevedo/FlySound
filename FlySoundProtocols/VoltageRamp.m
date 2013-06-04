@@ -1,7 +1,7 @@
-classdef PiezoSine < FlySoundProtocol
+classdef VoltageRamp < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'PiezoSine';
+        protocolName = 'VoltageRamp';
     end
     
     properties (Hidden)
@@ -18,15 +18,15 @@ classdef PiezoSine < FlySoundProtocol
     
     methods
         
-        function obj = PiezoSine(varargin)
+        function obj = VoltageRamp(varargin)
             % In case more construction is needed
-            % obj = obj@FlySoundProtocol(varargin);
+            obj = obj@FlySoundProtocol(varargin{:});
         end
 
-        function stim = generateStimulus(obj,varargin)
-            stim = obj.stim.*sin(2*pi*obj.params.freq*obj.stimx);
-            stim = stim * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
-            stim = stim+obj.params.displacementOffset;
+        function varargout = generateStimulus(obj,varargin)
+            stim = obj.stim * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
+            stim = stim + obj.params.displacementOffset;
+            varargout = {stim,obj.x};
         end
         
         function run(obj,varargin)
@@ -39,50 +39,50 @@ classdef PiezoSine < FlySoundProtocol
             obj.aoSession.Rate = trialdata.samprateout;
 
             stim = nan(length(obj.generateStimulus()),length((obj.aoSession.Channels)));
-            
+            current = nan(size(obj.x));
+            voltage = nan(size(obj.x));
             for repeat = 1:trialdata.repeats
-                for vi = 1:length(obj.params.freqs)
-                    obj.params.freq = obj.params.freqs(vi);
-                    trialdata.freq = obj.params.freq;
 
-                    obj.writeTrialNotes('freq');
-                    stim(:,1) = obj.generateStimulus();
-                    stim(:,2) = obj.generateStimulus();
-
-                    obj.aoSession.wait;
-                    obj.aoSession.queueOutputData(stim)
-                    obj.aoSession.startBackground; % Start the session that receives start trigger first
-                    obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
-                    
-                    voltage = obj.y(:,1);
-                    current = obj.y(:,2);
-                    obj.sensorMonitor = obj.y(:,3);
-                    
-                    % apply scaling factors
-                    voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
-                    % Note: collecting hard current here, not scaled
-                    % current
-                    current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
-                    current = current*1000;
-                    
-                    obj.y(:,1) = voltage;
-                    obj.y(:,2) = current; % 'pA'
-                    
-                    obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
+                obj.writeTrialNotes('displacement');
                 
-                    obj.displayTrial()
-                end
+                stim(:,1) = obj.generateStimulus();
+                stim(:,2) = obj.generateStimulus();
+                obj.aoSession.wait;
+
+                obj.aoSession.queueOutputData(stim)                
+                obj.aoSession.startBackground; % Start the session that receives start trigger first
+                obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
+
+                voltage(:) = obj.y(:,1);
+                current(:) = obj.y(:,2);
+                obj.sensorMonitor = obj.y(:,3);
+                
+                % apply scaling factors
+                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
+                % Note: collecting hard current here, not scaled
+                % current
+                current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
+                current = current*1000;
+                 
+                obj.y(:,1) = voltage;
+                obj.y(:,2) = current; % 'pA'
+
+                obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
+                
+                obj.displayTrial()
             end
         end
                 
         function displayTrial(obj)
             figure(1);
-            ax1 = subplot(4,1,[1 2 3]);
+            ax1 = subplot(4,4,[1 2 3 5 6 7 9 10 11]);
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
+
+            %line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
             line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
@@ -93,11 +93,34 @@ classdef PiezoSine < FlySoundProtocol
             end
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
-            ax2 = subplot(4,1,4);
+            ax2 = subplot(4,4,[13 14 15]);
             line(obj.stimx,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
+            ax3 = subplot(3,4,[4 8]);
+
+            sgsfft = real(fft(obj.y(:,3)).*conj(fft(obj.y(:,3))));
+            sgsf = obj.params.sampratein/length(obj.y(:,3))*[0:length(obj.y(:,3))/2]; sgsf = [sgsf, fliplr(sgsf(2:end-1))];
+            
+            respfft = real(fft(obj.y(:,1)).*conj(fft(obj.y(:,1))));
+            respf = obj.params.sampratein/length(obj.y(:,1))*[0:length(obj.y(:,1))/2]; respf = [respf, fliplr(respf(2:end-1))];
+            
+            %             stim = obj.generateStimulus;
+            %             stimfft = real(fft(stim).*conj(fft(stim)));
+            %             stimf = obj.params.samprateout/length(stim)*[0:length(stim)/2]; stimf = [stimf, fliplr(stimf(2:end-1))];
+
+            [C,IA,IB] = intersect(respf,sgsf);
+            stimratio = respfft(IA)./sgsfft(IB);
+            
+            %loglog(stimf,stimfft/max(stimfft(stimf>obj.params.freqstart & stimf<obj.params.freqstop))), hold on;
+            loglog(sgsf,sgsfft/max(sgsfft(sgsf>obj.params.freqstart & sgsf<obj.params.freqstop)),'b'), hold on;
+            loglog(respf,respfft/max(respfft(respf>obj.params.freqstart & respf<obj.params.freqstop)),'r'), hold on;
+            loglog(C,stimratio/max(stimratio(C>obj.params.freqstart & C<obj.params.freqstop/2)),'k'), hold on;
+            
+            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            box off; set(gca,'TickDir','out');
+            xlim([obj.params.freqstart obj.params.freqstop*.95])
         end
 
     end % methods
@@ -115,7 +138,7 @@ classdef PiezoSine < FlySoundProtocol
             % configure AO
             obj.aoSession = daq.createSession('ni');
             obj.aoSession.addAnalogOutputChannel('Dev1',1, 'Voltage'); % sound of chirp
-            obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage');
+            obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage'); % piezo
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
@@ -130,16 +153,11 @@ classdef PiezoSine < FlySoundProtocol
         end
         
         function defineParameters(obj)
-            obj.params.displacementOffset = 5;
-            obj.params.sampratein = 10000;
-            obj.params.samprateout = 40000;
-            obj.params.displacement = 1;
-            obj.params.ramptime = 0.001; %sec;
-
-            % obj.params.cycles = 10; 
-            obj.params.freq = 256; % Hz
-            obj.params.freqs = [256]; % Hz
-            obj.params.stimDurInSec = .5; % obj.params.cycles/obj.params.freq;
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 10000;
+            obj.params.vstart = -5; %mV;
+            obj.params.vstop = 5; %mV
+            obj.params.stimDurInSec = 3;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
@@ -150,31 +168,27 @@ classdef PiezoSine < FlySoundProtocol
         end
         
         function setupStimulus(obj,varargin)
+            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;            
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
             obj.stimx = obj.stimx(:);
-
+            
             stim = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
             stim = stim(:);
             stim(:) = 0;
-
+            
             stimpnts = obj.params.samprateout*obj.params.preDurInSec+1:...
                 obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec);
-            
-            w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
-            w = [w(1:obj.params.ramptime*obj.params.samprateout);...
-                ones(length(stimpnts)-length(w),1);...
-                w(obj.params.ramptime*obj.params.samprateout+1:end)];
+                                    
+            stim(stimpnts) = (1:1:(length(stimpnts)))/(length(stimpnts)) * ...
+                (obj.params.vstop - obj.params.vstart) + obj.params.vstart;
 
-            stim(stimpnts) = w;
-            
-            obj.stim = stim;
-            
+
+            obj.stim = stim;            
             obj.x = ((1:obj.params.sampratein*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.sampratein)/obj.params.sampratein;
             obj.x = obj.x(:);
             obj.y = obj.x;
-
         end
-
+                
         function stim_mat = generateStimFamily(obj)
             for paramsToVary = obj.params
                 stim_mat = generateStimulus;

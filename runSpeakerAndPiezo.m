@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 function data = runSpeakerAndPiezo(exp_info)
 
 % function presents acoustic or piezoelectric stimuli and acquires voltage
