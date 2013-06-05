@@ -115,7 +115,7 @@ classdef CurrentSteps < FlySoundProtocol
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,1);
-            line(obj.stimx,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.6 .6 .6],'linewidth',1);
+            line(obj.x,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.6 .6 .6],'linewidth',1);
             line(obj.stimx,obj.params.step*obj.stim,'parent',ax2,'color',[.5 1 1],'linewidth',1);
             %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
