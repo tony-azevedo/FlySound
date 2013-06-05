@@ -78,14 +78,18 @@ classdef VoltageRamp < FlySoundProtocol
             set(redlines,'color',[1 .8 .8]);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
+            greylines = findobj(1,'Color',[.6 .6 .6]);
+            set(greylines,'color',[.8 .8 .8]);
+            pinklines = findobj(1,'Color',[.5 1 1]);
+            set(pinklines,'color',[.8 .8 .8]);
 
             %line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
-            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(1:length(obj.x),1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,1);
-            line(obj.stimx,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.6 .6 .6],'linewidth',1);
+            line(obj.x,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.6 .6 .6],'linewidth',1);
             line(obj.stimx,obj.stim,'parent',ax2,'color',[.5 1 1],'linewidth',1);
 
             box off; set(gca,'TickDir','out');
