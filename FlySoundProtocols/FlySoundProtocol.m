@@ -238,8 +238,12 @@ classdef FlySoundProtocol < handle
             dbp.daqout_to_current = 0.1199709; % m, multiply DAQ voltage to get nA injected
             dbp.daqout_to_current_offset = -0.00150;  % b, add to DAQ voltage to get the right offset
 
+            dbp.daqout_to_voltage = .002; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+            dbp.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
+            
             dbp.rearcurrentswitchval = 1; % [V/nA];
             dbp.hardcurrentscale = 1/(dbp.rearcurrentswitchval*dbp.headstagegain); % [V]/current scal gives nA;
+            dbp.hardvoltagescale = 1/(10); % reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
 
             dbp.scaledcurrentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA
             dbp.scaledcurrentoffset = -0.00890326; % [mV/V]/gainsetting gives pA
