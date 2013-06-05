@@ -228,18 +228,18 @@ classdef FlySoundProtocol < handle
             dbp.recmode = readMode();
             dbp.headstagegain = 1;
             
-            dbp.daqCurrentOffset = 0.006; %nA There is some current offset when Vdaq = 0 
+            dbp.daqCurrentOffset = 0.0007; % 0.006; %nA There is some current offset when Vdaq = 0 
             % to get this number, run  the zeroDAQOut routine and mess with
             % ext_offset
 
             % Current Injection = DAQ_voltage*m+b
             % DAQ_out_voltage = (nA-b)/m;  % to get these numbers, run the
             % currentInputCalibration routine
-            dbp.daqout_to_current = 0.1199709; % m, multiply DAQ voltage to get nA injected
-            dbp.daqout_to_current_offset = -0.00150;  % b, add to DAQ voltage to get the right offset
+            dbp.daqout_to_current = 1.99597; % m, multiply DAQ voltage to get nA injected
+            dbp.daqout_to_current_offset = -0.00539;  % b, add to DAQ voltage to get the right offset
 
-            dbp.daqout_to_voltage = .002; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
-            dbp.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
+            dbp.daqout_to_voltage = .01998025; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+            dbp.daqout_to_voltage_offset = -.00060233;  % b, add to DAQ voltage to get the right offset
             
             dbp.rearcurrentswitchval = 1; % [V/nA];
             dbp.hardcurrentscale = 1/(dbp.rearcurrentswitchval*dbp.headstagegain); % [V]/current scal gives nA;

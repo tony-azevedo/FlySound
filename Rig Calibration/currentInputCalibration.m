@@ -33,7 +33,7 @@ istim = zeros(nsampout,1);
 % istim(floor(stimonset*samprateout/4)+1:floor(stimonset*samprateout/4)+samprateout*0.2) = .1;
 istim(samprateout*.1+1:samprateout*0.4) = 1;
 
-scale = sort([(-6:.5:6) (-.5:.05:.5)]);
+scale = sort([(-4:.5:4) (-.5:.05:.5)]);
 
 %% reset aquisition engines
 % configure session
@@ -85,14 +85,16 @@ for n = 1:N
     subplot(2,2,1);
     plot(cmd);
     xlabel('sample');
-    ylabel('I');
+    ylabel('I desired');
     
     subplot(2,2,3);
     % f = sampratein/length(x)*[0:length(x)/2]; f = [f, fliplr(f(2:end-1))];
     % loglog(f,real(fft(nanmean(x,2))).*conj(fft((nanmean(x,2))))); drawnow
     % plot(nanmean(divcmd,2));
     plot(divcmd);
-    
+    xlabel('sample');
+    ylabel('I actual');
+
     drawnow
     
     chi(n) = mean(cmd(sampratein*.1+20:sampratein*0.4-20,n));
@@ -105,9 +107,9 @@ end
 m = polyfit(chi,yps,1);
 hold on
 plot(chi,m(1)*chi+m(2),'color',[1 1 1]*.8)
-text(0,-.4,sprintf('m = %.5f, b = %.5f',m(1),m(2)))
+text(0,-2,sprintf('m = %.5f, b = %.5f',m(1),m(2)))
 mean(sqrt((yps-(m(1)*chi+m(2))).^2))
-text(0,-0.3,sprintf('rms = %e',sqrt(mean((yps-(m(1)*chi+m(2))).^2))));
+text(0,-5,sprintf('rms = %e',sqrt(mean((yps-(m(1)*chi+m(2))).^2))));
 xlabel('desired')
 ylabel('actual')
 

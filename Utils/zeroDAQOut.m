@@ -47,8 +47,8 @@ stim0(2501:20000,1) = 1;
 % voltage divider = 0.09983 Vout/Vin
 % Vin = desired I(in A) / (2nA/Vout) / (0.09983 Vout/Vin)
 
-m = 0.1199709; % from the currentInputCalibration script
-b = -0.0016838;
+m = 1.99597; % from the currentInputCalibration script
+b = -0.00539;
 
 desiredI = .100/510e6 * 1e9/1; % .196 nA
 
@@ -56,7 +56,7 @@ desiredI = .100/510e6 * 1e9/1; % .196 nA
 Vdaq = (desiredI-b)/m; 
 stim0 = stim0*Vdaq;
 
-ext_offset = 0.0045; %nA
+ext_offset = 0.0000; %nA
 V_eo_daq = ext_offset/m; 
 stim1 = stim0-V_eo_daq;
 
@@ -72,8 +72,8 @@ gain = readGain();
 Vin = Vin/gain - scaledVoltageOffset(gain);
 
 Iin = Iin+ext_offset;
-currentscale = 1*1 % V/nA (mV/pA)
-Iin = Iin/currentscale;
+currentscale = 1/1 % V/nA (mV/pA)
+Iin = Iin*currentscale;
 
 figure(2);
 subplot(2,1,1);
@@ -82,7 +82,7 @@ bluelines = findobj(2,'Color',[0, 0, 1]);
 set(bluelines,'color',[.8 .8 1]);
 hold on
 plot(Vin)
-ylim([-.01 .11])
+ylim([-.01 .3])
 
 subplot(2,1,2)
 ylabel('nA');
