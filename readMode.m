@@ -16,6 +16,7 @@ mode_voltage = mean(mode_voltage);
 
 if mode_voltage < 1.75
     mode = 'IClamp_fast';
+    mode = 'IClamp';
 elseif mode_voltage < 2.75
     mode = 'IClamp';
 elseif mode_voltage < 3.75

@@ -24,14 +24,16 @@ classdef VoltageRamp < FlySoundProtocol
         end
 
         function varargout = generateStimulus(obj,varargin)
-            stim = obj.stim * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
-            stim = stim + obj.params.displacementOffset;
-            varargout = {stim,obj.x};
+            stim = (obj.stim - obj.dataBoilerPlate.daqout_to_voltage_offset) / obj.dataBoilerPlate.daqout_to_voltage; % mV / (20mV/V) gives volts command
+            varargout = {stim,obj.stimx};
         end
         
         function run(obj,varargin)
             trialdata = runtimeParameters(obj,varargin{:});
             obj.writePrologueNotes()
+            if ~strcmp(readMode(),'VClamp')
+                error('Not in current clamp (IClamp)');
+            end
 
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
@@ -43,31 +45,26 @@ classdef VoltageRamp < FlySoundProtocol
             voltage = nan(size(obj.x));
             for repeat = 1:trialdata.repeats
 
-                obj.writeTrialNotes('displacement');
+                obj.writeTrialNotes();
                 
                 stim(:,1) = obj.generateStimulus();
-                stim(:,2) = obj.generateStimulus();
                 obj.aoSession.wait;
 
                 obj.aoSession.queueOutputData(stim)                
                 obj.aoSession.startBackground; % Start the session that receives start trigger first
                 obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
 
-                voltage(:) = obj.y(:,1);
-                current(:) = obj.y(:,2);
-                obj.sensorMonitor = obj.y(:,3);
+                current(:) = obj.y(:,1);
+                voltage(:) = obj.y(:,2);
                 
                 % apply scaling factors
-                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
-                % Note: collecting hard current here, not scaled
-                % current
-                current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
-                current = current*1000;
+                current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
+                voltage = (voltage-trialdata.hardvoltageoffset)*trialdata.hardvoltagescale;
                  
-                obj.y(:,1) = voltage;
-                obj.y(:,2) = current; % 'pA'
+                obj.y(:,1) = current;
+                obj.y(:,2) = voltage; % 'mV'
 
-                obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
+                obj.saveData(trialdata,current,voltage) 
                 
                 obj.displayTrial()
             end
@@ -75,7 +72,7 @@ classdef VoltageRamp < FlySoundProtocol
                 
         function displayTrial(obj)
             figure(1);
-            ax1 = subplot(4,4,[1 2 3 5 6 7 9 10 11]);
+            ax1 = subplot(4,1,[2 3 4]);
             
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
@@ -85,42 +82,14 @@ classdef VoltageRamp < FlySoundProtocol
             %line(obj.stimx,obj.generateStimulus,'parent',ax1,'color',[0 0 1],'linewidth',1);
             line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
-            switch obj.recmode
-                case 'VClamp'
-                    ylabel('I (pA)'); %xlim([0 max(t)]);
-                case 'IClamp'
-                    ylabel('V_m (mV)'); %xlim([0 max(t)]);
-            end
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
-            ax2 = subplot(4,4,[13 14 15]);
-            line(obj.stimx,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+            ax2 = subplot(4,1,1);
+            line(obj.stimx,obj.y(1:length(obj.x),2),'parent',ax2,'color',[.6 .6 .6],'linewidth',1);
+            line(obj.stimx,obj.stim,'parent',ax2,'color',[.5 1 1],'linewidth',1);
+
             box off; set(gca,'TickDir','out');
-
-            ax3 = subplot(3,4,[4 8]);
-
-            sgsfft = real(fft(obj.y(:,3)).*conj(fft(obj.y(:,3))));
-            sgsf = obj.params.sampratein/length(obj.y(:,3))*[0:length(obj.y(:,3))/2]; sgsf = [sgsf, fliplr(sgsf(2:end-1))];
-            
-            respfft = real(fft(obj.y(:,1)).*conj(fft(obj.y(:,1))));
-            respf = obj.params.sampratein/length(obj.y(:,1))*[0:length(obj.y(:,1))/2]; respf = [respf, fliplr(respf(2:end-1))];
-            
-            %             stim = obj.generateStimulus;
-            %             stimfft = real(fft(stim).*conj(fft(stim)));
-            %             stimf = obj.params.samprateout/length(stim)*[0:length(stim)/2]; stimf = [stimf, fliplr(stimf(2:end-1))];
-
-            [C,IA,IB] = intersect(respf,sgsf);
-            stimratio = respfft(IA)./sgsfft(IB);
-            
-            %loglog(stimf,stimfft/max(stimfft(stimf>obj.params.freqstart & stimf<obj.params.freqstop))), hold on;
-            loglog(sgsf,sgsfft/max(sgsfft(sgsf>obj.params.freqstart & sgsf<obj.params.freqstop)),'b'), hold on;
-            loglog(respf,respfft/max(respfft(respf>obj.params.freqstart & respf<obj.params.freqstop)),'r'), hold on;
-            loglog(C,stimratio/max(stimratio(C>obj.params.freqstart & C<obj.params.freqstop/2)),'k'), hold on;
-            
-            %line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
-            box off; set(gca,'TickDir','out');
-            xlim([obj.params.freqstart obj.params.freqstop*.95])
+            ylabel('V (mV)'); %xlim([0 max(t)]);
         end
 
     end % methods
@@ -132,13 +101,12 @@ classdef VoltageRamp < FlySoundProtocol
             
             obj.aiSession = daq.createSession('ni');
             obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
-            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % from amp
-            obj.aiSession.addAnalogInputChannel('Dev1',5, 'Voltage'); % PZT Sensor monitor
+            %obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % Current
+            obj.aiSession.addAnalogInputChannel('Dev1',4, 'Voltage'); % Voltage
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            obj.aoSession.addAnalogOutputChannel('Dev1',1, 'Voltage'); % sound of chirp
-            obj.aoSession.addAnalogOutputChannel('Dev1',2, 'Voltage'); % piezo
+            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage'); % Output channel
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
