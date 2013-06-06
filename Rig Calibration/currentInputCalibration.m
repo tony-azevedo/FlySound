@@ -38,7 +38,7 @@ scale = sort([(-4:.5:4) (-.5:.05:.5)]);
 %% reset aquisition engines
 % configure session
 aiSession = daq.createSession('ni');
-aiSession.addAnalogInputChannel('Dev1',[0 3], 'Voltage');
+aiSession.addAnalogInputChannel('Dev1',[0 4], 'Voltage');
 aiSession.Rate = sampratein;
 aiSession.DurationInSeconds = stimdur+stimonset+stimpost;
 
@@ -62,8 +62,10 @@ end
 N = length(scale);
 cmd = nan(aiSession.NumberOfScans,N);
 divcmd = nan(aiSession.NumberOfScans,N);
+curresp = divcmd;
 chi = nan(size(1:N));
 yps = nan(size(1:N));
+zet = nan(size(1:N));
 
 for n = 1:N
     if test
@@ -80,12 +82,14 @@ for n = 1:N
     aoSession.startBackground; % Start the session that receives start trigger first
     x = aiSession.startForeground;
     cmd(:,n) = scale(n)*istim;
-    divcmd(:,n) = x(:,2)+offset;
+    divcmd(:,n) = (x(:,1)+offset);
+    curresp(:,n) = x(:,1) * 1000/(10*1) +0.00890326;
     
     subplot(2,2,1);
     plot(cmd);
     xlabel('sample');
     ylabel('I desired');
+    ylabel('Desired');
     
     subplot(2,2,3);
     % f = sampratein/length(x)*[0:length(x)/2]; f = [f, fliplr(f(2:end-1))];
@@ -94,13 +98,18 @@ for n = 1:N
     plot(divcmd);
     xlabel('sample');
     ylabel('I actual');
+    ylabel('Actual');
 
     drawnow
     
     chi(n) = mean(cmd(sampratein*.1+20:sampratein*0.4-20,n));
     yps(n) = mean(divcmd(sampratein*.1+20:sampratein*0.4-20,n));
+    zet(n) = mean(curresp(sampratein*.1+20:sampratein*0.4-20,n));
     
-    subplot(1,2,2);
+    subplot(2,2,2);
+    plot(yps,zet,'o');
+    
+    subplot(2,2,4);
     plot(chi,yps,'o');
 end
 %

@@ -35,6 +35,7 @@ classdef VoltageRamp < FlySoundProtocol
                 error('Not in current clamp (VClamp)');
             end
             obj.writePrologueNotes()
+
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 
@@ -44,7 +45,7 @@ classdef VoltageRamp < FlySoundProtocol
             voltage = nan(size(obj.x));
             current = nan(size(obj.x));
             for repeat = 1:trialdata.repeats
-                
+
                 obj.writeTrialNotes();
                 
                 stim(:,1) = obj.generateStimulus();
@@ -67,8 +68,7 @@ classdef VoltageRamp < FlySoundProtocol
                 obj.y(:,1) = current;
                 obj.y(:,3) = voltage; % 'pA'
 
-                obj.saveData(trialdata,current,voltage) % TODO: save signal monitor
-                
+                obj.saveData(trialdata,current,voltage) % TODO: save signal monitor                
                 obj.displayTrial()
             end
         end
@@ -88,12 +88,6 @@ classdef VoltageRamp < FlySoundProtocol
 
             line(obj.x,obj.y(1:length(obj.x),1),'parent',ax1,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
-            switch obj.recmode
-                case 'VClamp'
-                    ylabel('I (pA)'); %xlim([0 max(t)]);
-                case 'IClamp'
-                    ylabel('V_m (mV)'); %xlim([0 max(t)]);
-            end
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,1);
@@ -116,7 +110,7 @@ classdef VoltageRamp < FlySoundProtocol
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage'); % sound of chirp
+            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage'); % Output channel
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
