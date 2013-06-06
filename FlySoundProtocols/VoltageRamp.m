@@ -31,8 +31,10 @@ classdef VoltageRamp < FlySoundProtocol
         
         function run(obj,varargin)
             trialdata = runtimeParameters(obj,varargin{:});
+            if ~strcmp(readMode(),'VClamp')
+                error('Not in current clamp (VClamp)');
+            end
             obj.writePrologueNotes()
-
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
 

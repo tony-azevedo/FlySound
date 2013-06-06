@@ -1,43 +1,15 @@
-
 sampratein = 10000;
 samprateout = 10000;
 stimdur = .1;
-fc = 400;
-fm = 1;
-
-% stimname = ['AM tone, fc ', num2str(data(n).fc),' Hz, fm ', ...
-%     num2str(data(n).fm), ' Hz, m = 100%, duration ',...
-%     num2str(data(n).stimdur),' seconds'];
-AMtrain = amp_mod(1,fm,fc,.5,...
-    samprateout,stimdur,1,'with carrier');
-if isempty(AMtrain)
-    fprintf('AM stimulus not generated');
-    return;
-end
-intensity = .1; % set voltage scaling factor for stimulus output
-stimtrain = intensity.*AMtrain(:);  % make sure stim is a column vector
 
 % stimName = exp_info.stimName;
 stimonset = .41;                                  % time before stim on (seconds)
 stimpost = .1;                                  % time after stim offset (seconds)
 
-% timing calculations
-stimonsamp = floor(stimonset*samprateout)+1;
-stimoffsamp = floor(stimonset*samprateout)+(samprateout*stimdur);
-nsampout = stimoffsamp+floor(stimpost*samprateout);
-nsampin = ceil(nsampout/samprateout*sampratein);
-
-stim = zeros(nsampout,1);
-stim(stimonsamp:stimoffsamp) = stimtrain; %stimulus
-
 istim = zeros(nsampout,1);
 % istim(floor(stimonset*samprateout/4)+1:floor(stimonset*samprateout/4)+samprateout*0.2) = .1;
 istim(samprateout*.1+1:samprateout*0.4) = 1;
 
-scale = sort([(-4:.5:4) (-.5:.1:.5)]);
-%scale = ones(size(scale));
-
-%% reset aquisition engines
 % configure session
 aiSession = daq.createSession('ni');
 aiSession.addAnalogInputChannel('Dev1',[0 4], 'Voltage');
@@ -55,16 +27,19 @@ M = 1; CHI = {}; YPS = {};
 
 %%
 test = 1;
+m = mreal;
 if test
     slope = m(1);
-    b = m(2);
-    scale = sort([(-.5:.05:.5)]);
+    b = 0;%m(2);
+    scale = sort([(-4:.5:4)]);
+else
+    scale = sort([(-4:.5:4) (-.5:.1:.5)]);
 end
 
 N = length(scale);
 cmd = nan(aiSession.NumberOfScans,N);
-divcmd = nan(aiSession.NumberOfScans,N);
-curresp = divcmd;
+voltcmd = nan(aiSession.NumberOfScans,N);
+curresp = voltcmd;
 chi = nan(size(1:N));
 yps = nan(size(1:N));
 zet = nan(size(1:N));
@@ -84,10 +59,10 @@ for n = 1:N
     aoSession.startBackground; % Start the session that receives start trigger first
     x = aiSession.startForeground;
     cmd(:,n) = scale(n)*istim;
-    divcmd(:,n) = (x(:,2)+offset)*1000/(10);
+    voltcmd(:,n) = (x(:,2)+offset)*1000/(10);
     
     subplot(2,2,1);
-    plot(cmd);
+    plot(cmd(:,n)); 
     xlabel('sample');
     ylabel('Desired');
     
@@ -95,14 +70,14 @@ for n = 1:N
     % f = sampratein/length(x)*[0:length(x)/2]; f = [f, fliplr(f(2:end-1))];
     % loglog(f,real(fft(nanmean(x,2))).*conj(fft((nanmean(x,2))))); drawnow
     % plot(nanmean(divcmd,2));
-    plot(divcmd);
+    plot(voltcmd(:,n));
     xlabel('sample');
     ylabel('Actual');
 
     drawnow
     
     chi(n) = mean(cmd(sampratein*.1+20:sampratein*0.4-20,n));
-    yps(n) = mean(divcmd(sampratein*.1+20:sampratein*0.4-20,n));
+    yps(n) = mean(voltcmd(sampratein*.1+20:sampratein*0.4-20,n));
     zet(n) = mean(curresp(sampratein*.1+20:sampratein*0.4-20,n));
     
     subplot(2,2,2);
