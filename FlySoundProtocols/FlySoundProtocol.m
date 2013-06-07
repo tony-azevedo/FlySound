@@ -245,6 +245,7 @@ classdef FlySoundProtocol < handle
             dbp.rearcurrentswitchval = 1; % [V/nA];
             dbp.hardcurrentscale = 1/(dbp.rearcurrentswitchval*dbp.headstagegain); % [V]/current scal gives nA;
             dbp.hardvoltagescale = 1/(10); % reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
+            dbp.hardvoltageoffset = -.6/1000; % in V, reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
 
             dbp.scaledcurrentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA
             dbp.scaledcurrentoffset = 0; % [mV/V]/gainsetting gives pA

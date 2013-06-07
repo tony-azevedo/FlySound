@@ -51,7 +51,7 @@ classdef PiezoStep < FlySoundProtocol
                 if size(obj.y,1)~= length(obj.x)
                     obj.y = obj.y(2:1+length(obj.x),:);
                 else
-                    disp('***** vectors are same length!  aiSession produces variable input sizes')
+                    warning('***** vectors are same length!  aiSession produces variable input sizes')
                 end
                 
                 voltage = obj.y(:,1);

@@ -1,7 +1,7 @@
-classdef VoltageRamp < FlySoundProtocol
+classdef SealTestRamp < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'VoltageRamp';
+        protocolName = 'SealTestRamp';
     end
     
     properties (Hidden)
@@ -18,7 +18,7 @@ classdef VoltageRamp < FlySoundProtocol
     
     methods
         
-        function obj = VoltageRamp(varargin)
+        function obj = SealTestRamp(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
         end
@@ -149,7 +149,7 @@ classdef VoltageRamp < FlySoundProtocol
             obj.params.samprateout = 10000;
             obj.params.vstart = -5; %mV;
             obj.params.vstop = 5; %mV
-            obj.params.stimDurInSec = 3;
+            obj.params.stimDurInSec = 2;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
