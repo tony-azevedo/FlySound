@@ -22,7 +22,7 @@ function varargout = MainWindow(varargin)
 
 % Edit the above text to modify the response to help MainWindow
 
-% Last Modified by GUIDE v2.5 06-Jun-2013 15:14:15
+% Last Modified by GUIDE v2.5 06-Jun-2013 18:25:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -44,7 +44,7 @@ end
 % End initialization code - DO NOT EDIT
 
 % --- Executes just before MainWindow is made visible.
-function MainWindow_OpeningFcn(hObject, eventdata, handles, varargin)
+function MainWindow_OpeningFcn(hObject, eventdata, h, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -52,50 +52,50 @@ function MainWindow_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to MainWindow (see VARARGIN)
 
 % Choose default command line output for MainWindow
-handles.output = hObject;
+h.output = hObject;
 
 % Update handles structure
-guidata(hObject, handles);
+guidata(hObject, h);
 
-initialize_gui(hObject, handles, false);
+initialize_gui(hObject, h, false);
 
 % UIWAIT makes MainWindow wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
+% uiwait(handles.mainWindow);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = MainWindow_OutputFcn(hObject, eventdata, handles)
+function varargout = MainWindow_OutputFcn(hObject, eventdata, h)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.output;
+varargout{1} = h.output;
 
 % --- Executes on button press in update.
-function update_Callback(hObject, eventdata, handles)
+function update_Callback(hObject, eventdata, h)
 % hObject    handle to update (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --- Executes on button press in comment.
-function comment_Callback(hObject, eventdata, handles)
+function comment_Callback(hObject, eventdata, h)
 % hObject    handle to comment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --- Executes on button press in settings.
-function settings_Callback(hObject, eventdata, handles)
+function settings_Callback(hObject, eventdata, h)
 % hObject    handle to settings (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --- Executes on selection change in protocolmenu.
-function protocolmenu_Callback(hObject, eventdata, handles)
+function protocolmenu_Callback(hObject, eventdata, h)
 % hObject    handle to protocolmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -105,7 +105,7 @@ function protocolmenu_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function protocolmenu_CreateFcn(hObject, eventdata, handles)
+function protocolmenu_CreateFcn(hObject, eventdata, h)
 % hObject    handle to protocolmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -118,26 +118,70 @@ end
 
 
 % --------------------------------------------------------------------
-function initialize_gui(fig_handle, handles, isreset)
-% If the metricdata field is present and the reset flag is false, it means
-% we are we are just re-initializing a GUI by calling it from the cmd line
-% while it is up. So, bail out as we dont want to reset the data.
-if isfield(handles, 'metricdata') && ~isreset
-    return;
-end
+function initialize_gui(fig_handle, h, isreset)
 
-handles.metricdata.density = 0;
-handles.metricdata.volume  = 0;
+% List of the protocols to include
+protocols = {'SealAndLeakExternal',...
+    'VoltageRamp',...
+    'Sweep',...
+    'VoltageRamp',...
+    'CurrentSteps',...
+    'PiezoStep',...
+    'PiezoSine',...
+    'PiezoChirp',...
+    };
+set(h.protocolmenu,'String',protocols);
+set(h.protocolmenu,'value',1);
 
-set(handles.density, 'String', handles.metricdata.density);
-set(handles.volume,  'String', handles.metricdata.volume);
-set(handles.mass, 'String', 0);
-
-set(handles.unitgroup, 'SelectedObject', handles.english);
-
-set(handles.genotypelabel, 'String', 'lb/cu.in');
-set(handles.flylabel, 'String', 'cu.in');
-set(handles.celllabel, 'String', 'lb');
+set(h.genotypeedit, 'String', '');
+set(h.flyedit, 'String', '');
+set(h.celledit, 'String', '');
 
 % Update handles structure
-guidata(handles.figure1, handles);
+guidata(h.mainWindow, h);
+
+
+
+function flyedit_Callback(hObject, eventdata, handles)
+% hObject    handle to flyedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of flyedit as text
+%        str2double(get(hObject,'String')) returns contents of flyedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function flyedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to flyedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function celledit_Callback(hObject, eventdata, handles)
+% hObject    handle to celledit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of celledit as text
+%        str2double(get(hObject,'String')) returns contents of celledit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function celledit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to celledit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
