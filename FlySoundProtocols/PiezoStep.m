@@ -40,7 +40,7 @@ classdef PiezoStep < FlySoundProtocol
             obj.x_units = 's';
             
             for repeat = 1:trialdata.repeats
-                tic
+                % tic
                 obj.writeTrialNotes('displacement');
                 
                 stim = obj.generateStimulus();
@@ -73,7 +73,7 @@ classdef PiezoStep < FlySoundProtocol
                 obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
                 
                 obj.displayTrial()
-                toc
+                % toc
             end
         end
                 
