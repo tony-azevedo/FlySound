@@ -46,19 +46,24 @@ classdef Sweep < FlySoundProtocol
                 trialdata.trial = obj.n;
 
                 obj.y = obj.aiSession.startForeground; %plot(x); drawnow
-                voltage = obj.y(:,1);
                 current = obj.y(:,2);
+                voltage = obj.y(:,3);
                 
-                % apply scaling factors
-                current = (current-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
-                voltage = (voltage-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
-                
+                % when do I multiply by 1000?
+                % apply scaling factors 
+                current = (current-trialdata.hardcurrentoffset)*trialdata.hardcurrentscale * 1000;
+                obj.y(:,2) = current;
+                voltage = (voltage-trialdata.hardvoltageoffset)*trialdata.hardvoltagescale * 1000;
+                obj.y(:,3) = voltage;
+
                 switch obj.recmode
                     case 'VClamp'
-                        obj.y = current;
+                        current = (obj.y(:,1)-trialdata.scaledcurrentoffset)*trialdata.scaledcurrentscale;
+                        obj.y(:,1) = current;
                         obj.y_units = 'pA';
                     case 'IClamp'
-                        obj.y = voltage;
+                        voltage = (obj.y(:,1)-trialdata.scaledvoltageoffset)*trialdata.scaledvoltagescale;
+                        obj.y(:,1) = voltage;
                         obj.y_units = 'mV';
                 end
                 
@@ -70,15 +75,23 @@ classdef Sweep < FlySoundProtocol
                 
         function displayTrial(obj)
             figure(1);
+            ax1 = subplot(4,1,1);
+            ax2 = subplot(4,1,[2 3 4]);
             redlines = findobj(1,'Color',[1, 0, 0]);
             set(redlines,'color',[1 .8 .8]);
-            line(obj.x,obj.y,'color',[1 0 0],'linewidth',1);
+            line(obj.x,obj.y(:,1),'parent',ax2,'color',[1 0 0],'linewidth',1);
             box off; set(gca,'TickDir','out');
             switch obj.recmode
                 case 'VClamp'
-                    ylabel('I (pA)'); %xlim([0 max(t)]);
+                    ylabel(ax2,'I (pA)'); %xlim([0 max(t)]);
+                    line(obj.x,obj.y(:,3),'parent',ax1,'color',[1 0 0],'linewidth',1);
+                    ylabel(ax1,'V_m (mV)'); %xlim([0 max(t)]);
+                    title(ax1,[num2str(mean(obj.y(:,3))) ' mV']);
                 case 'IClamp'
                     ylabel('V_m (mV)'); %xlim([0 max(t)]);
+                    line(obj.x,obj.y(:,2),'parent',ax1,'color',[1 0 0],'linewidth',1);
+                    ylabel(ax1,'I (pA)'); %xlim([0 max(t)]);
+                    title(ax1,[num2str(mean(obj.y(:,2))) ' pA']);
             end
             xlabel('Time (s)'); %xlim([0 max(t)]);
         end
