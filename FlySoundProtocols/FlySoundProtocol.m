@@ -53,56 +53,7 @@ classdef FlySoundProtocol < handle
             parse(p,varargin{:});
             obj.modusOperandi = p.Results.modusOperandi;
             
-            % first assign the saved values
-            if ispref('AcquisitionPrefs')
-                acquisitionPrefs = getpref('AcquisitionPrefs');
-            else
-                acquisitionPrefs.fly_genotype = [];
-                acquisitionPrefs.fly_number = [];
-                acquisitionPrefs.cell_number = [];
-                acquisitionPrefs.notes_file_name = [];
-            end
-            
-            % assign updated values of input parameters
-            if isfield(p.Results,'fly_genotype') && isempty(p.Results.fly_genotype)
-                while isempty(obj.fly_genotype)
-                    obj.fly_genotype = input(sprintf('Enter Fly Genotype (current - %s):  ',acquisitionPrefs.fly_genotype),'s');
-                    if isempty(obj.fly_genotype) && ~isempty(acquisitionPrefs.fly_genotype)
-                        obj.fly_genotype = acquisitionPrefs.fly_genotype;
-                    end
-                end
-            elseif isfield(p.Results,'fly_genotype') && ~isempty(p.Results.fly_genotype)
-                obj.fly_genotype = p.Results.fly_genotype;
-            end
-            
-            % assign updated values of input parameters
-            if isfield(p.Results,'fly_number') && isempty(p.Results.fly_number)
-                while isempty(obj.fly_number)
-                    obj.fly_number = input(sprintf('Enter Fly Number (current - %s):  ',acquisitionPrefs.fly_number),'s');
-                    if isempty(obj.fly_number) && ~isempty(acquisitionPrefs.fly_number)
-                        obj.fly_number = acquisitionPrefs.fly_number;
-                    end
-                end
-            elseif isfield(p.Results,'fly_number') && ~isempty(p.Results.fly_number)
-                obj.fly_number = p.Results.fly_number;
-            end
-            
-            % assign updated values of input parameters
-            if isfield(p.Results,'cell_number') && isempty(p.Results.cell_number)
-                while isempty(obj.cell_number)
-                    obj.cell_number = input(sprintf('Enter Cell Number (current - %s):  ',acquisitionPrefs.cell_number),'s');
-                    if isempty(obj.cell_number) && ~isempty(acquisitionPrefs.cell_number)
-                        obj.cell_number = acquisitionPrefs.cell_number;
-                    end
-                end
-            elseif isfield(p.Results,'cell_number') && ~isempty(p.Results.cell_number)
-                obj.cell_number = p.Results.cell_number;
-            end
-                        
-            % then set preferences to current values
-            setpref('AcquisitionPrefs',...
-                {'fly_genotype','fly_number','cell_number'},...
-                {obj.fly_genotype,obj.fly_number,obj.cell_number});
+            obj.setIdentifiers(p)
             
             obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',date,'\',...
                 date,'_F',obj.fly_number,'_C',obj.cell_number];
@@ -206,7 +157,109 @@ classdef FlySoundProtocol < handle
     end % methods
     
     methods (Access = protected)
-                
+        
+        function setIdentifiers(obj,p)
+
+            numlines = [1 1 1];
+            defAns = {'','',''};
+            inputprompts{1} = 'Fly Genotype: ';
+            if isfield(p.Results,'fly_genotype') && ~isempty(p.Results.fly_genotype)
+                obj.fly_genotype = p.Results.fly_genotype;
+                defAns{1} = obj.fly_genotype;
+                numlines(1) = 0;
+            end
+            
+            inputprompts{2} = 'Fly Number: ';
+            if isfield(p.Results,'fly_number') && ~isempty(p.Results.fly_number)
+                obj.fly_number = num2str(p.Results.fly_number);
+                defAns{2} = obj.fly_number;
+                numlines(2) = 0;
+            end
+            
+            inputprompts{3} = 'Cell Number: ';
+            if isfield(p.Results,'cell_number') && ~isempty(p.Results.cell_number)
+                obj.cell_number = num2str(p.Results.cell_number);
+                defAns{3} = obj.cell_number;
+                numlines(3) = 0;
+            end
+
+            if ispref('AcquisitionPrefs')
+                acquisitionPrefs = getpref('AcquisitionPrefs');
+            else
+                acquisitionPrefs.fly_genotype = [];
+                acquisitionPrefs.fly_number = [];
+                acquisitionPrefs.cell_number = [];
+                acquisitionPrefs.last_timestamp = 0;
+            end
+            
+            undefinedID = 0;
+            usingAcqPrefs = 0;
+            dlgtitle = 'Enter remaining IDs (integers please)';
+            if isempty(obj.fly_genotype)
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                    obj.fly_genotype = acquisitionPrefs.fly_genotype;
+                    defAns{1} = acquisitionPrefs.fly_genotype;
+                    usingAcqPrefs = 1;
+                else
+                    if ~isempty(acquisitionPrefs.fly_genotype);
+                        defAns{1} = acquisitionPrefs.fly_genotype;
+                    end
+                    undefinedID = 1;
+                end
+            end
+            if isempty(obj.fly_number)
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                    obj.fly_number = acquisitionPrefs.fly_number;
+                    defAns{2} = acquisitionPrefs.fly_number;
+                    usingAcqPrefs = 1;
+                else
+                    if ~isempty(acquisitionPrefs.fly_number);
+                        defAns{2} = acquisitionPrefs.fly_number;
+                    end
+                    undefinedID = 1;
+                end
+            end
+            if isempty(obj.cell_number)
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                    obj.cell_number = acquisitionPrefs.cell_number;
+                    defAns{3} = num2str(acquisitionPrefs.cell_number);
+                    usingAcqPrefs = 1;
+                else
+                    if ~isempty(acquisitionPrefs.cell_number);
+                        defAns{3} = acquisitionPrefs.cell_number;
+                    end
+                    undefinedID = 1;
+                end
+            end
+            
+            if undefinedID
+                while undefinedID
+                    answer = inputdlg(inputprompts,dlgtitle,numlines,defAns);
+                    obj.fly_genotype = answer{1};
+                    obj.fly_number  = answer{2};
+                    obj.cell_number = answer{3};
+                    if ~isempty(obj.fly_number) && ~isempty(obj.cell_number)
+                        break
+                    end
+                end
+                disp('****')
+            else
+                if usingAcqPrefs
+                    msgbox(...
+                        sprintf('Identifiers are current: \nfly genotype - %s\nfly number - %s\ncell number - %s',...
+                        obj.fly_genotype,...
+                        obj.fly_number,...
+                        obj.cell_number));
+                end
+            end
+            
+            % then set preferences to current values
+            setpref('AcquisitionPrefs',...
+                {'fly_genotype','fly_number','cell_number','last_timestamp'},...
+                {obj.fly_genotype,obj.fly_number,obj.cell_number, now});
+        end
+        
+        
         function createAIAOSessions(obj)
             % configureAIAO is to start an acquisition routine
             fprintf('** Protocol Subclass Lacks AIAO Session! **\n');
@@ -229,16 +282,16 @@ classdef FlySoundProtocol < handle
             dbp.recmode = readMode();
             dbp.headstagegain = 1;
             
-            dbp.daqCurrentOffset = 0.0000; % 0.006; %nA There is some current offset when Vdaq = 0 
+            dbp.daqCurrentOffset = 0.0000; % 0.006; %nA There is some current offset when Vdaq = 0
             % to get this number, run  the zeroDAQOut routine and mess with
             % ext_offset
-
+            
             % Current Injection = DAQ_voltage*m+b
             % DAQ_out_voltage = (nA-b)/m;  % to get these numbers, run the
             % currentInputCalibration routine
             dbp.daqout_to_current = 2/dbp.headstagegain; % m, multiply DAQ voltage to get nA injected
             dbp.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
-
+            
             dbp.daqout_to_voltage = .02; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
             dbp.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
             
@@ -247,14 +300,14 @@ classdef FlySoundProtocol < handle
             dbp.hardcurrentoffset = -6.6238/1000;
             dbp.hardvoltagescale = 1/(10); % reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
             dbp.hardvoltageoffset = -6.2589/1000; % in V, reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
-
+            
             dbp.scaledcurrentscale = 1000/(dbp.recgain*dbp.headstagegain); % [mV/V]/gainsetting gives pA
             dbp.scaledcurrentoffset = 0; % [mV/V]/gainsetting gives pA
             dbp.scaledvoltagescale = 1000/(dbp.recgain); % mV/gainsetting gives mV
             dbp.scaledvoltageoffset = 0; % mV/gainsetting gives mV
-
+            
             obj.dataBoilerPlate = dbp;
-       end
+        end
         
         function defineParameters(obj)
             obj.params.sampratein = 10000;
@@ -264,7 +317,7 @@ classdef FlySoundProtocol < handle
             
             obj.params = obj.getDefaults;
         end
-
+        
         function setupStimulus(obj,varargin)
             try obj.stimx = ((1:obj.params.samprateout*obj.params.durSweep))/obj.params.samprateout;
             catch e
@@ -289,7 +342,7 @@ classdef FlySoundProtocol < handle
             addOptional(p,'repeats',1);
             addOptional(p,'vm_id',obj.params.Vm_id);
             parse(p,varargin{:});
-
+            
             trialdata = appendStructure(obj.dataBoilerPlate,obj.params);
             trialdata.Vm_id = p.Results.vm_id;
             trialdata.repeats = p.Results.repeats;
@@ -312,7 +365,7 @@ classdef FlySoundProtocol < handle
                 temp = load(obj.dataFileName,'data');
                 obj.data = temp.data;
                 obj.n = length(obj.data)+1;
-
+                
             end
             fprintf('Fly %s, Cell %s currently has %d trials\n',obj.fly_number,obj.cell_number,length(obj.data));
             
