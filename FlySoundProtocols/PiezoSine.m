@@ -150,9 +150,10 @@ classdef PiezoSine < FlySoundProtocol
         end
         
         function setupStimulus(obj,varargin)
+            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
             obj.stimx = obj.stimx(:);
-
+            obj.params.freq = obj.params.freq(1);
             stim = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
             stim = stim(:);
             stim(:) = 0;

@@ -55,11 +55,11 @@ classdef FlySoundProtocol < handle
             
             obj.setIdentifiers(p)
             
-            obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',date,'\',...
-                date,'_F',obj.fly_number,'_C',obj.cell_number];
+            obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',datestr(date,'yymmdd'),'\',...
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number];
             
             obj.dataFileName = [obj.D,'\',obj.protocolName,'_',...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'.mat'];
             
             obj.openNotesFile();
             
@@ -154,6 +154,24 @@ classdef FlySoundProtocol < handle
             fprintf(1,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
         end
         
+        function showFileStem(obj)
+            name = [obj.D,'\',obj.protocolName,'_Raw_', ...
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
+                '%s.mat'];
+            fprintf(1,'%s\n%s\n%s\n',obj.D,obj.dataFileName,name);
+            
+        end
+
+        function name = getDataFileName(obj)
+            name = obj.dataFileName;
+        end
+
+        function name = getRawFileStem(obj)
+            name = [obj.D,'\',obj.protocolName,'_Raw_', ...
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
+                '%d.mat'];            
+        end
+
     end % methods
     
     methods (Access = protected)
@@ -272,7 +290,7 @@ classdef FlySoundProtocol < handle
             % whatever keys you want.  Or cell array of maps?  Or a java
             % hashmap?
             dbp.protocolName = obj.protocolName;
-            dbp.date = date;
+            dbp.date = datestr(date,'yymmdd');
             dbp.flynumber = obj.fly_number;
             dbp.flygenotype = obj.fly_genotype;
             dbp.cellnumber = obj.cell_number;
@@ -379,7 +397,7 @@ classdef FlySoundProtocol < handle
         
         function saveData(obj,trialdata,current,voltage,varargin)
             name = [obj.D,'\',obj.protocolName,'_Raw_', ...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
                 num2str(obj.n)];
             if nargin>4
                 if  mod(length(varargin),2)
@@ -409,7 +427,7 @@ classdef FlySoundProtocol < handle
         function openNotesFile(obj)
             global notestrialnum
             curnotesfn = [obj.D,'\notes_',...
-                date,'_F',obj.fly_number,'_C',obj.cell_number,'.txt'];
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'.txt'];
             % if the file does not exist, restart the current trial number
             if ~exist(curnotesfn,'file')
                 notestrialnum = 1;

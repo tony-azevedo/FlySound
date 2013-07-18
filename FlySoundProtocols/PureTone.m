@@ -1,4 +1,4 @@
-classdef PureTones < FlySoundProtocol
+classdef PureTone < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'PureTone';
@@ -17,7 +17,7 @@ classdef PureTones < FlySoundProtocol
     
     methods
         
-        function obj = CurrentSteps(varargin)
+        function obj = PureTone(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
         end
