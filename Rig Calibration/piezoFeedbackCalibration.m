@@ -72,9 +72,9 @@ for i = 1:length(displacement)
             ps = sprintf('%s, %g (%g)',ps,mean(peaks),std(peaks));
             ts = sprintf('%s, %g (%g)',ts,mean(troughs),std(troughs));
             figure(3), subplot(2,1,1);
-            plot(sgsmonitor),hold on, 
-            plot(plocs+0.23*p.params.sampratein,sgsmonitor(plocs+0.23*p.params.sampratein),'or')
-            plot(tlocs+0.23*p.params.sampratein,sgsmonitor(tlocs+0.23*p.params.sampratein),'og')
+%             plot(sgsmonitor),hold on, 
+%             plot(plocs+0.23*p.params.sampratein,sgsmonitor(plocs+0.23*p.params.sampratein),'or')
+%             plot(tlocs+0.23*p.params.sampratein,sgsmonitor(tlocs+0.23*p.params.sampratein),'og')
         end
         fprintf('\n%s\n%s\n',ps,ts);
         figure(3), subplot(2,1,2);plot(mean(voltages));
