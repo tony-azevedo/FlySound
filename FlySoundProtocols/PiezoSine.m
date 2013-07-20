@@ -1,5 +1,7 @@
+% Create protocol to deliver a sine pulse to an antenna
+%   p = PiezoSine(<paramname>,paramname,'modusOperandi',<'Run','Stim','Cal'>)
+
 classdef PiezoSine < FlySoundProtocol
-    
     properties (Constant)
         protocolName = 'PiezoSine';
     end
@@ -10,6 +12,7 @@ classdef PiezoSine < FlySoundProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
+        gaincorrection
     end
     
     events
@@ -19,14 +22,65 @@ classdef PiezoSine < FlySoundProtocol
     methods
         
         function obj = PiezoSine(varargin)
-            % In case more construction is needed
-            % obj = obj@FlySoundProtocol(varargin);
+            obj = obj@FlySoundProtocol(varargin{:});
+            p = inputParser;
+            p.addParamValue('modusOperandi','Run',...
+                @(x) any(validatestring(x,{'Run','Stim','Cal'})));
+            parse(p,varargin{:});
+            
+            if strcmp(p.Results.modusOperandi,'Cal')
+                    obj.comment('Calibrating!  Not using calibration folder')
+                    warning('PiezoSine is not being corrected!  No available correction file')
+                    obj.gaincorrection = [];
+            
+            else 
+                correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
+                if ~isempty(correctionfiles)
+                    cfdate = correctionfiles(1).date;
+                    cf = 1;
+                    cfdate = datenum(cfdate);
+                    for d = 2:length(correctionfiles)
+                        if cfdate < datenum(correctionfiles(d).date)
+                            cfdate = datenum(correctionfiles(d).date);
+                            cf = d;
+                        end
+                    end
+                    temp = load(correctionfiles(cf).name);
+                    obj.gaincorrection = temp.d;
+                else
+                    obj.comment('PiezoSine is not being corrected!  No available correction file')
+                    warning('PiezoSine is not being corrected!  No available correction file')
+                    obj.gaincorrection = [];
+                end
+            end
         end
 
         function stim = generateStimulus(obj,varargin)
+            if ~isempty(obj.gaincorrection)
+                gain = obj.gaincorrection.gain(...
+                    round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
+                    round(obj.gaincorrection.freqs*10)/10 == round(obj.params.freq*10)/10);
+                offset = obj.gaincorrection.offset(...
+                    round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
+                    round(obj.gaincorrection.freqs*10)/10 == round(obj.params.freq*10)/10);
+            if isempty(gain) || isempty(offset)
+                gain = 1;
+                offset = 0;
+                obj.comment('PiezoSine Stimulus is uncalibrated');
+                warning('PiezoSine Stimulus is uncalibrated!')
+            end
+            else gain = 1; offset = 0; 
+            end
+            if obj.params.displacement*gain + obj.params.displacementOffset+offset >= 10 || ...
+                    obj.params.displacementOffset+offset-obj.params.displacement*gain >= 10
+                gain = 1;
+                offset = 0;
+                obj.comment('Calibrated Stimulus outside bounds!');
+                warning('Calibrated Stimulus outside bounds!')
+            end
             stim = obj.stim.*sin(2*pi*obj.params.freq*obj.stimx);
-            stim = stim * obj.params.displacement; %*obj.dataBoilerPlate.displFactor;
-            stim = stim+obj.params.displacementOffset;
+            stim = stim * obj.params.displacement*gain; %*obj.dataBoilerPlate.displFactor;
+            stim = stim+obj.params.displacementOffset+offset;
         end
         
         function run(obj,varargin)
@@ -39,7 +93,7 @@ classdef PiezoSine < FlySoundProtocol
             obj.aoSession.Rate = trialdata.samprateout;
 
             stim = nan(length(obj.generateStimulus()),length((obj.aoSession.Channels)));
-            
+            tic
             for repeat = 1:trialdata.repeats
                 for vi = 1:length(obj.params.freqs)
                     obj.params.freq = obj.params.freqs(vi);
@@ -48,12 +102,14 @@ classdef PiezoSine < FlySoundProtocol
                     obj.writeTrialNotes('freq');
                     stim(:,1) = obj.generateStimulus();
                     stim(:,2) = obj.generateStimulus();
-
+                    tic
                     obj.aoSession.wait;
                     obj.aoSession.queueOutputData(stim)
+                    fprintf('AoSession Wait: '),toc
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
+                    fprintf('AoSession Backgroud: '),toc
                     obj.y = obj.aiSession.startForeground; % both amp and signal monitor input
-                    
+                    fprintf('Trial in foreground: '),toc
                     voltage = obj.y(:,1);
                     current = obj.y(:,2);
                     obj.sensorMonitor = obj.y(:,3);
@@ -69,7 +125,6 @@ classdef PiezoSine < FlySoundProtocol
                     obj.y(:,2) = current; % 'pA'
                     
                     obj.saveData(trialdata,current,voltage,'sgsmonitor',obj.sensorMonitor) % TODO: save signal monitor
-                
                     obj.displayTrial()
                 end
             end
@@ -153,7 +208,7 @@ classdef PiezoSine < FlySoundProtocol
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.stimx = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
             obj.stimx = obj.stimx(:);
-            obj.params.freq = obj.params.freq(1);
+            obj.params.freq = obj.params.freqs(1);
             stim = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
             stim = stim(:);
             stim(:) = 0;

@@ -7,10 +7,10 @@ freqs = 25 * sqrt(2) .^ (0:10);
 displacementOffset = 5;
 % displacement = 1;
 % freqs = 25 * 2 .^ (2:5);
-displacement = 3;
-freqs = 200;
+%displacement = 3;
+%freqs = 200;
 
-p = PiezoSine;
+p = PiezoSine('modusOperandi','Cal');
 p.setParams('ramptime',.02,...
     'stimDurInSec',.2,...
     'preDurInSec',0.2,...
@@ -29,15 +29,18 @@ d.offsetcorrection = d.amplitude;
 
 d.gainarchive={};
 d.offsetarchive={};
+
 %% Run this until the correction is stable and the amplitude is accurate
 
 for i = 1:length(displacement)
     for j = 1:length(freqs)
         
-        if displacement(i)*d.gain(i,j) >=5
+        if displacement(i)*d.gain(i,j)+ displacementOffset+d.offset(i,j) >= 10 || ...
+                displacementOffset+d.offset(i,j)-displacement(i)*d.gain(i,j) >= 10
             d.amplitude(i,j) = 0;
             d.gaincorrection(i,j) = 1;
             d.offsetcorrection(i,j) = 0;
+            d.calibrated = false;
             continue
         end
         
@@ -45,17 +48,18 @@ for i = 1:length(displacement)
             'displacement',displacement(i)*d.gain(i,j),...
             'displacementOffset',displacementOffset+d.offset(i,j));
         start = p.n;
-        p.run(100);
+        p.run(3);
         
         trialnums = start:p.n-1;
         trials = zeros(length(trialnums),length(p.x));
         voltages = zeros(length(trialnums),length(p.x));
-        load(regexprep(p.getDataFileName,'\\','\\\'))
+        %load(regexprep(p.getDataFileName,'\\','\\\'))
         
         peaks = [];
         troughs = [];
         ps = sprintf('peaks: \t');
         ts = sprintf('troughs: \t');
+        figure(3), ax = subplot(2,1,1); delete(get(ax,'children'));
         for n = 1:length(trialnums);
             load(sprintf(stem,trialnums(n)));
             trials(n,:) = sgsmonitor;
@@ -71,11 +75,12 @@ for i = 1:length(displacement)
             troughs = [troughs, -troughsvec];
             ps = sprintf('%s, %g (%g)',ps,mean(peaks),std(peaks));
             ts = sprintf('%s, %g (%g)',ts,mean(troughs),std(troughs));
-            figure(3), subplot(2,1,1);
-%             plot(sgsmonitor),hold on, 
-%             plot(plocs+0.23*p.params.sampratein,sgsmonitor(plocs+0.23*p.params.sampratein),'or')
-%             plot(tlocs+0.23*p.params.sampratein,sgsmonitor(tlocs+0.23*p.params.sampratein),'og')
+            plot(sgsmonitor),hold on,
+            plot(plocs+0.23*p.params.sampratein,sgsmonitor(plocs+0.23*p.params.sampratein),'or')
+            plot(tlocs+0.23*p.params.sampratein,sgsmonitor(tlocs+0.23*p.params.sampratein),'og')
         end
+        text(-.15,4.6,sprintf('f: %.0f,d: %.3f, act.: %.3f',...
+            freqs(j),displacement(i),(mean(peaks)-mean(troughs))/2));
         fprintf('\n%s\n%s\n',ps,ts);
         figure(3), subplot(2,1,2);plot(mean(voltages));
         
@@ -91,58 +96,19 @@ end
 
 %%
 save(sprintf(...
+    regexprep(...
     'C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection%s',...
-    datestr(date,'yymmdd')),'d'); d.gainarchive = [d.gainarchive {d.gain}];
-
+    '\\','\\\'),...
+    datestr(date,'yymmdd')),'d'); 
+%%
+d.gainarchive = [d.gainarchive {d.gain}];
 d.offsetarchive = [d.offsetarchive {d.offset}];
 d.gain = d.gain.*d.gaincorrection;
 d.offset = d.offset+d.offsetcorrection;
-
-%%
-
-% store as ?? for future indexing for correction factor (put this under
-% version control)
-
-
-% rerun, using correction factors, measure error
-d.error = zeros(size(d.correction));
-for i = 1:length(displacement)
-    for j = 1:length(freqs)
-        
-        if displacement(i)*d.correction(i,j) >=5
-            d.error(i,j) = Inf;
-            continue
-        end
-        p.setParams('freqs',freqs(j),...
-            'displacement',displacement(i)*d.correction(i,j),...
-            'displacementOffset',5+d.offset(i,j));
-        start = p.n;
-        p.run(5);
-        p.setParams('displacement',displacement(i),...
-            'displacementOffset',5);
-        stim = p.generateStimulus;
-
-        % load the 5 trials, compute variance
-        trialnums = start:p.n-1;
-        trials = zeros(length(trialnums),length(p.x));
-        load(regexprep(p.getDataFileName,'\\','\\\'))
-        
-        for n = 1:length(trialnums);
-            load(sprintf(regexprep(stem,'\\','\\\'),trialnums(n)));
-            trials(n,:) = sgsmonitor;
-        end
-        
-        resid = trials-repmat(stim',length(trialnums),1);
-        d.error(i,j) = sqrt(mean(mean((resid.^2))));
-        sgsamp = (mean(max(trials,[],2))-mean(min(trials,[],2)))/2;
-        d.correctedamplitude(i,j) = sgsamp;
-        d.correctedcorrection(i,j) = displacement(i)/d.correctedamplitude(i,j);
-        d.correctedoffset(i,j) = mean(stim(1:400)' - mean(trials(:,1:400)));
-    end
-end
-d.correctionarchive = [d.correctionarchive {d.correction}];
-d.correction = d.correctedcorrection;
-save('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection','d'); 
-
-
-% for fun, try to run the chirp
+disp('Correction Complete')
+%% If you fuck up!
+d2 = load(sprintf(...
+    regexprep(...
+    'C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection%s',...
+    '\\','\\\'),...
+    datestr(date,'yymmdd'))); 
