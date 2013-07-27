@@ -55,7 +55,7 @@ classdef PiezoSine < FlySoundProtocol
             end
         end
 
-        function stim = generateStimulus(obj,varargin)
+        function varargout = generateStimulus(obj,varargin)
             if ~isempty(obj.gaincorrection)
                 gain = obj.gaincorrection.gain(...
                     round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
@@ -63,24 +63,27 @@ classdef PiezoSine < FlySoundProtocol
                 offset = obj.gaincorrection.offset(...
                     round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
                     round(obj.gaincorrection.freqs*10)/10 == round(obj.params.freq*10)/10);
-            if isempty(gain) || isempty(offset)
-                gain = 1;
-                offset = 0;
-                obj.comment('PiezoSine Stimulus is uncalibrated');
-                warning('PiezoSine Stimulus is uncalibrated!')
+                if isempty(gain) || isempty(offset)
+                    gain = 1;
+                    offset = 0;
+                    obj.comment('PiezoSine Stimulus is uncalibrated');
+                    warning('PiezoSine Stimulus is uncalibrated!')
+                end
+            else gain = 1; offset = 0;
             end
-            else gain = 1; offset = 0; 
-            end
-            if obj.params.displacement*gain + obj.params.displacementOffset+offset >= 10 || ...
+            if obj.params.displacement*gain + obj.params.displacementOffset + offset >= 10 || ...
                     obj.params.displacementOffset+offset-obj.params.displacement*gain >= 10
                 gain = 1;
                 offset = 0;
                 obj.comment('Calibrated Stimulus outside bounds!');
                 warning('Calibrated Stimulus outside bounds!')
             end
-            stim = obj.stim.*sin(2*pi*obj.params.freq*obj.stimx);
-            stim = stim * obj.params.displacement*gain; %*obj.dataBoilerPlate.displFactor;
-            stim = stim+obj.params.displacementOffset+offset;
+            commandstim = obj.stim.*sin(2*pi*obj.params.freq*obj.stimx);
+            commandstim = commandstim * obj.params.displacement; 
+            calstim = commandstim *gain; 
+            commandstim = commandstim+obj.params.displacementOffset;
+            calstim = calstim+obj.params.displacementOffset+offset;
+            varargout = {calstim,commandstim};
         end
         
         function run(obj,varargin)
@@ -149,7 +152,8 @@ classdef PiezoSine < FlySoundProtocol
             xlabel('Time (s)'); %xlim([0 max(t)]);
             
             ax2 = subplot(4,1,4);
-            line(obj.stimx,obj.generateStimulus,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+            [~,commandstim] = obj.generateStimulus;
+            line(obj.stimx,commandstim,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
 
