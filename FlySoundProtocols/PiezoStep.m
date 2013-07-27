@@ -10,6 +10,7 @@ classdef PiezoStep < FlySoundProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
+        gaincorrection
     end
     
     events
@@ -21,22 +22,67 @@ classdef PiezoStep < FlySoundProtocol
         function obj = PiezoStep(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
+            p = inputParser;
+            p.addParamValue('modusOperandi','Run',...
+                @(x) any(validatestring(x,{'Run','Stim','Cal'})));
+            parse(p,varargin{:});
+            
+            if strcmp(p.Results.modusOperandi,'Cal')
+                obj.comment('Calibrating!  Not using calibration folder')
+                warning('PiezoStep is not being corrected!  No available correction file')
+                obj.gaincorrection = [];
+                
+            else
+                correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
+                if ~isempty(correctionfiles)
+                    cfdate = correctionfiles(1).date;
+                    cf = 1;
+                    cfdate = datenum(cfdate);
+                    for d = 2:length(correctionfiles)
+                        if cfdate < datenum(correctionfiles(d).date)
+                            cfdate = datenum(correctionfiles(d).date);
+                            cf = d;
+                        end
+                    end
+                    temp = load(correctionfiles(cf).name);
+                    obj.gaincorrection = temp.d;
+                else
+                    obj.comment('PiezoStep is not being corrected!  No available correction file')
+                    warning('PiezoStep is not being corrected!  No available correction file')
+                    obj.gaincorrection = [];
+                end
+            end
+            
         end
-
+        
         function varargout = generateStimulus(obj,varargin)
-            trialstim = obj.stim* obj.params.displacement;%*obj.dataBoilerPlate.displFactor;
-            varargout = {trialstim,obj.stimx};
+            if ~isempty(obj.gaincorrection)
+                offset = obj.gaincorrection.offset(...
+                    round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
+                    1);
+                if isempty(offset)
+                    offset = 0;
+                    obj.comment('PiezoStep Stimulus is uncalibrated');
+                    warning('PiezoStep Stimulus is uncalibrated!')
+                end
+            else
+                offset = 0;
+            end
+            commandstim = obj.stim* obj.params.displacement;%*obj.dataBoilerPlate.displFactor;
+            commandstim = commandstim + obj.params.displacementOffset;
+            calstim = commandstim+offset;
+            varargout = {calstim,commandstim};
         end
         
         function run(obj,varargin)
             trialdata = runtimeParameters(obj,varargin{:});
             obj.writePrologueNotes()
-
+            
             obj.aiSession.Rate = trialdata.sampratein;
             obj.aiSession.DurationInSeconds = trialdata.durSweep;
-
+            
             obj.aoSession.Rate = trialdata.samprateout;
-
+            
             obj.x_units = 's';
             
             for repeat = 1:trialdata.repeats
@@ -64,7 +110,7 @@ classdef PiezoStep < FlySoundProtocol
                 % current
                 current = current/trialdata.hardcurrentscale+trialdata.daqCurrentOffset; % in nA
                 current = current*1000;
-                                
+                
                 obj.y(:,1) = voltage;
                 obj.y(:,2) = current;
                 obj.y(:,3) = obj.sensorMonitor;
@@ -76,7 +122,7 @@ classdef PiezoStep < FlySoundProtocol
                 % toc
             end
         end
-                
+        
         function displayTrial(obj)
             figure(1);
             ax1 = subplot(4,1,[1 2 3]);
@@ -96,17 +142,17 @@ classdef PiezoStep < FlySoundProtocol
             ax2 = subplot(4,1,4);
             bluelines = findobj(1,'Color',[0, 0, 1]);
             set(bluelines,'color',[.8 .8 1]);
-            y = obj.generateStimulus;
+            [~,y] = obj.generateStimulus;
             line(obj.stimx,y(1:length(obj.stimx)),'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
             line(obj.x,obj.sensorMonitor(1:length(obj.x)),'parent',ax2,'color',[0 0 1],'linewidth',1);
             box off; set(gca,'TickDir','out');
-
+            
         end
-
+        
     end % methods
     
     methods (Access = protected)
-                        
+        
         function createAIAOSessions(obj)
             % configureAIAO is to start an acquisition routine
             
@@ -122,7 +168,7 @@ classdef PiezoStep < FlySoundProtocol
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
-
+        
         function createDataStructBoilerPlate(obj)
             % TODO, make this a map.Container array, so you can add
             % whatever keys you want.  Or cell array of maps?  Or a java
@@ -132,12 +178,13 @@ classdef PiezoStep < FlySoundProtocol
         end
         
         function defineParameters(obj)
-            obj.params.sampratein = 10000;
-            obj.params.samprateout = 10000;
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 50000;
             obj.params.displacement = 1;
-            obj.params.stimDurInSec = .5;
-            obj.params.preDurInSec = .5;
-            obj.params.postDurInSec = .5;
+            obj.params.displacementOffset = 5;
+            obj.params.stimDurInSec = .2;
+            obj.params.preDurInSec = .2;
+            obj.params.postDurInSec = .1;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
 
             obj.params.Vm_id = 0;
