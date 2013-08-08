@@ -29,7 +29,7 @@ classdef PiezoSine < FlySoundProtocol
             parse(p,varargin{:});
             
             if strcmp(p.Results.modusOperandi,'Cal')
-                    obj.comment('Calibrating!  Not using calibration folder')
+                    % obj.comment('Calibrating!  Not using calibration folder')
                     warning('PiezoSine is not being corrected!  No available correction file')
                     obj.gaincorrection = [];
             
@@ -75,8 +75,7 @@ classdef PiezoSine < FlySoundProtocol
                     obj.params.displacementOffset+offset-obj.params.displacement*gain >= 10
                 gain = 1;
                 offset = 0;
-                obj.comment('Calibrated Stimulus outside bounds!');
-                warning('Calibrated Stimulus outside bounds!')
+                obj.warn('Calibrated Stimulus outside bounds!');
             end
             commandstim = obj.stim.*sin(2*pi*obj.params.freq*obj.stimx);
             commandstim = commandstim * obj.params.displacement; 
@@ -104,7 +103,7 @@ classdef PiezoSine < FlySoundProtocol
 
                     obj.writeTrialNotes('freq');
                     stim(:,1) = obj.generateStimulus();
-                    stim(:,2) = obj.generateStimulus();
+                    stim(:,2) = stim(:,1);
                     tic
                     obj.aoSession.wait;
                     obj.aoSession.queueOutputData(stim)

@@ -6,6 +6,7 @@ classdef FlySoundProtocol < handle
     
     properties (Hidden, SetAccess = protected)
         n               % current trial
+        expt_n          % current experiment trial
         x               % current x
         stimx           % stimulus x
         y               % current y
@@ -388,6 +389,7 @@ classdef FlySoundProtocol < handle
                 %obj.data = appendStructure(obj.dataBoilerPlate,obj.params);
                 %obj.data = obj.data(1:end-1);
                 obj.n = 1;
+                obj.expt_n = 1;
             else
                 %load current data file
                 %temp = load(obj.dataFileName,'data');
@@ -396,7 +398,15 @@ classdef FlySoundProtocol < handle
                 obj.n = length(rawtrials)+1;
                 
             end
-            fprintf('Fly %s, Cell %s currently has %d trials\n',obj.fly_number,obj.cell_number,obj.n-1);
+            expt_rawtrials = dir([obj.D,'\','*_Raw_*',...
+                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_*']);
+            if isempty(expt_rawtrials)
+                obj.expt_n = 1;
+            else
+                obj.expt_n = length(expt_rawtrials)+1;                
+            end
+
+            fprintf('Fly %s, Cell %s currently has %d %s trials (%d total)\n',obj.fly_number,obj.cell_number,obj.n-1,obj.protocolName,obj.expt_n-1);
         end
         
         function stim_mat = generateStimFamily(obj)
@@ -408,7 +418,7 @@ classdef FlySoundProtocol < handle
         function saveData(obj,trialdata,current,voltage,varargin)
             trialdata.trial = obj.n;
             params = trialdata;
-            tic
+            %tic
             name = [obj.D,'\',obj.protocolName,'_Raw_', ...
                 datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
                 num2str(obj.n)];
@@ -427,7 +437,7 @@ classdef FlySoundProtocol < handle
             else
                 save(name,'current','voltage','name','params');
             end
-            fprintf('Save mat: '),toc
+            %fprintf('Save mat: '),toc
 
             % 1st version: long data struct
             % TODO: For speed, test appending to data; It is O(n^2) right
@@ -443,24 +453,20 @@ classdef FlySoundProtocol < handle
             % fprintf('Append hdf5: '),toc
             
             % 3rd option save individual data struct
-            tic
-            name = [obj.D,'\',obj.protocolName,'_Params_', ...
-                datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
-                num2str(obj.n)];
-            save(name,'params');
-            fprintf('Save data: '),toc
+            %             name = [obj.D,'\',obj.protocolName,'_Params_', ...
+            %                 datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'_', ...
+            %                 num2str(obj.n)];
+            %             save(name,'params');
+            %             fprintf('Save data: '),toc
 
             obj.n = obj.n + 1;
+            obj.expt_n = 1;
         end
         
         function openNotesFile(obj)
-            global notestrialnum
             curnotesfn = [obj.D,'\notes_',...
                 datestr(date,'yymmdd'),'_F',obj.fly_number,'_C',obj.cell_number,'.txt'];
             % if the file does not exist, restart the current trial number
-            if ~exist(curnotesfn,'file')
-                notestrialnum = 1;
-            end
             obj.notesFileName = curnotesfn;
             obj.notesFileID = fopen(obj.notesFileName,'a');    
         end
@@ -494,12 +500,11 @@ classdef FlySoundProtocol < handle
         end
         
         function writeTrialNotes(obj,varargin)
-            global notestrialnum
             fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
-                notestrialnum,...
+                obj.expt_n,...
                 obj.protocolName,...
                 obj.n);
-            fprintf(1,'\t\t%d, %s trial %d',notestrialnum, obj.protocolName,obj.n);
+            fprintf(1,'\t\t%d, %s trial %d',obj.expt_n, obj.protocolName,obj.n);
             if nargin>1
                 paramnames = varargin;
                 for i = 1:length(paramnames);
@@ -515,7 +520,11 @@ classdef FlySoundProtocol < handle
             end
             fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
             fprintf(1,', %s\n',datestr(clock,13));
-            notestrialnum = notestrialnum+1;
+        end
+        
+        function warn(obj,warning)
+            fprintf(obj.notesFileID,'\t\t\t%s\n',warning);
+            fprintf(1,'\t\t\t%s\n',warning);
         end
         
     end % protected methods

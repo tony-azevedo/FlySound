@@ -131,13 +131,14 @@ classdef CurrentSteps < FlySoundProtocol
             % configureAIAO is to start an acquisition routine
             
             obj.aiSession = daq.createSession('ni');
-            obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % scaled output
-            obj.aiSession.addAnalogInputChannel('Dev1',3, 'Voltage'); % 100 beta mV/pA
-            obj.aiSession.addAnalogInputChannel('Dev1',4, 'Voltage'); % 10 Vm
+            %obj.aiSession.addAnalogInputChannel('Dev1',0, 'Voltage'); % from amp
+            obj.aiSession.addAnalogInputChannel('Dev1',6, 'Voltage'); % from amp
+            obj.aiSession.addAnalogInputChannel('Dev1',7, 'Voltage'); % Voltage
             
             % configure AO
             obj.aoSession = daq.createSession('ni');
-            obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage');
+            % obj.aoSession.addAnalogOutputChannel('Dev1',0, 'Voltage'); % Output channel
+            obj.aoSession.addAnalogOutputChannel('Dev1',3, 'Voltage'); % Output channel
             
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
@@ -148,9 +149,33 @@ classdef CurrentSteps < FlySoundProtocol
             % whatever keys you want.  Or cell array of maps?  Or a java
             % hashmap?            
             createDataStructBoilerPlate@FlySoundProtocol(obj);
-            obj.dataBoilerPlate.displFactor = 20/30; %V/um
+            dbp.recgain = 1;
+            dbp.recmode = 'IClamp';
+            
+            dbp.headstagegain = .01;
+            dbp.daqCurrentOffset = 0.0000;
+            dbp.daqout_to_current = 10*dbp.headstagegain; % m, multiply DAQ voltage to get nA injected
+            dbp.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
+            
+            dbp.daqout_to_voltage = .02; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+            dbp.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
+            
+            dbp.hardcurrentscale = .010/(dbp.rearcurrentswitchval*dbp.headstagegain); % [V]/current scal gives nA;
+            dbp.hardcurrentoffset = 0; % -6.6238/1000;
+            dbp.hardvoltagescale = 1/(10); % reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
+            dbp.hardvoltageoffset = 0; % -6.2589/1000; % in V, reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
+
         end
         
+        function trialdata = runtimeParameters(obj,varargin)
+            trialdata = runtimeParameters@FlySoundProtocol(obj,varargin{:});
+            trialdata.recgain = 1;
+            trialdata.recmode = 'VClamp';
+            
+            obj.dataBoilerPlate.scaledcurrentscale = 1000/(obj.recgain*obj.dataBoilerPlate.headstagegain); % [mV/V]/gainsetting gives pA
+            obj.dataBoilerPlate.scaledvoltagescale = 1000/(obj.recgain); % mV/gainsetting gives mV
+        end
+
         function defineParameters(obj)
             obj.params.sampratein = 10000;
             obj.params.samprateout = 10000;

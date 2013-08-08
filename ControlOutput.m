@@ -67,7 +67,7 @@ popupval = get(handles.popupmenu1,'Value');
 aoSession = daq.createSession('ni');
 aoSession.Rate = 10000;
 handles.stim = ones(aoSession.Rate*0.001,1);
-aoSession.addAnalogOutputChannel('Dev1',popupval-1,'Voltage')
+aoSession.addAnalogOutputChannel('cDAQ1Mod1',popupval-1,'Voltage')
 aoSession.queueOutputData(handles.stim(:)*get(handles.slider1,'Value'));  
 aoSession.startBackground
 handles.sessions{popupval} = aoSession;
