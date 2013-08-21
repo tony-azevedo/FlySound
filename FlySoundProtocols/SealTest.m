@@ -41,14 +41,20 @@ classdef SealTest < FlySoundProtocol
             stim = nan(length(obj.generateStimulus()),length((obj.aoSession.Channels)));
             stim(:,1) = obj.generateStimulus();
 
-            obj.listener = addlistener(obj.aoSession,'DataRequired',@queueMoreData);
             obj.aoSession.queueOutputData(stim)
             obj.aoSession.startBackground; % Start the session that receives start trigger first
         end
         
         function stop(obj)
-            delete(obj.listener)
-        end
+            obj.aoSession.stop;
+            obj.aoSession.IsContinuous = false;
+
+            stim = zeros(obj.aoSession.Rate*0.001,1);
+            obj.aoSession.queueOutputData(stim(:));
+            obj.aoSession.startBackground;
+            obj.aoSession.wait;
+            obj.aoSession.IsContinuous = true;
+       end
           
     end
     methods (Access = protected)
@@ -58,12 +64,10 @@ classdef SealTest < FlySoundProtocol
             
             obj.aoSession = daq.createSession('ni');
             obj.aoSession.addAnalogOutputChannel('cDAQ1Mod1','ao1', 'Voltage'); % Output channel
+            obj.aoSession.IsContinuous = true;
+            obj.listener = obj.aoSession.addlistener('DataRequired',@(src,event) src.queueOutputData(obj.generateStimulus));
         end
-        
-        function queueMoreData(src,event)
-            src.queueOutputData(obj.generateStimulus);
-        end
-        
+                
         function createDataStructBoilerPlate(obj)
             % TODO, make this a map.Container array, so you can add
             % whatever keys you want.  Or cell array of maps?  Or a java
@@ -102,7 +106,7 @@ classdef SealTest < FlySoundProtocol
         function defineParameters(obj)
             obj.params.sampratein = 100000;
             obj.params.samprateout = 100000;
-            obj.params.stepamp = 200; %mV;
+            obj.params.stepamp = 5; %mV;
             obj.params.stepdur = .02; %sec;
             obj.params.pulses = 20;
             %             obj.params.stimDurInSec = 2;
@@ -129,13 +133,7 @@ classdef SealTest < FlySoundProtocol
             obj.x = obj.x(:);
             obj.y = obj.x;
         end
-                
-        function stim_mat = generateStimFamily(obj)
-            for paramsToVary = obj.params
-                stim_mat = generateStimulus;
-            end
-        end
-        
+                        
     end % protected methods
     
     methods (Static)

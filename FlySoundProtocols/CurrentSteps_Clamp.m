@@ -1,7 +1,7 @@
-classdef CurrentSteps < FlySoundProtocol
+classdef CurrentSteps_Clamp < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'CurrentSteps';
+        protocolName = 'CurrentSteps_Clamp';
     end
     
     properties (Hidden)
@@ -17,7 +17,7 @@ classdef CurrentSteps < FlySoundProtocol
     
     methods
         
-        function obj = CurrentSteps(varargin)
+        function obj = CurrentSteps_Clamp(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
         end
