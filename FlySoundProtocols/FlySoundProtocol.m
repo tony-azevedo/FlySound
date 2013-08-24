@@ -31,6 +31,7 @@ classdef FlySoundProtocol < handle
         params
         aiSession
         aoSession
+        rig
     end
     
     % Define an event called InsufficientFunds
@@ -65,7 +66,7 @@ classdef FlySoundProtocol < handle
             
             obj.recgain = readGain();
             obj.recmode = readMode();
-            obj.createAIAOSessions();
+            obj.createRig();
             obj.aiSession.Rate = p.Results.aiSamprate;
 
             obj.createDataStructBoilerPlate();  % Saving Params.  This can be updated in other protocols
@@ -286,9 +287,9 @@ classdef FlySoundProtocol < handle
         end
         
         
-        function createAIAOSessions(obj)
-            % configureAIAO is to start an acquisition routine
-            fprintf('** Protocol Subclass Lacks AIAO Session! **\n');
+        function createRig(obj)
+            % createRig is to start an acquisition routine
+            fprintf('** Protocol Subclass Lacks Rig or AIAO Session! **\n');
         end
         
         function createDataStructBoilerPlate(obj)

@@ -52,7 +52,6 @@ eSS.externalSoln.NaH2PO4_H2O = 1;
 eSS.externalSoln.CaCl2_H2O = 1.5;
 eSS.externalSoln.MgCl2_6H2O = 4;
 
-
 eSS.internalSoln.potassiumAspartate = 140;
 eSS.internalSoln.HEPES = 10;
 eSS.internalSoln.EGTA = 1;

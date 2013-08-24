@@ -1,4 +1,4 @@
-classdef Rig < handle
+classdef PiezoRig < handle
     
     properties (Constant, Abstract)
         rigName;
@@ -9,13 +9,10 @@ classdef Rig < handle
     end
     
     properties (SetAccess = protected)
-        devices
         aiSession
         aoSession
         recgain        % amp gain
         recmode        % amp mode
-        x
-        y
     end
     
     events
@@ -23,35 +20,13 @@ classdef Rig < handle
     end
     
     methods
-        function obj = Rig(varargin)
+        function obj = PiezoRig(varargin)
+            
         end
-        
-        function run(obj,varargin)    
-        end
-        
-        function getSessions(obj)
-        end
-        
-        function getAISession(obj)
-        end
-        
-        function getAOSession(obj)
-        end
-                
-        function setOutputs(obj)
-        end
-        
-        function getOutputs(obj)
-        end
-        
-        function getInputs(obj)
-        end
-        
     end
     
     methods (Access = protected)
         
-
         
         function createDeviceParameters(obj)
             dbp.recgain = readGain();
