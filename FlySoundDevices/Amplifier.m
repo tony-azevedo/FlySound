@@ -25,49 +25,93 @@ classdef Amplifier < Device
     methods
         function obj = Amplifier(varargin)
             % This and the transformInputs function are hard coded
+            obj.inputLabels = {'scaled','current','voltage'};
+            obj.inputUnits = {'mV','pA','mV'};
+            obj.inputPorts = [0,3,4];
+            obj.outputLabels = {'scaled'};
+            obj.outputUnits = {'pA'};
+            obj.outputPorts = 0;
+
             obj.setModeSession;
             obj.getmode;
             obj.setGainSession;
             obj.getgain;
 
             obj.createDeviceParameters();
-
-            obj.inputLabels = {'scaled','gain','mode','current','voltage'};
-            obj.inputUnits = {'mV','V','V','pA','mV'};
-            obj.inputPorts = [0,1,2,3,4];
-            obj.outputLabels = {'scaled'};
-            obj.outputUnits = {'pA'};
-            obj.outputPorts = 0;
         end
         
-        function scaledinputs = transformInputs(obj,varargin)
-            [inputs,ports] = obj.parseInputs(varargin{:});
-            scaledinputs = inputs;
-            for p = 1:length(ports)
-                switch ports(p)
-                    case 0
-                        switch obj.recmode
-                            case 'VClamp'
-                                obj.inputLabels{1} = 'current';
-                                obj.inputUnits{1} = 'pA';
-                                scaledinputs(:,p) = (inputs(:,p)-obj.params.scaledcurrentoffset)*obj.params.scaledcurrentscale;
-                            case 'IClamp'
-                                obj.inputLabels{1} = 'voltage';
-                                obj.inputUnits{1} = 'mV';
-                                scaledinputs(:,p) = (inputs(:,p)-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale;
-                            case 'IClamp_fast'
-                                obj.inputLabels{1} = 'voltage';
-                                obj.inputUnits{1} = 'mV';
-                                scaledinputs(:,p) = (inputs(:,p)-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale;
-                        end
-                    case 1
-                    case 2
-                    case 3
-                        scaledinputs(:,p) = (scaledinputs(:,p)-trialdata.hardcurrentoffset)*trialdata.hardcurrentscale * 1000;
-                    case 4
-                        scaledinputs(:,p) = (scaledinputs(:,p)-trialdata.hardvoltageoffset)*trialdata.hardvoltagescale * 1000;
+        function varargout = transformOutputs(obj,out)
+            outlabels = fieldnames(out);
+            for ol = 1:length(outlabels)
+                port = obj.outputPorts(strcmp(obj.outputLabels,outlabels{ol}));
+                if length(port) == 2
+                    port = port(1);
+                end
+                if ~isempty(port)
+                    switch port
+                        case 0
+                            switch obj.mode
+                                case 'VClamp'
+                                    obj.outputLabels{1} = 'voltage';
+                                    obj.outputUnits{1} = 'mV';
+                                    out.(outlabels{ol}) = obj.stim/1000;  % mV, convert, this is the desired V injected
+                                    out.(outlabels{ol}) = (out.(outlabels{ol}) - obj.params.daqout_to_voltage_offset)/obj.params.daqout_to_voltage;
+                                    units.(outlabels{ol}) = 'mV';
+                                case 'IClamp'
+                                    obj.outputLabels{1} = 'current';
+                                    obj.outputUnits{1} = 'pA';
+                                    out.(outlabels{ol}) = (out.(outlabels{ol})-obj.params.daqout_to_current_offset)/obj.params.daqout_to_current;
+                                    DAQ_V_to_subtract_static_current = obj.params.daqCurrentOffset/obj.params.daqout_to_current;
+                                    out.(outlabels{ol}) = out.(outlabels{ol}) - DAQ_V_to_subtract_static_current;
+                                    units.(outlabels{ol}) = 'pA';
+                                case 'IClamp_fast'
+                                    obj.outputLabels{1} = 'current';
+                                    obj.outputUnits{1} = 'pA';
+                                    out.(outlabels{ol}) = (out.(outlabels{ol})-obj.params.daqout_to_current_offset)/obj.params.daqout_to_current;
+                                    DAQ_V_to_subtract_static_current = obj.params.daqCurrentOffset/obj.params.daqout_to_current;
+                                    out.(outlabels{ol}) = out.(outlabels{ol}) - DAQ_V_to_subtract_static_current;
+                                    units.(outlabels{ol}) = 'pA';
+                            end
+                    end
                 end
             end
+            varargout = {out,units};
+        end
+        
+        function varargout = transformInputs(obj,inputstruct)
+            inlabels = fieldnames(inputstruct);
+            for il = 1:length(inlabels)
+                port = obj.inputPorts(strcmp(obj.inputLabels,inlabels{il}));
+                if length(port) == 2
+                    port = port(1);
+                end
+                if ~isempty(port)
+                    switch port
+                        case 0
+                            switch obj.mode
+                                case 'VClamp'
+                                    obj.inputLabels{1} = 'current';
+                                    obj.inputUnits{1} = 'pA';
+                                    inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset)*obj.params.scaledcurrentscale;
+                                case 'IClamp'
+                                    obj.inputLabels{1} = 'voltage';
+                                    obj.inputUnits{1} = 'mV';
+                                    inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale;
+                                case 'IClamp_fast'
+                                    obj.inputLabels{1} = 'voltage';
+                                    obj.inputUnits{1} = 'mV';
+                                    inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale;
+                            end
+                        case 1
+                        case 2
+                        case 3
+                            inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.hardcurrentoffset)*obj.params.hardcurrentscale * 1000;
+                        case 4
+                            inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.hardvoltageoffset)*obj.params.hardvoltagescale * 1000;
+                    end
+                end
+            end
+            varargout = {inputstruct,units};
         end
         
         function setModeSession(obj)
@@ -102,6 +146,25 @@ classdef Amplifier < Device
                 newmode = 'VClamp';
             end
             obj.mode = newmode;
+            
+            switch obj.mode
+                case 'VClamp'
+                    obj.outputLabels{1} = 'voltage';
+                    obj.outputUnits{1} = 'mV';
+                    obj.inputLabels{1} = 'current';
+                    obj.inputUnits{1} = 'pA';
+                case 'IClamp'
+                    obj.outputLabels{1} = 'current';
+                    obj.outputUnits{1} = 'pA';
+                    obj.inputLabels{1} = 'voltage';
+                    obj.inputUnits{1} = 'mV';
+                case 'IClamp_fast'
+                    obj.outputLabels{1} = 'current';
+                    obj.outputUnits{1} = 'pA';
+                    obj.inputLabels{1} = 'voltage';
+                    obj.inputUnits{1} = 'mV';
+            end
+
         end
         function newgain = getgain(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)

@@ -87,7 +87,9 @@ classdef AxoClamp2B < Amplifier
             end
         end
         
-        function newmode = setmode(obj);
+        function newmode = setmode(obj)
+        end
+        
         function newmode = getmode(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
             mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow

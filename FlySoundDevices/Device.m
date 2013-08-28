@@ -31,22 +31,7 @@ classdef Device < handle
             obj.outputUnits = {};
             obj.outputPorts = 0;
         end
-        
-        function scaledinputs = transformInputs(obj,varargin)
-            [inputs,ports] = obj.parseInputs(varargin{:});
-            scaledinputs = inputs;
-            for p = 1:length(ports)
-                scaledinputs(:,p) = inputs(:,p);
-            end
-        end
-        function scaledoutputs = transformOutputs(obj,varargin)
-            [outputs,ports] = obj.parsePorts(varargin{:});
-            scaledoutputs = outputs;
-            for p = 1:length(ports)
-                scaledoutputs(:,p) = outputs(:,p);
-            end
-        end
-                
+                        
         function p = getParams(obj)
             p = obj.params;
         end
@@ -73,17 +58,12 @@ classdef Device < handle
 
     end
     
+    methods (Abstract)
+        inputstruct = transformInputs(obj,inputstruct)
+        outputstruct = transformOutputs(obj,outputstruct)
+    end
+    
     methods (Access = protected)
-        
-        function obj.parsePorts(obj,varargin)
-            % parse inputs for the label of the input
-            
-            % line up the inputs with the Labels
-
-            % line up the inputs according to ports
-            
-            % reject anything that doesn't match
-        end
         
         function createDeviceParameters(obj)
             % create an amplifier class that implements these
