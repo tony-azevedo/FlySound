@@ -18,7 +18,7 @@ classdef Device < handle
     end
     
     events
-        %InsufficientFunds, notify(BA,'InsufficientFunds')
+        ParamChange
     end
     
     methods
@@ -30,6 +30,8 @@ classdef Device < handle
             obj.outputLabels = {};
             obj.outputUnits = {};
             obj.outputPorts = 0;
+            obj.defineParameters();
+            obj.params = obj.getDefaults();
         end
                         
         function p = getParams(obj)
@@ -48,12 +50,37 @@ classdef Device < handle
                 obj.params.(results{r}) = p.Results.(results{r});
             end
             obj.showParams
+            notify(obj,'ParamChange');
         end
         
         function showParams(obj,varargin)
             disp('')
             disp(obj.deviceName)
             disp(obj.params);
+        end
+        
+        function defaults = getDefaults(obj)
+            defaults = getpref(['defaults',obj.deviceName]);
+            if isempty(defaults)
+                defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
+                obj.setDefaults(defaultsnew{:});
+                defaults = obj.params;
+            end
+        end
+        
+        function setDefaults(obj,varargin)
+            p = inputParser;
+            names = fieldnames(obj.params);
+            for i = 1:length(names)
+                addOptional(p,names{i},obj.params.(names{i}));
+            end
+            parse(p,varargin{:});
+            results = fieldnames(p.Results);
+            for r = 1:length(results)
+                setpref(['defaults',obj.deviceName],...
+                    [results{r}],...
+                    p.Results.(results{r}));
+            end
         end
 
     end
@@ -63,15 +90,7 @@ classdef Device < handle
         outputstruct = transformOutputs(obj,outputstruct)
     end
     
-    methods (Access = protected)
-        
-        function createDeviceParameters(obj)
-            % create an amplifier class that implements these
-            % dbp.recgain = readGain();
-            % dbp.recmode = readMode();
-            dbp.blank = 'blank';
-            
-            obj.params = dbp;
-        end
+    methods (Abstract,Access = protected)
+        defineParameters(obj)
     end
 end

@@ -16,6 +16,7 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
+            % setpref('AcquisitionHardware','Amplifier','Amplifier') % AxoClamp2B
             acqhardware = getpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier')
                 obj.addDevice('amplifier',acqhardware.Amplifier);
@@ -23,10 +24,6 @@ classdef EPhysRig < Rig
                 obj.addDevice('amplifier','Amplifier');
             end
         end
-                
-        function run(obj,varargin)
-            
-        end        
     end
     
     methods (Access = protected)

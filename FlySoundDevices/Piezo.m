@@ -27,11 +27,11 @@ classdef Piezo < Device
             obj.outputPorts = 2;
         end
         
-        function scaledinputs = transformInputs(obj,in)
+        function in = transformInputs(obj,in)
             %multiply Inputs by micron/volts
         end
         
-        function scaledoutputs = transformOutputs(obj,varargin)
+        function out = transformOutputs(obj,out)
             %multiply outputs by volts/micron
         end
     
@@ -39,8 +39,8 @@ classdef Piezo < Device
     
     methods (Access = protected)
                 
-        function createDeviceParameters(obj)
-            obj.params.voltsPerMicron = 10/30; 
+        function defineParameters(obj)
+            obj.params.voltsPerMicron = 10/30;
         end
     end
 end

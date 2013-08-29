@@ -5,6 +5,7 @@ classdef Rig < handle
     end
     
     properties (Hidden, SetAccess = protected)
+        TrialDisplay
     end
     
     properties (SetAccess = protected)
@@ -14,6 +15,9 @@ classdef Rig < handle
         outputs
         inputs
         params
+    end
+    
+    properties (SetAccess = private)
     end
     
     events
@@ -27,40 +31,48 @@ classdef Rig < handle
         function obj = Rig(varargin)
             obj.aiSession = daq.createSession('ni');
             obj.aoSession = daq.createSession('ni');            
-            % obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            % obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
-            obj.createRigParameters();
+            obj.defineParameters();
+            obj.params = obj.getDefaults();
         end
         
         function addDevice(obj,devicekey,deviceclass)
-            eval(['obj.devices.(devicekey) = ' deviceclass]);
+            eval(['obj.devices.(devicekey) = ' deviceclass ';']);
             obj.setSessions(devicekey);
         end
         
-        function in = run(obj,protocol)
+        function in = run(obj,protocol,varargin)
+            if nargin>2
+                repeats = varargin{1};
+            else
+                repeats = 1;
+            end
+            obj.setDisplay([],[],protocol);
+
             obj.aiSession.Rate = protocol.params.sampratein;
             obj.aiSession.DurationInSeconds = protocol.params.durSweep;
-
-            obj.aoSession.Rate = trialdata.samprateout;
-            
+            obj.aoSession.Rate = protocol.params.samprateout;
             notify(obj,'StartRun');
-            while protocol.hasNext()
-                notify(obj,'StartRun');
-                
-                obj.setAOSession(protocol);
-                obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-                obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
-                % Run in foreground
-                obj.aoSession.startBackground; % Start the session that receives start trigger first
-                
-                % Collect input
-                in = obj.aiSession.startForeground; % both amp and signal monitor input
-                obj.transformInputs(in);
-                notify(obj,'SaveData');
+            for n = 1:repeats
+                while protocol.hasNext()
+                    obj.setAOSession(protocol);
+                    notify(obj,'StartTrial');
+
+                    %obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
+                    %obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+                    % Run in foreground
+                    obj.aoSession.startBackground; % Start the session that receives start trigger first
+                    
+                    % Collect input
+                    in = obj.aiSession.startForeground; % both amp and signal monitor input
+                    obj.transformInputs(in);
+                    notify(obj,'SaveData');
+                    obj.displayTrial(protocol);
+                end
+                protocol.reset;
             end
         end
                         
-        function setAOSession(obj)
+        function setAOSession(obj,protocol)
             % figure out what the stim vector should be
             obj.transformOutputs(protocol.next());
             obj.aoSession.wait;
@@ -70,43 +82,49 @@ classdef Rig < handle
         function transformOutputs(obj,out)
             
             % loop over devices, transforming data
-            for d = 1:length(obj.outputs.dev)
-                dev = obj.outputs.dev{d};
-                out = dev.transformOutputs(out);
+            devs = fieldnames(obj.devices);
+            for d = 1:length(devs)
+                dev = obj.devices.(devs{d});
+                if ~isempty(dev)
+                    out = dev.transformOutputs(out);
+                end
             end
             
             % make the stims the right size (keeping the array if it's the
             % same
-            if size(obj.outputs.dataarray,1) ~= length(out.(obj.outputs.labels{1}))
-                if sum(obj.outputs.outvalues ~= obj.outputs.datacolumns(end,:))
-                    obj.outputs.outvalues = obj.outputs.datacolumns(end,:);
+            outnames = fieldnames(out);
+            if size(obj.outputs.datacolumns,1) ~= length(out.(outnames{1}))
+                if sum(obj.outputs.datavalues ~= obj.outputs.datacolumns(end,:))
+                    obj.outputs.datavalues = obj.outputs.datacolumns(end,:);
                 end
                 % column array of outputs from the outvalues vector
-                obj.outputs.datacolumns = repmat(obj.outputs.outvalues(:)',...
-                    obj.outputs.outvalues,1);
+                obj.outputs.datacolumns = repmat(obj.outputs.datavalues(:)',...
+                    length(out.(outnames{1})),1);
             end
             
             % get outvals end values just in case
-            if sum(obj.outputs.outvalues ~= obj.outputs.datacolumns(end,:))
-                obj.outputs.outvalues = obj.outputs.datacolumns(end,:);
-                for c = 1:size(obj.outputs.datacolumns)
-                    obj.outputs.datacolumns(:,c) = obj.outputs.outvalues(c);
+            if sum(obj.outputs.datavalues ~= obj.outputs.datacolumns(end,:))
+                obj.outputs.datavalues = obj.outputs.datacolumns(end,:);
+                for c = 1:size(obj.outputs.datacolumns,2)
+                    obj.outputs.datacolumns(:,c) = obj.outputs.datavalues(c);
                 end
             end
             
-            outlabels = fieldnames(out);
-            for ol = 1:length(outlabels)
-                obj.outputs.datacolumns(:,strcmp(obj.outputs.labels,outlabels{ol})) = out.(outlabels{ol});
+            for ol = 1:length(outnames)
+                obj.outputs.datacolumns(:,strcmp(obj.outputs.labels,outnames{ol})) = out.(outnames{ol});
             end
         end
         
         function transformInputs(obj,in)
-            for il = 1:length(obj.input.labels)
+            for il = length(obj.inputs.labels):-1:1;
                 obj.inputs.data.(obj.inputs.labels{il}) = in(:,il);
             end
-            for d = 1:length(obj.inputs.dev)
-                dev = obj.inputs.dev{d};
-                obj.inputs.data = dev.transformInputs(obj.inputs.data);
+            devs = fieldnames(obj.devices);
+            for d = 1:length(devs)
+                dev = obj.devices.(devs{d});
+                if ~isempty(dev)
+                    obj.inputs.data = dev.transformInputs(obj.inputs.data);
+                end
             end
         end
                         
@@ -121,18 +139,54 @@ classdef Rig < handle
             for r = 1:length(results)
                 obj.params.(results{r}) = p.Results.(results{r});
             end
-            obj.setupStimulus
-            obj.showParams
         end
         
-        function saveRigParams()
-            
+        function defaults = getDefaults(obj)
+            defaults = getpref(['defaults',obj.rigName]);
+            if isempty(defaults)
+                defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
+                obj.setDefaults(defaultsnew{:});
+                defaults = obj.params;
+            end
         end
+        
+        function setDefaults(obj,varargin)
+            p = inputParser;
+            names = fieldnames(obj.params);
+            for i = 1:length(names)
+                addOptional(p,names{i},obj.params.(names{i}));
+            end
+            parse(p,varargin{:});
+            results = fieldnames(p.Results);
+            for r = 1:length(results)
+                setpref(['defaults',obj.rigName],...
+                    [results{r}],...
+                    p.Results.(results{r}));
+            end
+        end
+        
+        function setDisplay(obj,fig,evnt,varargin)
+            scrsz = get(0,'ScreenSize');
+            
+            obj.TrialDisplay = figure(...
+                'Position',[4 scrsz(4)/3 560 420],...
+                'NumberTitle', 'off',...
+                'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
+            if nargin>3
+                protocol = varargin{1};
+                set(obj.TrialDisplay,'UserData',makeTime(protocol));
+                %                 h = guidata(obj.TrialDisplay);
+                %                 h.time = makeTime(protocol);
+                %                 guidata(obj.TrialDisplay,h);
+                %
+            end
+        end
+        
     end
     
     methods (Access = protected)
         
-        function createRigParameters(obj)
+        function defineParameters(obj)
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
         end
@@ -165,7 +219,6 @@ classdef Rig < handle
                     obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
                 obj.inputs.labels = obj.inputs.portlabels(strncmp(obj.inputs.portlabels,'',0));
-
             end
         end
     

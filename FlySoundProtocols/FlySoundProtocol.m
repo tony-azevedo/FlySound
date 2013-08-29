@@ -5,8 +5,6 @@ classdef FlySoundProtocol < handle
     end
     
     properties (Hidden, SetAccess = protected)
-        x            
-        y              
         target
         current
         paramsToIter
@@ -19,6 +17,9 @@ classdef FlySoundProtocol < handle
         modusOperandi   % simulate or run?
         params
         rig
+        x
+        y
+        out
     end
     
     % Define an event called InsufficientFunds
@@ -29,29 +30,20 @@ classdef FlySoundProtocol < handle
     methods
         
         function obj = FlySoundProtocol(varargin)
-            obj.x = [];              % current x
-            obj.y = [];              % current y
             obj.defineParameters();
             obj.setupStimulus();            
-            obj.showParams;
+            % obj.showParams;
             obj.target = length(obj.paramIter);
+            obj.randomizeIter = 0;
             obj.current = 1;
-        end
-        
-        function stim = getStimulus(obj,varargin)
-            stim = zeros(obj.params.durSweep*obj.params.samprateout,1);
-        end
-
-        %         function run(obj,famN,varargin)
-        %             % Runtime routine for the protocol. obj.run(numRepeats)
-        %             % preassign space in data for all the trialdata structs
-        %
-        %         end
-        
+        end        
         
         function stim = next(obj)
+            % for this, have to adhere to the convention that params are
+            % the 
             for pn = 1:length(obj.paramsToIter)
-                obj.params.(pn) = obj.paramIter(pn,obj.current);
+                name = obj.paramsToIter{pn};
+                obj.params.(name(1:end-1)) = obj.paramIter(pn,obj.current);
             end
             stim = obj.getStimulus();
             obj.current = obj.current+1;
@@ -115,7 +107,24 @@ classdef FlySoundProtocol < handle
             disp('DefaultParameters');
             disp(getpref(['defaults',obj.protocolName]));
         end
-                
+        
+        function randomize(obj,varargin)
+            sl = ~logical(obj.randomizeIter);
+            if isempty(sl)
+                sl = false;
+            end
+            if nargin>1
+                sl = logical(varargin{1});
+            end
+            switch sl
+                case true
+                    obj.randomizeIter = true;
+                case false
+                    obj.randomizeIter = false;
+            end
+            obj.setupStimulus
+        end
+
     end % methods
     
     methods (Abstract, Static, Access = protected)
@@ -123,9 +132,13 @@ classdef FlySoundProtocol < handle
     end
     
     methods (Abstract,Static)
-        displayTrial
+        % displayTrial
     end
     
+    methods (Abstract)
+        getStimulus(obj)
+    end
+
     
     methods (Access = protected)
                 
@@ -136,13 +149,13 @@ classdef FlySoundProtocol < handle
             obj.target = 1;
             for pn = 1:length(names)
                 if length(obj.params.(names{pn})) > 1
-                    obj.paramsToIter{end+1} = pn;
+                    obj.paramsToIter{end+1} = names{pn};
                     multivals{end+1} = obj.params.(names{pn});
                     obj.target = obj.target*length(obj.params.(names{pn}));
                 end
             end
             obj.paramIter = permsFromCell(multivals);
-            
+
             if obj.randomizeIter
                 rvec = randperm(size(obj.paramIter,2));
                 obj.paramIter = obj.paramIter(:,rvec);

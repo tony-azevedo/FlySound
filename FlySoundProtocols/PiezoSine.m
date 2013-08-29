@@ -49,14 +49,13 @@ classdef PiezoSine < FlySoundProtocol
                     temp = load(correctionfiles(cf).name);
                     obj.gaincorrection = temp.d;
                 else
-                    obj.comment('PiezoSine is not being corrected!  No available correction file')
-                    warning('PiezoSine is not being corrected!  No available correction file')
+                    notify(obj,'UncorrectedStimulus')
                     obj.gaincorrection = [];
                 end
             end
         end
 
-        function varargout = generateStimulus(obj,varargin)
+        function varargout = getStimulus(obj,varargin)
             if ~isempty(obj.gaincorrection)
                 gain = obj.gaincorrection.gain(...
                     round(obj.gaincorrection.displacement*10)/10 == round(obj.params.displacement*10)/10,...
@@ -77,38 +76,13 @@ classdef PiezoSine < FlySoundProtocol
                 offset = 0;
                 notify(obj,'StimulusOutsideBounds')
             end
-            commandstim = obj.y.*sin(2*pi*obj.params.freq*obj.x);
+            commandstim = obj.y .*sin(2*pi*obj.params.freq*obj.x);
             commandstim = commandstim * obj.params.displacement; 
             calstim = commandstim *gain; 
             commandstim = commandstim+obj.params.displacementOffset;
             calstim = calstim+obj.params.displacementOffset+offset;
-            varargout = {calstim,commandstim};
-        end
-                        
-        function displayTrial(obj)
-            figure(1);
-            ax1 = subplot(4,1,[1 2 3]);
-            
-            redlines = findobj(1,'Color',[1, 0, 0]);
-            set(redlines,'color',[1 .8 .8]);
-            bluelines = findobj(1,'Color',[0, 0, 1]);
-            set(bluelines,'color',[.8 .8 1]);
-            line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
-            box off; set(gca,'TickDir','out');
-            switch obj.recmode
-                case 'VClamp'
-                    ylabel('I (pA)'); %xlim([0 max(t)]);
-                case 'IClamp'
-                    ylabel('V_m (mV)'); %xlim([0 max(t)]);
-            end
-            xlabel('Time (s)'); %xlim([0 max(t)]);
-            
-            ax2 = subplot(4,1,4);
-            [~,commandstim] = obj.generateStimulus;
-            line(obj.x,commandstim,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-            line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
-            box off; set(gca,'TickDir','out');
-
+            obj.out.piezocommand = calstim;
+            varargout = {obj.out,calstim,commandstim};
         end
 
     end % methods
@@ -117,19 +91,19 @@ classdef PiezoSine < FlySoundProtocol
         
         function defineParameters(obj)
             obj.params.displacementOffset = 5;
-            obj.params.sampratein = 10000;
-            obj.params.samprateout = 40000;
-            obj.params.displacements = 0.5*sqrt(2).^(0:6);
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 50000;
+            obj.params.displacements = 0.05*sqrt(2).^(0:6);
             obj.params.displacement = obj.params.displacements(1);
             
-            obj.params.ramptime = 0.001; %sec;
+            obj.params.ramptime = 0.04; %sec;
 
             % obj.params.cycles = 10; 
             obj.params.freq = 25; % Hz
             obj.params.freqs = 25 * sqrt(2) .^ (0:10);
-            obj.params.stimDurInSec = .5; % obj.params.cycles/obj.params.freq;
-            obj.params.preDurInSec = .5;
-            obj.params.postDurInSec = .5;
+            obj.params.stimDurInSec = .3; % obj.params.cycles/obj.params.freq;
+            obj.params.preDurInSec = .4;
+            obj.params.postDurInSec = .3;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;
@@ -157,6 +131,7 @@ classdef PiezoSine < FlySoundProtocol
 
             y(stimpnts) = w;
             obj.y = y;
+            obj.out.piezocommand = y;
         end
         
     end % protected methods
@@ -164,3 +139,29 @@ classdef PiezoSine < FlySoundProtocol
     methods (Static)
     end
 end % classdef
+
+% function displayTrial(obj)
+        %     figure(1);
+        %     ax1 = subplot(4,1,[1 2 3]);
+        %
+        %     redlines = findobj(1,'Color',[1, 0, 0]);
+        %     set(redlines,'color',[1 .8 .8]);
+        %     bluelines = findobj(1,'Color',[0, 0, 1]);
+        %     set(bluelines,'color',[.8 .8 1]);
+        %     line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
+        %     box off; set(gca,'TickDir','out');
+        %     switch obj.recmode
+        %         case 'VClamp'
+        %             ylabel('I (pA)'); %xlim([0 max(t)]);
+        %         case 'IClamp'
+        %             ylabel('V_m (mV)'); %xlim([0 max(t)]);
+        %     end
+        %     xlabel('Time (s)'); %xlim([0 max(t)]);
+        %
+        %     ax2 = subplot(4,1,4);
+        %     [~,commandstim] = obj.generateStimulus;
+        %     line(obj.x,commandstim,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+        %     line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+        %     box off; set(gca,'TickDir','out');
+        %
+        % end

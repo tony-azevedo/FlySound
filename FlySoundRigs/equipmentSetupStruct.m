@@ -1,4 +1,4 @@
-function eSS = equipmentSetupStruct()
+function eSS = equipmentSetupStruct(varargin)
 % Equipment for current rig.
 
 eSS.microscope.make = 'Olympus';
@@ -59,3 +59,16 @@ eSS.internalSoln.MgATP = 4;
 eSS.internalSoln.Na3GTP	= 0.5;
 eSS.internalSoln.KCl = 1;
 eSS.internalSoln.biocytinHydrazide = 13;
+
+            % s = equipmentSetupStruct;
+            % fnames1 = fieldnames(s);
+            % for n1 = 1:length(fnames)
+            % fprintf(obj.notesFileID,'\t%s ',...
+            % fnames1{n1});
+            % fnames2 = fieldnames(s.(fnames1{n1}));
+            % for n2 = 1:length(fnames2)
+            % fprintf(obj.notesFileID,'\t%s: %s ',...
+            % fnames1{n2},s.(fnames1{n1}).(fnames1{n2}));
+            % end
+            % fprintf(obj.notesFileID,'\n');
+            % end
