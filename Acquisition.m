@@ -32,6 +32,8 @@ classdef Acquisition < handle
     
     methods
         function obj = Acquisition(varargin)
+            
+            obj.setIdentifiers(varargin{:})
             addlistener(...
                 obj,...
                 'flynumber',...
@@ -41,13 +43,10 @@ classdef Acquisition < handle
                 'cellnumber',...
                 'PostSet',@obj.updateFileNames);
             
-            obj.setIdentifiers(varargin{:})
-            
             obj.setRig();
             addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
             addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
             addlistener(obj.rig,'SaveData',@obj.saveData);
-            addlistener(obj.rig,'StimulusProblem',@obj.handleStimProblems);
             
             devs = fieldnames(obj.rig.devices);
             for d = 1:length(devs)
@@ -56,13 +55,18 @@ classdef Acquisition < handle
                 addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
             end
             
-            % if the protocol changes and needs a different rig:
-            addlistener(obj.protocol,'RigChange',@obj.handleRigChange);
-            obj.setProtocol('SealTest');
+            obj.updateFileNames()
             
-            obj.findPrevTrials();
+            % set a simple protocol
+            obj.setProtocol('SealTest');
+            addlistener(obj.protocol,'RigChange',@obj.handleRigChange);
+            addlistener(obj.protocol,'StimulusProblem',@obj.handleStimProblems);
+            
+            % set it again to drive the listeners
+            obj.setProtocol('SealTest');
+
             obj.openNotesFile();
-            obj.saveAcquisition();
+
         end
         
         function run(obj,varargin)
@@ -133,6 +137,7 @@ classdef Acquisition < handle
             obj.protocol.setParams(...
                 'sampratein',obj.rig.params.sampratein,...
                 'samprateout',obj.rig.params.samprateout);
+            obj.findPrevTrials();
         end
         
         
@@ -342,12 +347,14 @@ classdef Acquisition < handle
         end
         
         function openNotesFile(obj)
-            if ~isempty(obj.notesFileID)
-                fclose(obj.notesFileID);
-            end
             curnotesfn = [obj.D,'\notes_',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'.txt'];
+
             newnoteslogical = isempty(dir(curnotesfn));
+            if newnoteslogical
+                fclose(obj.notesFileID);
+            end
+
             obj.notesFileName = curnotesfn;
             obj.notesFileID = fopen(obj.notesFileName,'a');
             if newnoteslogical
@@ -422,6 +429,10 @@ classdef Acquisition < handle
         end
         
         function saveAcquisition(obj,varargin)
+            if ~isdir(obj.D)
+                mkdir(obj.D);
+            end
+
             name = [obj.D,'\Acquisition_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;

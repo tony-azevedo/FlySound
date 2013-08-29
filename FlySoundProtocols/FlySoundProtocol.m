@@ -5,7 +5,7 @@ classdef FlySoundProtocol < handle
     end
     
     properties (Constant, Abstract) 
-        rigName;
+        rigRequired;
     end
     
     properties (Hidden, SetAccess = protected)
