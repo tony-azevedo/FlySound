@@ -4,7 +4,7 @@
 classdef PiezoSine < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoSine';
-        rigRequired = 'PiezoRig';
+        requiredRig = 'PiezoRig';
     end
     
     % The following properties can be set only by class methods

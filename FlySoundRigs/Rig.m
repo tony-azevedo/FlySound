@@ -182,6 +182,17 @@ classdef Rig < handle
             end
         end
         
+        function rigStruct = getRigStruct(obj)
+            rigStruct.rigConstructor = str2func(obj.rigName);
+            rigStruct.outputs = obj.outputs.portlabels;
+            rigStruct.inputs = obj.inputs.portlabels;
+            rigStruct.devices = obj.devices;
+        end
+        
+        function delete(obj)
+            obj.aiSession.release;
+            obj.aoSession.release;
+        end
     end
     
     methods (Access = protected)
@@ -221,7 +232,6 @@ classdef Rig < handle
                 obj.inputs.labels = obj.inputs.portlabels(strncmp(obj.inputs.portlabels,'',0));
             end
         end
-    
-        
+                
     end
 end

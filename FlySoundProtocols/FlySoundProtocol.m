@@ -2,10 +2,7 @@ classdef FlySoundProtocol < handle
     
     properties (Constant, Abstract) 
         protocolName;
-    end
-    
-    properties (Constant, Abstract) 
-        rigRequired;
+        requiredRig;
     end
     
     properties (Hidden, SetAccess = protected)
@@ -29,12 +26,12 @@ classdef FlySoundProtocol < handle
     % Define an event called InsufficientFunds
     events
         RigChange
+        StimulusProblem
     end
     
     methods
         
         function obj = FlySoundProtocol(varargin)
-            notify(obj,'RigChange',RigChangeData(obj.requiredRig));
             obj.defineParameters();
             obj.setupStimulus();            
             % obj.showParams;

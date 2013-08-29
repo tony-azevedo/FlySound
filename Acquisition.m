@@ -42,31 +42,13 @@ classdef Acquisition < handle
                 obj,...
                 'cellnumber',...
                 'PostSet',@obj.updateFileNames);
-            
-            obj.setRig();
-            addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
-            addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
-            addlistener(obj.rig,'SaveData',@obj.saveData);
-            
-            devs = fieldnames(obj.rig.devices);
-            for d = 1:length(devs)
-                % if the device params change (eg filter cutoff), save the
-                % acquisition setup
-                addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
-            end
-            
             obj.updateFileNames()
-            
+
             % set a simple protocol
             obj.setProtocol('SealTest');
-            addlistener(obj.protocol,'RigChange',@obj.handleRigChange);
-            addlistener(obj.protocol,'StimulusProblem',@obj.handleStimProblems);
             
-            % set it again to drive the listeners
-            obj.setProtocol('SealTest');
-
             obj.openNotesFile();
-
+            obj.saveAcquisition();
         end
         
         function run(obj,varargin)
@@ -80,66 +62,11 @@ classdef Acquisition < handle
             obj.rig.run(obj.protocol,repeats);
         end
         
-        function setRig(obj,varargin)
-            numlines = [1];
-            defAns = {''};
-            inputprompts{1} = 'Rig Class Name: ';
-            if ispref('AcquisitionPrefs')
-                acquisitionPrefs = getpref('AcquisitionPrefs');
-            else
-                acquisitionPrefs.rig = [];
-            end
-            if ~isfield(acquisitionPrefs,'rig')
-                acquisitionPrefs.rig = [];
-            end
-            if nargin>1
-                acquisitionPrefs.rig = varargin{1};
-            end
-            undefinedID = 0;
-            usingAcqPrefs = 0;
-            dlgtitle = 'Enter Rig Name';
-            if isempty(obj.rig)
-                if ~isempty(acquisitionPrefs.rig)
-                    eval(['obj.rig = ' acquisitionPrefs.rig ';']);
-                    defAns{1} = acquisitionPrefs.rig;
-                    usingAcqPrefs = 1;
-                else
-                    undefinedID = 1;
-                end
-            end
-            if undefinedID
-                while undefinedID
-                    answer = inputdlg(inputprompts,dlgtitle,numlines,defAns);
-                    eval(['obj.rig = ' answer{1} ';']);
-                    %                     try eval(['obj.rig = ' answer{1}]);
-                    %                     catch
-                    %                         warning('Enter a valid Rig Class Name');
-                    %                     end
-                    if ~isempty(obj.rig)
-                        break
-                    end
-                end
-                disp('****')
-            else
-                if usingAcqPrefs
-                    fprintf('Rig is current: \n')
-                end
-            end
-            
-            % then set preferences to current values
-            setpref('AcquisitionPrefs',...
-                {'rig'},...
-                {obj.rig.rigName});
-        end
-        
         function setProtocol(obj,prot)
             eval(['obj.protocol = ' prot ';']);
-            obj.protocol.setParams(...
-                'sampratein',obj.rig.params.sampratein,...
-                'samprateout',obj.rig.params.samprateout);
             obj.findPrevTrials();
+            obj.setRig();
         end
-        
         
         function comment(obj,varargin)
             if nargin > 1
@@ -322,7 +249,26 @@ classdef Acquisition < handle
         function updateFileNames(obj,metprop,propevnt)
             obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',datestr(date,'yymmdd'),'\',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
-            obj.saveAcquisition();
+            if ~isempty(obj.rig)
+                obj.saveAcquisition();
+            end
+        end
+        
+        function setRig(obj,varargin)
+            if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rigName)
+                eval(['obj.rig = ' obj.protocol.requiredRig ';']);
+                
+                addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
+                addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
+                addlistener(obj.rig,'SaveData',@obj.saveData);
+                
+                devs = fieldnames(obj.rig.devices);
+                for d = 1:length(devs)
+                    % if the device params change (eg filter cutoff), save the
+                    % acquisition setup
+                    addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
+                end
+            end
         end
         
         function writeTrialNotes(obj,varargin)
@@ -351,7 +297,7 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'.txt'];
 
             newnoteslogical = isempty(dir(curnotesfn));
-            if newnoteslogical
+            if newnoteslogical && ~isempty(obj.notesFileID)
                 fclose(obj.notesFileID);
             end
 
@@ -437,14 +383,13 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;
             acqStruct.flynumber = obj.flynumber;
-            acqStruct.cellnumber = obj.cellnumber;
-            
-            acqStruct.rigConstructor = str2func(obj.rig.rigName);
-            acqStruct.rig.outputs = obj.rig.outputs.portlabels;
-            acqStruct.rig.inputs = obj.rig.inputs.portlabels;
-            acqStruct.rig.devices = obj.rig.devices;
-            
+            acqStruct.cellnumber = obj.cellnumber;            
             save(name,'acqStruct');
+            
+            rigStruct = obj.rig.getRigStruct();
+            name = [obj.D,'\' obj.rig.rigName '_', ...
+                datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
+            save(name,'rigStruct');           
         end
         
         function handleRigChange(obj,metprop,propevnt,varargin)
@@ -452,6 +397,9 @@ classdef Acquisition < handle
                 % destroy current ai/aoSessions
                 obj.setRig(evntdata.rigName);
             end 
+        end
+        function handleStimulusProblem(obj,metprop,propevnt,varargin)
+            obj.warn('StimProblem')
         end
     end
     

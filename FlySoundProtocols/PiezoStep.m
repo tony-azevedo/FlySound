@@ -2,7 +2,7 @@ classdef PiezoStep < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'PiezoStep';
-        rigRequired = 'PiezoRig';
+        requiredRig = 'PiezoRig';
     end
     
     
@@ -12,7 +12,6 @@ classdef PiezoStep < FlySoundProtocol
     end
     
     events
-        StimulusProblem
     end
     
     methods

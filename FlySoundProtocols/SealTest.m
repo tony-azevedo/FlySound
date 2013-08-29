@@ -2,9 +2,7 @@ classdef SealTest < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'SealTest';
-        rigRequired = 'ContinuousOutRig';
-        %            obj.listener = obj.aoSession.addlistener('DataRequired',@(src,event) src.queueOutputData(obj.generateStimulus));
-
+        requiredRig = 'ContinuousOutRig';
     end
     
     properties (Hidden)
@@ -21,7 +19,6 @@ classdef SealTest < FlySoundProtocol
     methods
         
         function obj = SealTest(varargin)
-            % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
         end
 
@@ -29,16 +26,6 @@ classdef SealTest < FlySoundProtocol
             varargout = {obj.out,obj.x};
         end
                 
-        function stop(obj)
-            obj.aoSession.stop;
-            obj.aoSession.IsContinuous = false;
-
-            stim = zeros(obj.aoSession.Rate*0.001,1);
-            obj.aoSession.queueOutputData(stim(:));
-            obj.aoSession.startBackground;
-            obj.aoSession.wait;
-            obj.aoSession.IsContinuous = true;
-       end
           
     end
     methods (Access = protected)
@@ -67,7 +54,8 @@ classdef SealTest < FlySoundProtocol
             obj.y(2:2:2*obj.params.pulses,:) = 1;
             obj.y = obj.y(:);
             
-            obj.y = obj.y * obj.params.stepamp;            
+            obj.y = obj.y * obj.params.stepamp;
+            obj.out.voltage = obj.y;
         end
                         
     end % protected methods
