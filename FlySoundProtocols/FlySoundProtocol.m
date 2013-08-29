@@ -4,6 +4,10 @@ classdef FlySoundProtocol < handle
         protocolName;
     end
     
+    properties (Constant, Abstract) 
+        rigName;
+    end
+    
     properties (Hidden, SetAccess = protected)
         target
         current
@@ -24,12 +28,13 @@ classdef FlySoundProtocol < handle
     
     % Define an event called InsufficientFunds
     events
-        %InsufficientFunds, notify(BA,'InsufficientFunds')
+        RigChange
     end
     
     methods
         
         function obj = FlySoundProtocol(varargin)
+            notify(obj,'RigChange',RigChangeData(obj.requiredRig));
             obj.defineParameters();
             obj.setupStimulus();            
             % obj.showParams;

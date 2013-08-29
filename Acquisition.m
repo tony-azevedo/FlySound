@@ -10,11 +10,6 @@ classdef Acquisition < handle
         dataFileName    % filename for data struct
         notesFileName
         notesFileID
-        %         runlistener
-        %         triallistener
-        %         inputlistener
-        %         flylistener
-        %         celllistener
     end
     
     % The following properties can be set only by class methods
@@ -36,12 +31,11 @@ classdef Acquisition < handle
     end
     
     methods
-        
         function obj = Acquisition(varargin)
             addlistener(...
                 obj,...
                 'flynumber',...
-                'PostSet',@obj.updateFileNames);
+                'PostSet',@obj.updateFileNames);  % if flynumber or cellnumber are updated, change directories
             addlistener(...
                 obj,...
                 'cellnumber',...
@@ -53,18 +47,24 @@ classdef Acquisition < handle
             addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
             addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
             addlistener(obj.rig,'SaveData',@obj.saveData);
+            addlistener(obj.rig,'StimulusProblem',@obj.handleStimProblems);
             
             devs = fieldnames(obj.rig.devices);
             for d = 1:length(devs)
+                % if the device params change (eg filter cutoff), save the
+                % acquisition setup
                 addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
             end
             
-            obj.setProtocol('PiezoSine');
+            % if the protocol changes and needs a different rig:
+            addlistener(obj.protocol,'RigChange',@obj.handleRigChange);
+            obj.setProtocol('SealTest');
+            
             obj.findPrevTrials();
             obj.openNotesFile();
             obj.saveAcquisition();
-       end
-             
+        end
+        
         function run(obj,varargin)
             if nargin>1
                 repeats = varargin{1};
@@ -95,14 +95,14 @@ classdef Acquisition < handle
             usingAcqPrefs = 0;
             dlgtitle = 'Enter Rig Name';
             if isempty(obj.rig)
-                if ~isempty(acquisitionPrefs.rig)  
+                if ~isempty(acquisitionPrefs.rig)
                     eval(['obj.rig = ' acquisitionPrefs.rig ';']);
                     defAns{1} = acquisitionPrefs.rig;
                     usingAcqPrefs = 1;
                 else
                     undefinedID = 1;
                 end
-            end            
+            end
             if undefinedID
                 while undefinedID
                     answer = inputdlg(inputprompts,dlgtitle,numlines,defAns);
@@ -153,23 +153,23 @@ classdef Acquisition < handle
                 '%s.mat'];
             fprintf(1,'%s\n%s\n%s\n',obj.D,obj.dataFileName,name);
         end
-
+        
         function name = getDataFileName(obj)
             name = obj.dataFileName;
         end
-
+        
         function name = getRawFileStem(obj)
             name = [obj.D,'\',obj.protocol.protocolName,'_Raw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_', ...
-                '%d.mat'];            
+                '%d.mat'];
         end
         
     end % methods
     
     methods (Access = protected)
-                
+        
         function setIdentifiers(obj,varargin)
-            p = inputParser;            
+            p = inputParser;
             p.addParamValue('flygenotype','',@ischar);
             p.addParamValue('flynumber',[],@isnumeric);
             p.addParamValue('cellnumber',[],@isnumeric);
@@ -206,7 +206,7 @@ classdef Acquisition < handle
                 defAns{3} = obj.cellnumber;
                 numlines(3) = 0;
             end
-
+            
             if ispref('AcquisitionPrefs')
                 acquisitionPrefs = getpref('AcquisitionPrefs');
             else
@@ -220,7 +220,7 @@ classdef Acquisition < handle
             usingAcqPrefs = 0;
             dlgtitle = 'Enter remaining IDs (integers please)';
             if isempty(obj.flygenotype)
-                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)
                     obj.flygenotype = acquisitionPrefs.flygenotype;
                     defAns{1} = acquisitionPrefs.flygenotype;
                     usingAcqPrefs = 1;
@@ -232,7 +232,7 @@ classdef Acquisition < handle
                 end
             end
             if isempty(obj.flynumber)
-                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)
                     obj.flynumber = acquisitionPrefs.flynumber;
                     defAns{2} = acquisitionPrefs.flynumber;
                     usingAcqPrefs = 1;
@@ -244,7 +244,7 @@ classdef Acquisition < handle
                 end
             end
             if isempty(obj.cellnumber)
-                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)  
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)
                     obj.cellnumber = acquisitionPrefs.cellnumber;
                     defAns{3} = num2str(acquisitionPrefs.cellnumber);
                     usingAcqPrefs = 1;
@@ -286,7 +286,7 @@ classdef Acquisition < handle
                 {'flygenotype','flynumber','cellnumber','last_timestamp'},...
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
         end
-
+        
         function findPrevTrials(obj)
             % make a directory if one does not exist
             if ~isdir(obj.D)
@@ -317,6 +317,7 @@ classdef Acquisition < handle
         function updateFileNames(obj,metprop,propevnt)
             obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',datestr(date,'yymmdd'),'\',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
+            obj.saveAcquisition();
         end
         
         function writeTrialNotes(obj,varargin)
@@ -339,7 +340,7 @@ classdef Acquisition < handle
             fprintf(obj.notesFileID,'\t\t\t%s\n',warning);
             fprintf(1,'\t\t\t%s\n',warning);
         end
-                        
+        
         function openNotesFile(obj)
             if ~isempty(obj.notesFileID)
                 fclose(obj.notesFileID);
@@ -348,7 +349,7 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'.txt'];
             newnoteslogical = isempty(dir(curnotesfn));
             obj.notesFileName = curnotesfn;
-            obj.notesFileID = fopen(obj.notesFileName,'a'); 
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             if newnoteslogical
                 obj.writePrologueNotes
             end
@@ -356,19 +357,19 @@ classdef Acquisition < handle
         
         function writeRunNotes(obj,varargin)
             obj.notesFileID = fopen(obj.notesFileName,'a');
-
+            
             fprintf(obj.notesFileID,'\n\t%s - %s - %s; F%s_C%s\n',...
                 obj.protocol.protocolName,datestr(clock,13),...
                 obj.flygenotype,obj.flynumber,obj.cellnumber);
             fprintf(1,'\n\t%s - %s - %s; F%s_C%s\n',...
                 obj.protocol.protocolName,datestr(clock,13),...
                 obj.flygenotype,obj.flynumber,obj.cellnumber);
-
+            
             if isfield(obj.rig.devices,'amplifier')
                 fprintf(obj.notesFileID,'\t%s',obj.rig.devices.amplifier.mode);
                 fprintf(1,'\t%s',obj.rig.devices.amplifier.mode);
             end
-
+            
             paramnames = fieldnames(obj.protocol.params);
             for i = 1:length(paramnames);
                 val = obj.protocol.params.(paramnames{i});
@@ -398,11 +399,11 @@ classdef Acquisition < handle
                     '\t%s: %s\n',...
                     devnames{d},devs.(devnames{d}).deviceName);
             end
-               
+            
             fprintf(obj.notesFileID,...
                 'For list of equipement run: equipmentSetupStruct(''%s'')\n',...
                 datestr(date,'yymmdd'));
-
+            
         end
         
         function saveData(obj,varargin)
@@ -431,9 +432,16 @@ classdef Acquisition < handle
             acqStruct.rig.outputs = obj.rig.outputs.portlabels;
             acqStruct.rig.inputs = obj.rig.inputs.portlabels;
             acqStruct.rig.devices = obj.rig.devices;
-
+            
             save(name,'acqStruct');
         end
-    end 
+        
+        function handleRigChange(obj,metprop,propevnt,varargin)
+            if ~strcmp(evntdata.rigName,obj.rigName)
+                % destroy current ai/aoSessions
+                obj.setRig(evntdata.rigName);
+            end 
+        end
+    end
     
 end % classdef

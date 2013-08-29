@@ -2,11 +2,9 @@ classdef PiezoStep < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'PiezoStep';
+        rigRequired = 'PiezoRig';
     end
     
-    properties (Hidden)
-        sensorMonitor
-    end
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
@@ -14,10 +12,7 @@ classdef PiezoStep < FlySoundProtocol
     end
     
     events
-        CalibratingStimulus
-        UncorrectedStimulus
-        UncalibratedStimulus
-        StimulusOutsideBounds
+        StimulusProblem
     end
     
     methods
@@ -30,7 +25,7 @@ classdef PiezoStep < FlySoundProtocol
             parse(p,varargin{:});
             
             if strcmp(p.Results.modusOperandi,'Cal')
-                notify(obj,'CalibratingStimulus')
+                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'))
                 obj.gaincorrection = [];
             else
                 correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
@@ -47,11 +42,10 @@ classdef PiezoStep < FlySoundProtocol
                     temp = load(correctionfiles(cf).name);
                     obj.gaincorrection = temp.d;
                 else
-                    notify(obj,'UncorrectedStimulus')
+                    notify(obj,'StimulusProblem',StimulusProblemData('UncorrectedStimulus'))
                     obj.gaincorrection = [];
                 end
             end
-            
         end
         
         function varargout = getStimulus(obj,varargin)
@@ -61,7 +55,7 @@ classdef PiezoStep < FlySoundProtocol
                     1);
                 if isempty(offset)
                     offset = 0;
-                    notify(obj,'UncalibratedStimulus')
+                    notify(obj,'StimulusProblem',StimulusProblemData('UncalibratedStimulus'))
                 end
             else
                 offset = 0;
@@ -72,11 +66,11 @@ classdef PiezoStep < FlySoundProtocol
             obj.out.piezocommand = calstim;
             varargout = {obj.out,calstim,commandstim};
         end
-                        
+        
     end % methods
     
     methods (Access = protected)
-                
+        
         function defineParameters(obj)
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
@@ -87,9 +81,9 @@ classdef PiezoStep < FlySoundProtocol
             obj.params.preDurInSec = .2;
             obj.params.postDurInSec = .1;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-
+            
             obj.params.Vm_id = 0;
-
+            
             obj.params = obj.getDefaults;
         end
         

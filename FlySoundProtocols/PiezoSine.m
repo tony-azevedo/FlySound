@@ -4,10 +4,7 @@
 classdef PiezoSine < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoSine';
-    end
-    
-    properties (Hidden)
-        sensorMonitor
+        rigRequired = 'PiezoRig';
     end
     
     % The following properties can be set only by class methods
@@ -16,10 +13,7 @@ classdef PiezoSine < FlySoundProtocol
     end
     
     events
-        CalibratingStimulus
-        UncorrectedStimulus
-        UncalibratedStimulus
-        StimulusOutsideBounds
+        StimulusProblem
     end
     
     methods
@@ -32,9 +26,9 @@ classdef PiezoSine < FlySoundProtocol
             parse(p,varargin{:});
             
             if strcmp(p.Results.modusOperandi,'Cal')
-                    notify(obj,'CalibratingStimulus')
-                    obj.gaincorrection = [];
-            else 
+                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'))
+                obj.gaincorrection = [];
+            else
                 correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
                 if ~isempty(correctionfiles)
                     cfdate = correctionfiles(1).date;
@@ -49,12 +43,12 @@ classdef PiezoSine < FlySoundProtocol
                     temp = load(correctionfiles(cf).name);
                     obj.gaincorrection = temp.d;
                 else
-                    notify(obj,'UncorrectedStimulus')
+                    notify(obj,'StimulusProblem',StimulusProblemData('UncorrectedStimulus'))
                     obj.gaincorrection = [];
                 end
             end
         end
-
+        
         function varargout = getStimulus(obj,varargin)
             if ~isempty(obj.gaincorrection)
                 gain = obj.gaincorrection.gain(...
@@ -66,7 +60,7 @@ classdef PiezoSine < FlySoundProtocol
                 if isempty(gain) || isempty(offset)
                     gain = 1;
                     offset = 0;
-                    notify(obj,'UncalibratedStimulus')
+                    notify(obj,'StimulusProblem',StimulusProblemData('UncalibratedStimulus'))
                 end
             else gain = 1; offset = 0;
             end
@@ -74,17 +68,17 @@ classdef PiezoSine < FlySoundProtocol
                     obj.params.displacementOffset+offset-obj.params.displacement*gain >= 10
                 gain = 1;
                 offset = 0;
-                notify(obj,'StimulusOutsideBounds')
+                notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))
             end
             commandstim = obj.y .*sin(2*pi*obj.params.freq*obj.x);
-            commandstim = commandstim * obj.params.displacement; 
-            calstim = commandstim *gain; 
+            commandstim = commandstim * obj.params.displacement;
+            calstim = commandstim *gain;
             commandstim = commandstim+obj.params.displacementOffset;
             calstim = calstim+obj.params.displacementOffset+offset;
             obj.out.piezocommand = calstim;
             varargout = {obj.out,calstim,commandstim};
         end
-
+        
     end % methods
     
     methods (Access = protected)
@@ -97,8 +91,8 @@ classdef PiezoSine < FlySoundProtocol
             obj.params.displacement = obj.params.displacements(1);
             
             obj.params.ramptime = 0.04; %sec;
-
-            % obj.params.cycles = 10; 
+            
+            % obj.params.cycles = 10;
             obj.params.freq = 25; % Hz
             obj.params.freqs = 25 * sqrt(2) .^ (0:10);
             obj.params.stimDurInSec = .3; % obj.params.cycles/obj.params.freq;
@@ -107,7 +101,7 @@ classdef PiezoSine < FlySoundProtocol
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;
-
+            
             obj.params = obj.getDefaults;
         end
         
@@ -120,7 +114,7 @@ classdef PiezoSine < FlySoundProtocol
             y = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
             y = y(:);
             y(:) = 0;
-
+            
             stimpnts = obj.params.samprateout*obj.params.preDurInSec+1:...
                 obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec);
             
@@ -128,7 +122,7 @@ classdef PiezoSine < FlySoundProtocol
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
-
+            
             y(stimpnts) = w;
             obj.y = y;
             obj.out.piezocommand = y;
@@ -141,27 +135,27 @@ classdef PiezoSine < FlySoundProtocol
 end % classdef
 
 % function displayTrial(obj)
-        %     figure(1);
-        %     ax1 = subplot(4,1,[1 2 3]);
-        %
-        %     redlines = findobj(1,'Color',[1, 0, 0]);
-        %     set(redlines,'color',[1 .8 .8]);
-        %     bluelines = findobj(1,'Color',[0, 0, 1]);
-        %     set(bluelines,'color',[.8 .8 1]);
-        %     line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
-        %     box off; set(gca,'TickDir','out');
-        %     switch obj.recmode
-        %         case 'VClamp'
-        %             ylabel('I (pA)'); %xlim([0 max(t)]);
-        %         case 'IClamp'
-        %             ylabel('V_m (mV)'); %xlim([0 max(t)]);
-        %     end
-        %     xlabel('Time (s)'); %xlim([0 max(t)]);
-        %
-        %     ax2 = subplot(4,1,4);
-        %     [~,commandstim] = obj.generateStimulus;
-        %     line(obj.x,commandstim,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
-        %     line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
-        %     box off; set(gca,'TickDir','out');
-        %
-        % end
+%     figure(1);
+%     ax1 = subplot(4,1,[1 2 3]);
+%
+%     redlines = findobj(1,'Color',[1, 0, 0]);
+%     set(redlines,'color',[1 .8 .8]);
+%     bluelines = findobj(1,'Color',[0, 0, 1]);
+%     set(bluelines,'color',[.8 .8 1]);
+%     line(obj.x,obj.y(:,1),'parent',ax1,'color',[1 0 0],'linewidth',1);
+%     box off; set(gca,'TickDir','out');
+%     switch obj.recmode
+%         case 'VClamp'
+%             ylabel('I (pA)'); %xlim([0 max(t)]);
+%         case 'IClamp'
+%             ylabel('V_m (mV)'); %xlim([0 max(t)]);
+%     end
+%     xlabel('Time (s)'); %xlim([0 max(t)]);
+%
+%     ax2 = subplot(4,1,4);
+%     [~,commandstim] = obj.generateStimulus;
+%     line(obj.x,commandstim,'parent',ax2,'color',[.7 .7 .7],'linewidth',1);
+%     line(obj.x,obj.sensorMonitor,'parent',ax2,'color',[0 0 1],'linewidth',1);
+%     box off; set(gca,'TickDir','out');
+%
+% end

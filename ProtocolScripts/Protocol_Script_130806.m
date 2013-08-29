@@ -1,64 +1,89 @@
-% trode
-p = SealAndLeak;
-p.run
+% Start the bitch
+A = Acquisition;
+
+%% test
+A.setProtocol('SealTest');
+A.protocol.run
+
+%%
+A.protocol.stop
+
+%% trode
+A.setProtocol('SealAndLeak');
+A.comment('Trode')
+A.protocol.run
+
+%% test
+A.setProtocol('SealTest');
+A.protocol.run
+
+%%
+A.protocol.stop
 
 %% Seal
-p.run
+A.setProtocol('SealAndLeak');
+A.comment('Seal')
+A.protocol.run
 
+%% test
+A.setProtocol('SealTest');
+A.protocol.run
+
+%%
+A.protocol.stop
 
 %% Break in
-p = SealAndLeak;
-p.run
+A.setProtocol('SealAndLeak');
+A.comment('Break in / Leak')
+A.protocol.run
 
 %% Resting potential and oscillations (5x5 sec)
-p = Sweep;
-p.run(5)
+A.setProtocol('Sweep');
+A.comment('Resting potential and oscillations ')
+A.protocol.run(5)
 beep 
 
 %% Hyperpolarize (spikes) (5x5 sec)
-p = Sweep;
-p.setParams('Vm_id',-3);
-p.run(3)
-beep
+A.setProtocol('Sweep');
+A.comment('Hyperpolarize ')
+A.protocol.setParams('Vm_id',-3);
+A.protocol.run(5)
+beep 
 
 %% Middle range (5x5 sec)
-p = Sweep;
-p.setParams('Vm_id',-2);
-p.run(5)
-beep
+A.setProtocol('Sweep');
+A.comment('Middle range ')
+A.protocol.setParams('Vm_id',-2);
+A.protocol.run(5)
+beep 
 
 %% Middle range (5x5 sec)
-p = Sweep;
-p.setParams('Vm_id',-1);
-p.run(5)
-beep
+A.setProtocol('Sweep');
+A.comment('Middle range ')
+A.protocol.setParams('Vm_id',-1);
+A.protocol.run(5)
+beep 
 
 %% Depolarize (oscillations) (5x5 sec)
-p = Sweep;
-p.setParams('Vm_id',1);
-p.run(5)
-beep
+A.setProtocol('Sweep');
+A.comment('Depolarize (oscillations) (5x5 sec)')
+A.protocol.setParams('Vm_id',1);
+A.protocol.run(5)
+beep 
 
 %% Steps at rest
-p = PiezoStep;
-p.setParams('displacement',1);
-p.run(5);
+A.setProtocol('PiezoStep');
+A.comment('Depolarize (oscillations) (5x5 sec)')
+A.protocol.setParams('Vm_id',1);
+A.protocol.run(5)
+beep 
 
-p.setParams('displacement',3);
-p.run(5);
+%% I=0, then turn on holding command, then switch to current clamp (fast or whatever)
 
-p.setParams('displacement',-3);
-p.run(5);
-
-p.setParams('displacement',-1);
-p.run(5);
-
-beep
-
-%% Test seal
-p = SealAndLeak;
-p.run
-beep
+%% Break in
+A.setProtocol('SealAndLeak');
+A.comment('Break in / Leak')
+A.protocol.run
 
 %% I=0, then turn off holding command, then switch to current clamp
 

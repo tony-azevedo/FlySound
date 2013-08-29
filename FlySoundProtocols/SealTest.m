@@ -9,7 +9,6 @@ classdef SealTest < FlySoundProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
-        listener
     end
     
     events
