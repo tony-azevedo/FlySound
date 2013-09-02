@@ -13,7 +13,6 @@ classdef PiezoSine < FlySoundProtocol
     end
     
     events
-        StimulusProblem
     end
     
     methods
@@ -24,9 +23,8 @@ classdef PiezoSine < FlySoundProtocol
             p.addParamValue('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             parse(p,varargin{:});
-            
+            obj.modusOperandi = p.Results.modusOperandi;
             if strcmp(p.Results.modusOperandi,'Cal')
-                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'))
                 obj.gaincorrection = [];
             else
                 correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
@@ -43,7 +41,6 @@ classdef PiezoSine < FlySoundProtocol
                     temp = load(correctionfiles(cf).name);
                     obj.gaincorrection = temp.d;
                 else
-                    notify(obj,'StimulusProblem',StimulusProblemData('UncorrectedStimulus'))
                     obj.gaincorrection = [];
                 end
             end
@@ -63,6 +60,9 @@ classdef PiezoSine < FlySoundProtocol
                     notify(obj,'StimulusProblem',StimulusProblemData('UncalibratedStimulus'))
                 end
             else gain = 1; offset = 0;
+                if strcmp(p.Results.modusOperandi,'Cal')
+                    notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
+                end
             end
             if obj.params.displacement*gain + obj.params.displacementOffset + offset >= 10 || ...
                     obj.params.displacementOffset+offset-obj.params.displacement*gain >= 10
@@ -108,10 +108,10 @@ classdef PiezoSine < FlySoundProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-            obj.x = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
+            obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
             obj.params.freq = obj.params.freqs(1);
-            y = (1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec));
+            y = makeOutTime(obj);
             y = y(:);
             y(:) = 0;
             
@@ -126,8 +126,14 @@ classdef PiezoSine < FlySoundProtocol
             y(stimpnts) = w;
             obj.y = y;
             obj.out.piezocommand = y;
+            if isempty(obj.gaincorrection)
+                if strcmp(obj.modusOperandi,'Cal')
+                    notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
+                else
+                    notify(obj,'StimulusProblem',StimulusProblemData('UncorrectedStimulus'))
+                end
+            end
         end
-        
     end % protected methods
     
     methods (Static)

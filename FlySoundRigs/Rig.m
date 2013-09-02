@@ -1,7 +1,8 @@
 classdef Rig < handle
     
     properties (Constant, Abstract)
-        rigName;
+        rigName
+        IsContinuous;
     end
     
     properties (Hidden, SetAccess = protected)
@@ -41,6 +42,7 @@ classdef Rig < handle
         end
         
         function in = run(obj,protocol,varargin)
+            
             if nargin>2
                 repeats = varargin{1};
             else
@@ -49,17 +51,13 @@ classdef Rig < handle
             obj.setDisplay([],[],protocol);
 
             obj.aiSession.Rate = protocol.params.sampratein;
-            obj.aiSession.DurationInSeconds = protocol.params.durSweep;
+            obj.aiSession.NumberOfScans = length(protocol.x);
             obj.aoSession.Rate = protocol.params.samprateout;
             notify(obj,'StartRun');
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
                     notify(obj,'StartTrial');
-
-                    %obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-                    %obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
-                    % Run in foreground
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     
                     % Collect input
@@ -110,14 +108,16 @@ classdef Rig < handle
                 end
             end
             
-            for ol = 1:length(outnames)
-                obj.outputs.datacolumns(:,strcmp(obj.outputs.labels,outnames{ol})) = out.(outnames{ol});
+            for ch = 1:length(obj.aoSession.Channels)
+                if isfield(out,obj.aoSession.Channels(ch).Name)
+                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(ch).Name);
+                end
             end
         end
         
         function transformInputs(obj,in)
-            for il = length(obj.inputs.labels):-1:1;
-                obj.inputs.data.(obj.inputs.labels{il}) = in(:,il);
+            for ch = 1:length(obj.aiSession.Channels)
+                obj.inputs.data.(obj.aiSession.Channels(ch).Name) = in(:,ch);
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -166,19 +166,12 @@ classdef Rig < handle
         end
         
         function setDisplay(obj,fig,evnt,varargin)
-            scrsz = get(0,'ScreenSize');
-            
-            obj.TrialDisplay = figure(...
-                'Position',[4 scrsz(4)/3 560 420],...
-                'NumberTitle', 'off',...
-                'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
-            if nargin>3
-                protocol = varargin{1};
-                set(obj.TrialDisplay,'UserData',makeTime(protocol));
-                %                 h = guidata(obj.TrialDisplay);
-                %                 h.time = makeTime(protocol);
-                %                 guidata(obj.TrialDisplay,h);
-                %
+            if isempty(obj.TrialDisplay) || ~ishghandle(obj.TrialDisplay) 
+                scrsz = get(0,'ScreenSize');
+                obj.TrialDisplay = figure(...
+                    'Position',[4 scrsz(4)/3 560 420],...
+                    'NumberTitle', 'off',...
+                    'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
             end
         end
         
@@ -187,11 +180,13 @@ classdef Rig < handle
             rigStruct.outputs = obj.outputs.portlabels;
             rigStruct.inputs = obj.inputs.portlabels;
             rigStruct.devices = obj.devices;
+            rigStruct.timestamp = now;
         end
         
         function delete(obj)
             obj.aiSession.release;
             obj.aoSession.release;
+            delete@handle(obj)
         end
     end
     
@@ -214,24 +209,34 @@ classdef Rig < handle
                 dev = obj.devices.(keys{k});
                 for i = 1:length(dev.outputPorts)
                     % configure AO
-                    obj.aoSession.addAnalogOutputChannel('Dev1',dev.outputPorts(i), 'Voltage'); 
+                    ch = obj.aoSession.addAnalogOutputChannel('Dev1',dev.outputPorts(i), 'Voltage');
+                    ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
                     obj.outputs.device{dev.outputPorts(i)+1} = dev;
                     % use the current vals to apply to outputs
                 end
-                obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
+                % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
                 obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
                 obj.outputs.datacolumns = obj.outputs.datavalues;
 
                 for i = 1:length(dev.inputPorts)
-                    obj.aiSession.addAnalogInputChannel('Dev1',dev.inputPorts(i), 'Voltage'); 
+                    ch = obj.aiSession.addAnalogInputChannel('Dev1',dev.inputPorts(i), 'Voltage'); 
+                    ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
                     obj.inputs.device{dev.inputPorts(i)+1} = dev;
                     obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
-                obj.inputs.labels = obj.inputs.portlabels(strncmp(obj.inputs.portlabels,'',0));
+                %obj.inputs.labels = obj.inputs.portlabels(strncmp(obj.inputs.portlabels,'',0));
             end
         end
-                
+        
+        function chNames = getChannelNames(obj)
+            for ch = 1:length(obj.aoSession.Channels)
+                chNames.out{ch} = obj.aoSession.Channels(ch).Name;
+            end
+            for ch = 1:length(obj.aiSession.Channels)
+                chNames.in{ch} = obj.aiSession.Channels(ch).Name;
+            end
+        end
     end
 end

@@ -8,12 +8,10 @@ classdef SealTest < FlySoundProtocol
     properties (Hidden)
     end
     
-    % The following properties can be set only by class methods
     properties (SetAccess = private)
     end
     
     events
-        %InsufficientFunds, notify(BA,'InsufficientFunds')
     end
     
     methods
@@ -47,13 +45,14 @@ classdef SealTest < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             obj.params.durSweep = obj.params.stepdur*(2*obj.params.pulses);
-            obj.x = (1:obj.params.samprateout*obj.params.durSweep)/obj.params.samprateout;
+            obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
-            
+
             obj.y = zeros(2*obj.params.pulses,obj.params.stepdur*obj.params.samprateout);
-            obj.y(2:2:2*obj.params.pulses,:) = 1;
+            obj.y(1:2:2*obj.params.pulses,:) = 1;
+            obj.y = obj.y';
             obj.y = obj.y(:);
-            
+
             obj.y = obj.y * obj.params.stepamp;
             obj.out.voltage = obj.y;
         end

@@ -1,4 +1,4 @@
-classdef ContinuousOutRig < EPhysRig
+classdef ContinuousOutRig < ContinuousRig & EPhysRig
     
     properties (Constant)
         rigName = 'ContinuousOutRig';
@@ -6,6 +6,7 @@ classdef ContinuousOutRig < EPhysRig
     
     properties (Hidden, SetAccess = protected)
         prevValue
+        listener
     end
     
     properties (SetAccess = protected)
@@ -16,19 +17,30 @@ classdef ContinuousOutRig < EPhysRig
     
     methods
         function obj = ContinuousOutRig(varargin)
+            ...
         end
     
         
         function run(obj,protocol,varargin)
-            addlistener(obj.aoSession,'DataRequired',@(protocol) obj.setAOSession);
-            
-            obj.aiSession.Rate = protocol.params.sampratein;
-            obj.aiSession.DurationInSeconds = protocol.params.durSweep;
+            if obj.aoSession.IsRunning
+                return
+            end
+            obj.devices.amplifier.getmode;
+            obj.devices.amplifier.getgain;
+            %obj.setOutputs;
+
             obj.aoSession.Rate = protocol.params.samprateout;
             obj.aoSession.wait;
 
             obj.setAOSession(protocol);
-            obj.aoSession.startBackground; % Start the session that receives start trigger first    
+            obj.listener = obj.aoSession.addlistener('DataRequired',...
+                @(src,event) src.queueOutputData(obj.outputs.datacolumns));
+            % obj.listener = obj.aoSession.addlistener('ErrorOccurred',...
+            %     @(src,event) error('What the fuck?!'));
+
+            obj.aoSession.IsContinuous = true;
+
+            obj.aoSession.startBackground;    
         end
         
         function setAOSession(obj,protocol)
@@ -42,13 +54,17 @@ classdef ContinuousOutRig < EPhysRig
             obj.aoSession.stop;
             obj.aoSession.IsContinuous = false;
 
-            stim = zeros(obj.aoSession.Rate*0.001,1);
-            obj.aoSession.queueOutputData(stim(:));
+            stim = zeros(size(obj.aoSession.Channels));
+            obj.aoSession.queueOutputData(stim);
             obj.aoSession.startBackground;
             obj.aoSession.wait;
             obj.aoSession.IsContinuous = true;
-       end
+        end
         
+        function delete(obj)
+            obj.stop;
+            delete@Rig(obj)
+        end
     end
     
     methods (Access = protected)

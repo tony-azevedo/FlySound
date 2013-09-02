@@ -32,20 +32,28 @@ classdef FlySoundProtocol < handle
     methods
         
         function obj = FlySoundProtocol(varargin)
+            p = inputParser;
+            p.addParamValue('modusOperandi','Run',...
+                @(x) any(validatestring(x,{'Run','Stim','Cal'})));
+            parse(p,varargin{:});
+            obj.modusOperandi = p.Results.modusOperandi;
+
             obj.defineParameters();
             obj.setupStimulus();            
             % obj.showParams;
-            obj.target = length(obj.paramIter);
+            obj.target = 1;
             obj.randomizeIter = 0;
             obj.current = 1;
         end        
         
         function stim = next(obj)
-            % for this, have to adhere to the convention that params are
-            % the 
-            for pn = 1:length(obj.paramsToIter)
-                name = obj.paramsToIter{pn};
-                obj.params.(name(1:end-1)) = obj.paramIter(pn,obj.current);
+            % for this, have to adhere to the convention that multiple
+            % value params have an s at the end.
+            if ~isempty(obj.paramIter)
+                for pn = 1:length(obj.paramsToIter)
+                    name = obj.paramsToIter{pn};
+                    obj.params.(name(1:end-1)) = obj.paramIter(pn,obj.current);
+                end
             end
             stim = obj.getStimulus();
             obj.current = obj.current+1;

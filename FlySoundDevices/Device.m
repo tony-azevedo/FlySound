@@ -1,10 +1,7 @@
 classdef Device < handle
-    
-    properties (Constant, Abstract)
+        
+    properties (Constant,Abstract)
         deviceName;
-    end
-    
-    properties (Hidden, SetAccess = protected)
     end
     
     properties (SetAccess = protected)
@@ -15,6 +12,8 @@ classdef Device < handle
         outputLabels % consider from point of view of cell, input to amp are lines out
         outputUnits %
         outputPorts % consider from point of view of cell, input to amp are lines out
+        mode
+        gain
     end
     
     events

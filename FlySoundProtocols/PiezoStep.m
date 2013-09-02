@@ -89,8 +89,7 @@ classdef PiezoStep < FlySoundProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-            obj.x = ((1:obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec+obj.params.postDurInSec))-obj.params.preDurInSec*obj.params.samprateout)/obj.params.samprateout;
-            obj.x = obj.x(:);
+            obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
             obj.y(obj.params.samprateout*(obj.params.preDurInSec)+1: obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
             obj.out.piezocommand = obj.y;

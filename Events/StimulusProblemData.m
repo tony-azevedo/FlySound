@@ -14,10 +14,10 @@ classdef StimulusProblemData < event.EventData
     methods
         function obj = StimulusProblemData(issue)
             obj.Issue = issue;
-            obj.Index = strcmp(obj.Possibilities,issue);
+            obj.Index = strcmp(obj.Possibles,issue);
             if isempty(obj.Index)
-                obj.Index = length(obj.Possibilities);
-                obj.Issue = obj.Possibilities{obj.Index};
+                obj.Index = length(obj.Possibles);
+                obj.Issue = obj.Possibles{obj.Index};
             end                
         end
     end

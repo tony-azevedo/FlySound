@@ -2,6 +2,7 @@ classdef EPhysRig < Rig
     
     properties (Constant,Abstract)
         rigName;
+        IsContinuous;
     end
     
     properties (Hidden, SetAccess = protected)
@@ -21,10 +22,18 @@ classdef EPhysRig < Rig
             if isfield(acqhardware,'Amplifier')
                 obj.addDevice('amplifier',acqhardware.Amplifier);
             else
-                obj.addDevice('amplifier','Amplifier');
+                obj.addDevice('amplifier','AxoPatch200B');
             end
         end
+        
+        function in = run(obj,protocol,varargin)
+            obj.devices.amplifier.getmode;
+            obj.devices.amplifier.getgain;
+            in = run@Rig(obj,protocol,varargin{:});
+        end
     end
+    
+    
     
     methods (Access = protected)
     end

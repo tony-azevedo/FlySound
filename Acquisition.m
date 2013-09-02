@@ -62,10 +62,23 @@ classdef Acquisition < handle
             obj.rig.run(obj.protocol,repeats);
         end
         
-        function setProtocol(obj,prot)
-            eval(['obj.protocol = ' prot ';']);
+        function setProtocol(obj,prot,varargin)
+            if ~isempty(obj.rig) && obj.rig.IsContinuous
+                obj.rig.stop
+            end
+            protstr = ['obj.protocol = ' prot '('];
+            if nargin>2
+                for i = 1:length(varargin)
+                    protstr = [protstr '''' varargin{i} ''','];
+                end
+                protstr = protstr(1:end-1);
+            end
+            eval([protstr ');']);
             obj.findPrevTrials();
             obj.setRig();
+            addlistener(obj.protocol,'StimulusProblem',@obj.handleStimulusProblem);
+            fprintf(1,'Protocol Set to: \n');
+            obj.protocol.showParams
         end
         
         function comment(obj,varargin)
@@ -255,7 +268,7 @@ classdef Acquisition < handle
         end
         
         function setRig(obj,varargin)
-            if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rigName)
+            if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName)
                 eval(['obj.rig = ' obj.protocol.requiredRig ';']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
@@ -268,6 +281,7 @@ classdef Acquisition < handle
                     % acquisition setup
                     addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
                 end
+                obj.saveAcquisition();
             end
         end
         
@@ -398,8 +412,8 @@ classdef Acquisition < handle
                 obj.setRig(evntdata.rigName);
             end 
         end
-        function handleStimulusProblem(obj,metprop,propevnt,varargin)
-            obj.warn('StimProblem')
+        function handleStimulusProblem(obj,protocol,evntdata,varargin)
+            obj.warn([protocol.protocolName ' has a problem: ' evntdata.Issue])
         end
     end
     

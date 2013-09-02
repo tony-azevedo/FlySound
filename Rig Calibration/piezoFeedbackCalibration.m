@@ -2,7 +2,7 @@
 
 % deliver 5 sine wave stimulus amplitudes using protocols as I will for the experiment {0.5, 1, 2, 4}.  Establishing only these amps and freqs as possibilities for now
 
-displacement = 0.5*sqrt(2).^(0:6);
+displacement = 0.05*sqrt(2).^(0:6);
 freqs = 25 * sqrt(2) .^ (0:10);
 displacementOffset = 5;
 % displacement = 1;
@@ -10,13 +10,13 @@ displacementOffset = 5;
 %displacement = 3;
 %freqs = 200;
 
-p = PiezoSine('modusOperandi','Cal');
-p.setParams('ramptime',.02,...
-    'stimDurInSec',.2,...
-    'preDurInSec',0.2,...
-    'postDurInSec',0.1,...
+A = Acquisition; A.setProtocol('PiezoSine','modusOperandi','Cal');
+A.protocol.setParams('ramptime',.04,...
+    'stimDurInSec',.4,...
+    'preDurInSec',0.4,...
+    'postDurInSec',0.2,...
     'displacementOffset',displacementOffset)
-stem = regexprep(p.getRawFileStem,'\\','\\\');
+stem = regexprep(A.getRawFileStem,'\\','\\\');
 
 d.freqs = freqs;
 d.displacement = displacement;
@@ -44,16 +44,15 @@ for i = 1:length(displacement)
             continue
         end
         
-        p.setParams('freqs',freqs(j),...
+        A.protocol.setParams('freqs',freqs(j),...
             'displacement',displacement(i)*d.gain(i,j),...
             'displacementOffset',displacementOffset+d.offset(i,j));
-        start = p.n;
-        p.run(3);
+        start = A.n;
+        A.run(3);
         
-        trialnums = start:p.n-1;
-        trials = zeros(length(trialnums),length(p.x));
-        voltages = zeros(length(trialnums),length(p.x));
-        %load(regexprep(p.getDataFileName,'\\','\\\'))
+        trialnums = start:A.n-1;
+        trials = zeros(length(trialnums),length(A.protocol.x));
+        voltages = zeros(length(trialnums),length(A.protocol.x));
         
         peaks = [];
         troughs = [];
@@ -64,12 +63,12 @@ for i = 1:length(displacement)
             load(sprintf(stem,trialnums(n)));
             trials(n,:) = sgsmonitor;
             voltages(n,:) = voltage;
-            [peaksvec,plocs] = findpeaks(trials(n,0.23*p.params.sampratein:0.36*p.params.sampratein),...
+            [peaksvec,plocs] = findpeaks(trials(n,0.23*params.sampratein:0.36*params.sampratein),...
                 'MINPEAKDISTANCE',...
-                floor(p.params.sampratein/p.params.freq));
+                floor(params.sampratein/params.freq));
             peaks = [peaks, peaksvec];
             [troughsvec,tlocs] = ...
-                findpeaks(-trials(n,0.23*p.params.sampratein:0.36*p.params.sampratein),...
+                findpeaks(-trials(n,0.45*params.sampratein:0.75*params.sampratein),...
                 'MINPEAKDISTANCE',...
                 floor(.9*p.params.sampratein/p.params.freq));
             troughs = [troughs, -troughsvec];

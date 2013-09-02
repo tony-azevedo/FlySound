@@ -1,14 +1,13 @@
 classdef AxoPatch200B < Device
     
-    properties (Constant,Abstract)
-        
+    properties (Constant)
+        deviceName = 'AxoPatch200B';
     end
     
     properties (Hidden, SetAccess = protected)
     end
     
     properties (SetAccess = protected)
-        deviceName
         mode
         gain
     end
@@ -26,7 +25,6 @@ classdef AxoPatch200B < Device
     methods
         function obj = Amplifier(varargin)
             % This and the transformInputs function are hard coded
-            obj.deviceName = 'Amplifier';
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};
             obj.inputPorts = [0,3,4];
