@@ -3,6 +3,7 @@ classdef SealTest < FlySoundProtocol
     properties (Constant)
         protocolName = 'SealTest';
         requiredRig = 'ContinuousOutRig';
+        analyses = {};
     end
     
     properties (Hidden)

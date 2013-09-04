@@ -6,10 +6,10 @@ classdef Device < handle
     
     properties (SetAccess = protected)
         params
-        inputLabels % consider from point of view of cell, input to amp are lines out
+        inputLabels % consider from point of view of daq,
         inputUnits %
-        inputPorts % consider from point of view of cell, input to amp are lines out
-        outputLabels % consider from point of view of cell, input to amp are lines out
+        inputPorts % consider from point of view of daq, 
+        outputLabels
         outputUnits %
         outputPorts % consider from point of view of cell, input to amp are lines out
         mode

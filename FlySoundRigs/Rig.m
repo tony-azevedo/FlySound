@@ -26,6 +26,7 @@ classdef Rig < handle
         StartRun
         StartTrial
         SaveData
+        DataSaved
     end
     
     methods
@@ -65,6 +66,8 @@ classdef Rig < handle
                     obj.transformInputs(in);
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);
+                    notify(obj,'DataSaved');
+
                 end
                 protocol.reset;
             end
@@ -117,7 +120,11 @@ classdef Rig < handle
         
         function transformInputs(obj,in)
             for ch = 1:length(obj.aiSession.Channels)
-                obj.inputs.data.(obj.aiSession.Channels(ch).Name) = in(:,ch);
+                chids(ch) = str2double(regexprep(obj.aiSession.Channels(ch).ID,'ai',''));
+            end
+            [~,o] = sort(chids);
+            for ch = length(o):-1:1
+                obj.inputs.data.(obj.aiSession.Channels(o(ch)).Name) = in(:,ch);
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -169,7 +176,7 @@ classdef Rig < handle
             if isempty(obj.TrialDisplay) || ~ishghandle(obj.TrialDisplay) 
                 scrsz = get(0,'ScreenSize');
                 obj.TrialDisplay = figure(...
-                    'Position',[4 scrsz(4)/3 560 420],...
+                    'Position',[8 scrsz(4)/3 560 420],...
                     'NumberTitle', 'off',...
                     'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
             end
@@ -184,6 +191,7 @@ classdef Rig < handle
         end
         
         function delete(obj)
+            close(obj.TrialDisplay)
             obj.aiSession.release;
             obj.aoSession.release;
             delete@handle(obj)

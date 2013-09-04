@@ -3,6 +3,7 @@ classdef PiezoStep < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoStep';
         requiredRig = 'PiezoRig';
+        analyses = {};
     end
     
     

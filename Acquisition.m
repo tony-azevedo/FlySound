@@ -18,12 +18,13 @@ classdef Acquisition < handle
         flygenotype
         rig
         protocol % can I change this object if it's protected?
-        analyses
+        analyzelistener
     end
     
     properties (SetObservable, AbortSet)
         flynumber
-        cellnumber    
+        cellnumber 
+        analyze
     end
     
     % Define an event called InsufficientFunds
@@ -42,6 +43,11 @@ classdef Acquisition < handle
                 obj,...
                 'cellnumber',...
                 'PostSet',@obj.updateFileNames);
+            addlistener(...
+                obj,...
+                'analyze',...
+                'PostSet',@obj.setAnalysisFlag);
+
             obj.updateFileNames()
 
             % set a simple protocol
@@ -49,6 +55,8 @@ classdef Acquisition < handle
             
             obj.openNotesFile();
             obj.saveAcquisition();
+            obj.analyze = 1;
+
         end
         
         function run(obj,varargin)
@@ -58,7 +66,6 @@ classdef Acquisition < handle
                 repeats = 1;
             end
             obj.protocol.reset;
-            obj.rig.setParams('sampratein',obj.protocol.params.sampratein,'samprateout',obj.protocol.params.samprateout);
             obj.rig.run(obj.protocol,repeats);
         end
         
@@ -78,7 +85,7 @@ classdef Acquisition < handle
             obj.setRig();
             addlistener(obj.protocol,'StimulusProblem',@obj.handleStimulusProblem);
             fprintf(1,'Protocol Set to: \n');
-            obj.protocol.showParams
+            obj.protocol.showParams            
         end
         
         function comment(obj,varargin)
@@ -274,8 +281,12 @@ classdef Acquisition < handle
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
                 addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
+                if obj.analyze
+                    obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
+                end
                 
                 devs = fieldnames(obj.rig.devices);
+                
                 for d = 1:length(devs)
                     % if the device params change (eg filter cutoff), save the
                     % acquisition setup
@@ -332,6 +343,10 @@ classdef Acquisition < handle
                 obj.protocol.protocolName,datestr(clock,13),...
                 obj.flygenotype,obj.flynumber,obj.cellnumber);
             
+            if isa(obj.rig,'EPhysRig')
+                obj.protocol.setParams('mode',obj.rig.devices.amplifier.mode);
+            end
+
             if isfield(obj.rig.devices,'amplifier')
                 fprintf(obj.notesFileID,'\t%s',obj.rig.devices.amplifier.mode);
                 fprintf(1,'\t%s',obj.rig.devices.amplifier.mode);
@@ -377,9 +392,6 @@ classdef Acquisition < handle
             data = obj.rig.inputs.data;
             data.params = obj.protocol.params;
             data.params.trial = obj.n;
-            if isa(obj.rig,'EPhysRig')
-                data.params.mode = obj.rig.devices.amplifier.mode;
-            end
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             
             save(data.name, '-struct', 'data');
@@ -397,16 +409,16 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;
             acqStruct.flynumber = obj.flynumber;
-            acqStruct.cellnumber = obj.cellnumber;            
+            acqStruct.cellnumber = obj.cellnumber;             %#ok<STRNU>
             save(name,'acqStruct');
             
-            rigStruct = obj.rig.getRigStruct();
+            rigStruct = obj.rig.getRigStruct(); %#ok<NASGU>
             name = [obj.D,'\' obj.rig.rigName '_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             save(name,'rigStruct');           
         end
         
-        function handleRigChange(obj,metprop,propevnt,varargin)
+        function handleRigChange(obj,~,~,varargin)
             if ~strcmp(evntdata.rigName,obj.rigName)
                 % destroy current ai/aoSessions
                 obj.setRig(evntdata.rigName);
@@ -415,6 +427,22 @@ classdef Acquisition < handle
         function handleStimulusProblem(obj,protocol,evntdata,varargin)
             obj.warn([protocol.protocolName ' has a problem: ' evntdata.Issue])
         end
+        
+        function setAnalysisFlag(obj,varargin)
+            if obj.analyze
+                obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
+            else
+                delete(obj.analyzelistener)
+            end
+        end
+        
+        function runAnalyses(obj,~,~,varargin)
+            for a = 1:length(obj.protocol.analyses)
+                eval([obj.protocol.analyses{a}...
+                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x);'])
+            end
+        end
+            
     end
     
 end % classdef

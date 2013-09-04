@@ -17,7 +17,7 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
-            % setpref('AcquisitionHardware','Amplifier','Amplifier') % AxoClamp2B
+            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B') % AxoClamp2B
             acqhardware = getpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier')
                 obj.addDevice('amplifier',acqhardware.Amplifier);

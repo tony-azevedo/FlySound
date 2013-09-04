@@ -5,6 +5,7 @@ classdef PiezoSine < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoSine';
         requiredRig = 'PiezoRig';
+        analyses = {};
     end
     
     % The following properties can be set only by class methods
@@ -60,7 +61,7 @@ classdef PiezoSine < FlySoundProtocol
                     notify(obj,'StimulusProblem',StimulusProblemData('UncalibratedStimulus'))
                 end
             else gain = 1; offset = 0;
-                if strcmp(p.Results.modusOperandi,'Cal')
+                if strcmp(obj.modusOperandi,'Cal')
                     notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
                 end
             end

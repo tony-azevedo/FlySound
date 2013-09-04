@@ -73,16 +73,18 @@ classdef AxoClamp2B < Device
             varargout = {inputstruct,units};
         end
         
-        function newmode = setmode(obj)
+        function setmode(obj)
             obj.mode = ModeGUI(obj.mode);
         end
         
         function newmode = getmode(obj)
             obj.mode = ModeGUI(obj.mode);
+            newmode = obj.mode;
         end
         
         function newgain = getgain(obj)           
             obj.gain = 1;
+            newgain = obj.gain;
         end
                 
         function setModeSession(obj)

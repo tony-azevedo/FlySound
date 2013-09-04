@@ -8,8 +8,6 @@ classdef AxoPatch200B < Device
     end
     
     properties (SetAccess = protected)
-        mode
-        gain
     end
 
     properties (Hidden, SetAccess = protected)
@@ -23,7 +21,7 @@ classdef AxoPatch200B < Device
     end
     
     methods
-        function obj = Amplifier(varargin)
+        function obj = AxoPatch200B(varargin)
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};

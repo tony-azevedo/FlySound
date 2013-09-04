@@ -3,6 +3,7 @@ classdef FlySoundProtocol < handle
     properties (Constant, Abstract) 
         protocolName;
         requiredRig;
+        analyses
     end
     
     properties (Hidden, SetAccess = protected)
@@ -37,7 +38,9 @@ classdef FlySoundProtocol < handle
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             parse(p,varargin{:});
             obj.modusOperandi = p.Results.modusOperandi;
-
+            
+            obj.params.protocol = obj.protocolName;
+            obj.params.mode = '';
             obj.defineParameters();
             obj.setupStimulus();            
             % obj.showParams;
