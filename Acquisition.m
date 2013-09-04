@@ -19,11 +19,11 @@ classdef Acquisition < handle
         rig
         protocol % can I change this object if it's protected?
         analyzelistener
+        flynumber
+        cellnumber 
     end
     
     properties (SetObservable, AbortSet)
-        flynumber
-        cellnumber 
         analyze
     end
     
@@ -35,20 +35,12 @@ classdef Acquisition < handle
         function obj = Acquisition(varargin)
             
             obj.setIdentifiers(varargin{:})
-            addlistener(...
-                obj,...
-                'flynumber',...
-                'PostSet',@obj.updateFileNames);  % if flynumber or cellnumber are updated, change directories
-            addlistener(...
-                obj,...
-                'cellnumber',...
-                'PostSet',@obj.updateFileNames);
+            obj.updateFileNames()
+
             addlistener(...
                 obj,...
                 'analyze',...
                 'PostSet',@obj.setAnalysisFlag);
-
-            obj.updateFileNames()
 
             % set a simple protocol
             obj.setProtocol('SealTest');
@@ -115,10 +107,6 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_', ...
                 '%d.mat'];
         end
-        
-    end % methods
-    
-    methods (Access = protected)
         
         function setIdentifiers(obj,varargin)
             p = inputParser;
@@ -237,7 +225,12 @@ classdef Acquisition < handle
             setpref('AcquisitionPrefs',...
                 {'flygenotype','flynumber','cellnumber','last_timestamp'},...
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
+            obj.updateFileNames();
         end
+        
+    end % methods
+    
+    methods (Access = protected)
         
         function findPrevTrials(obj)
             % make a directory if one does not exist

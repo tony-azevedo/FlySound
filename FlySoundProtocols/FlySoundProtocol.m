@@ -161,7 +161,10 @@ classdef FlySoundProtocol < handle
             obj.paramsToIter = {};
             obj.target = 1;
             for pn = 1:length(names)
-                if length(obj.params.(names{pn})) > 1
+                plurality = names{pn};                
+                if strcmp(plurality(end),'s') && ...
+                        ~ischar(obj.params.(names{pn})) &&...
+                        length(obj.params.(names{pn})) > 1
                     obj.paramsToIter{end+1} = names{pn};
                     multivals{end+1} = obj.params.(names{pn});
                     obj.target = obj.target*length(obj.params.(names{pn}));

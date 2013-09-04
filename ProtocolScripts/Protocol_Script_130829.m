@@ -43,7 +43,7 @@ A.run
 %% Resting potential and oscillations (5x5 sec)
 A.setProtocol('Sweep');
 A.comment('Resting potential and oscillations ')
-A.run
+A.run(5)
 beep 
 
 %% Hyperpolarize (spikes) (5x5 sec)

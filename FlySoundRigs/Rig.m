@@ -123,8 +123,10 @@ classdef Rig < handle
                 chids(ch) = str2double(regexprep(obj.aiSession.Channels(ch).ID,'ai',''));
             end
             [~,o] = sort(chids);
+            % go from highest channel id to lowest (ai7 -> ai0).  This
+            % enters scaled output (always ai0) for either V or I
             for ch = length(o):-1:1
-                obj.inputs.data.(obj.aiSession.Channels(o(ch)).Name) = in(:,ch);
+                obj.inputs.data.(obj.aiSession.Channels(o(ch)).Name) = in(:,o(ch));
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
