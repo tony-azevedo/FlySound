@@ -1,4 +1,4 @@
-function varargout = ControlOutput(varargin)
+function varargout = ControlOutput_USBX(varargin)
 % CONTROLOUTPUT MATLAB code for ControlOutput.fig
 %      CONTROLOUTPUT, by itself, creates a new CONTROLOUTPUT or raises the existing
 %      singleton*.
@@ -67,10 +67,9 @@ popupval = get(handles.popupmenu1,'Value');
 aoSession = daq.createSession('ni');
 aoSession.Rate = 10000;
 handles.stim = ones(aoSession.Rate*0.001,1);
-aoSession.addAnalogOutputChannel('cDAQ1Mod1',popupval-1,'Voltage')
+aoSession.addAnalogOutputChannel('Dev1',popupval-1,'Voltage')
 aoSession.queueOutputData(handles.stim(:)*get(handles.slider1,'Value'));  
 aoSession.startBackground
-handles.sessions{length(get(handles.popupmenu1,'String'))} = [];
 handles.sessions{popupval} = aoSession;
 handles.stimvals = zeros(1,length(get(handles.popupmenu1,'String')));
 handles.stimvals(popupval) = get(handles.slider1,'Value');
