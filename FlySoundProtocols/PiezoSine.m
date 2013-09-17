@@ -116,8 +116,8 @@ classdef PiezoSine < FlySoundProtocol
             y = y(:);
             y(:) = 0;
             
-            stimpnts = obj.params.samprateout*obj.params.preDurInSec+1:...
-                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec);
+            stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
+                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
             
             w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...

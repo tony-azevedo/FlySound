@@ -80,10 +80,10 @@ classdef BasicEPhysRig < EPhysRig
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
-            set(l,'ydata',invec);
+            set(l,'ydata',invec');
 
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampinput_alt');
-            set(l,'ydata',invecalt);
+            set(l,'ydata',invecalt');
             
             out = protocol.getStimulus;
             outlabels = fieldnames(out);

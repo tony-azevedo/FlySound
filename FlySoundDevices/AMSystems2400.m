@@ -1,7 +1,7 @@
-classdef AxoPatch200B < Device
+classdef AMSystems2400 < Device
     
     properties (Constant)
-        deviceName = 'AxoPatch200B';
+        deviceName = 'AMSystems2400';
     end
     
     properties (Hidden, SetAccess = protected)
@@ -18,17 +18,18 @@ classdef AxoPatch200B < Device
     
     events
         BadMode
+        ModeChange
     end
     
     methods
-        function obj = AxoPatch200B(varargin)
+        function obj = AMSystems2400(varargin)
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};
-            obj.inputPorts = [0,3,4];
+            obj.inputPorts = [6,7,16];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
-            obj.outputPorts = 0;
+            obj.outputPorts = 1;
 
             obj.setModeSession;
             obj.mode = 'VClamp';
@@ -83,7 +84,7 @@ classdef AxoPatch200B < Device
                         if sum(strcmp({'IClamp','IClamp_fast'},obj.mode))
                             obj.inputLabels{1} = 'voltage';
                             obj.inputUnits{1} = 'mV';
-                            inputstruct.voltage = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale_timesgain/obj.gain;
+                            inputstruct.voltage = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset)*obj.params.scaledvoltagescale_timesgain/obj.gain * 1000;
                         else
                             inputstruct.voltage = (inputstruct.(inlabels{il})-obj.params.hardvoltageoffset)*obj.params.hardvoltagescale * 1000;
                         end
@@ -92,7 +93,7 @@ classdef AxoPatch200B < Device
                         if sum(strcmp('VClamp',obj.mode))
                             obj.inputLabels{1} = 'current';
                             obj.inputUnits{1} = 'pA';
-                            inputstruct.current = (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset)*obj.params.scaledcurrentscale_timesgain/obj.gain;
+                            inputstruct.current = (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset)*obj.params.scaledcurrentscale_timesgain/obj.gain * 1000;
                         else
                             inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.hardcurrentoffset)*obj.params.hardcurrentscale * 1000;
                         end
@@ -104,76 +105,103 @@ classdef AxoPatch200B < Device
         
         function setModeSession(obj)
             obj.modeSession = daq.createSession('ni');
-            obj.modeSession.addAnalogInputChannel('Dev1',2, 'Voltage');
+            obj.modeSession.addAnalogInputChannel('Dev1',17, 'Voltage');
             obj.modeSession.Channels(1).TerminalConfig = 'SingleEndedNonReferenced';
-            obj.modeSession.Rate = 10000;  % 10 kHz
-            obj.modeSession.DurationInSeconds = .01; % 2ms
+            obj.modeSession.Rate = 100000;  % 100 kHz
+            obj.modeSession.DurationInSeconds = .001; 
         end
         
         function setGainSession(obj)
             obj.gainSession = daq.createSession('ni');
-            obj.gainSession.addAnalogInputChannel('Dev1',1, 'Voltage');
-            obj.gainSession.Rate = 10000;  % 10 kHz
-            obj.gainSession.DurationInSeconds = .02; % 2ms
+            obj.gainSession.addAnalogInputChannel('Dev1',18, 'Voltage');
+            obj.gainSession.Rate = 100000;  % 100 kHz
+            obj.gainSession.DurationInSeconds = .001; 
         end
         
         function newmode = getmode(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
             mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
-            mode_voltage = mean(mode_voltage);
-            
-            if mode_voltage < 1.75
-                newmode = 'IClamp_fast';
-            elseif mode_voltage < 2.75
-                newmode = 'IClamp';
-            elseif mode_voltage < 3.75
-                newmode = 'I=0';
-            elseif mode_voltage < 4.75
-                newmode = 'Track';
-            elseif mode_voltage < 6.75
-                newmode = 'VClamp';
+            mode_voltage1 = mean(mode_voltage);
+            pause(.01)
+            mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+            mode_voltage2 = mean(mode_voltage);
+            while abs(mode_voltage2-mode_voltage1)>0.01
+                mode_voltage1 = mode_voltage2;
+                mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+                mode_voltage2 = mean(mode_voltage);
             end
-            obj.mode = newmode;
+                
+            if mode_voltage2 < 1
+                newmode = 'Vtest';
+            elseif mode_voltage2 < 2
+                newmode = 'VClamp'; % Vcomp, test pulse ignored
+            elseif mode_voltage2 < 3
+                newmode = 'VClamp';
+            elseif mode_voltage2 < 4
+                newmode = 'I=0';
+            elseif mode_voltage2 < 5
+                newmode = 'IClamp';
+            elseif mode_voltage2 < 6
+                newmode = 'IClamp'; % Iresist, test pulse ignored
+            elseif mode_voltage2 < 7
+                newmode = 'IClamp'; % Ifollow, test pulse ignored
+            end
             
-            if sum(strcmp('VClamp',obj.mode))
+            if sum(strcmp('VClamp',newmode))
                     obj.outputLabels{1} = 'voltage';
                     obj.outputUnits{1} = 'mV';
                     obj.inputLabels{1} = 'current';
                     obj.inputUnits{1} = 'pA';
-            elseif sum(strcmp({'IClamp','IClamp_fast'},obj.mode)) 
+            elseif sum(strcmp({'IClamp'},newmode)) 
                     obj.outputLabels{1} = 'current';
                     obj.outputUnits{1} = 'pA';
                     obj.inputLabels{1} = 'voltage';
                     obj.inputUnits{1} = 'mV';
             end
-            notify(obj,'ModeChange');
+            oldmode = obj.mode;
+            obj.mode = newmode;
+            if ~strcmp(obj.mode,oldmode)
+                notify(obj,'ModeChange');
+            end
+            
+            
         end
+        
         function newgain = getgain(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
             
             gain_voltage = obj.gainSession.startForeground; %plot(x); drawnow
-            gain_voltage = mean(gain_voltage);
+            gain_voltage1 = mean(gain_voltage);
+            pause(.01)
+            gain_voltage = obj.gainSession.startForeground; %plot(x); drawnow
+            gain_voltage2 = mean(gain_voltage);
+            while abs(gain_voltage2-gain_voltage1)>0.01
+                gain_voltage1 = gain_voltage2;
+                gain_voltage = obj.gainSession.startForeground; %plot(x); drawnow
+                gain_voltage2 = mean(gain_voltage);
+            end
             
-            if gain_voltage < 2.2
-                newgain = 0.5;
-            elseif gain_voltage < 2.7
+            mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+            mode_voltage2 = mean(mode_voltage);
+            
+            if mode_voltage2 < 2.7
+                gain_voltage2 = gain_voltage2+1.5;
+            end
+            
+            if gain_voltage2 < 3.2
                 newgain = 1;
-            elseif gain_voltage < 3.2
+            elseif gain_voltage2 < 3.7
                 newgain = 2;
-            elseif gain_voltage < 3.7
+            elseif gain_voltage2 < 4.2
                 newgain = 5;
-            elseif gain_voltage < 4.2
+            elseif gain_voltage2 < 4.7
                 newgain = 10;
-            elseif gain_voltage < 4.7
+            elseif gain_voltage2 < 5.2
                 newgain = 20;
-            elseif gain_voltage < 5.2
+            elseif gain_voltage2 < 5.7
                 newgain = 50;
-            elseif gain_voltage < 5.7
+            elseif gain_voltage2 < 6.2
                 newgain = 100;
-            elseif gain_voltage < 6.2
-                newgain = 200;
-            elseif gain_voltage < 6.7
-                newgain = 500;
             end
             obj.gain = newgain;
         end
@@ -184,26 +212,30 @@ classdef AxoPatch200B < Device
                 
         function defineParameters(obj)
             % create an amplifier class that implements these
+            % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
             obj.params.filter = 1e4;
-            obj.params.headstagegain = 1;
+            obj.params.headstageresistor = 100;
+            obj.params.headstagegain = 1/10; %low
+            % obj.params.headstagegain = 1/100; %high
+            obj.params.extcmdswitch = 1/10; 
+            % obj.params.extcmdswitch = 1/50;
             
             obj.params.daqCurrentOffset = 0.0000; 
-            obj.params.daqout_to_current = 2/obj.params.headstagegain; % m, multiply DAQ voltage to get nA injected
+            obj.params.daqout_to_current = obj.params.headstagegain*obj.params.headstageresistor*100; % nA/V, multiply DAQ voltage to get nA injected
             obj.params.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
             
-            obj.params.daqout_to_voltage = .02; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+            obj.params.daqout_to_voltage = obj.params.extcmdswitch; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
             obj.params.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
             
-            obj.params.rearcurrentswitchval = 1; % [V/nA];
-            obj.params.hardcurrentscale = 1/(obj.params.rearcurrentswitchval*obj.params.headstagegain); % [V]/current scal gives nA;
-            obj.params.hardcurrentoffset = -6.6238/1000;
+            obj.params.hardcurrentscale = 1000 / 1000; % [mV]/[nA] - [V daq]*1000 / ([mV]/[nA])  -  1000 [pA]/[nA] in code;
+            obj.params.hardcurrentoffset = -8.6716/1000; 
             obj.params.hardvoltagescale = 1/(10); % reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
-            obj.params.hardvoltageoffset = -6.2589/1000; % in V, reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
+            obj.params.hardvoltageoffset = -7.374/1000; % in V, reads 10X Vm, mult by 1/10 to get actual reading in V, multiply in code to get mV
             
-            obj.params.scaledcurrentscale_timesgain = 1000/(obj.params.headstagegain); % [mV/V]/gainsetting gives pA
-            obj.params.scaledcurrentoffset = 0; % [mV/V]/gainsetting gives pA
-            obj.params.scaledvoltagescale_timesgain = 1000; % mV/gainsetting gives mV
-            obj.params.scaledvoltageoffset = 0; % mV/gainsetting gives mV
+            obj.params.scaledcurrentscale_timesgain = obj.params.hardcurrentscale*10; % [mV/V]/gainsetting gives pA
+            obj.params.scaledcurrentoffset = -6.898/1000; % [mV/V]/gainsetting gives pA
+            obj.params.scaledvoltagescale_timesgain = 1; % mV/gainsetting gives mV
+            obj.params.scaledvoltageoffset = -7.1479/1000 + -17.1563/1000/50; % mV/gainsetting gives mV
         end
     end
 end

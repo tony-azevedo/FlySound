@@ -44,9 +44,9 @@ classdef Acquisition < handle
 
             % set a simple protocol
             obj.setProtocol('SealTest');
-            
-            obj.openNotesFile();
+
             obj.saveAcquisition();
+
             obj.analyze = 1;
 
         end
@@ -226,8 +226,15 @@ classdef Acquisition < handle
                 {'flygenotype','flynumber','cellnumber','last_timestamp'},...
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
             obj.updateFileNames();
+            obj.openNotesFile();
+
         end
-        
+                
+        function nfn = cleanUpAndExit(obj)
+            fclose(obj.notesFileID);
+            nfn = obj.notesFileName;
+        end
+
     end % methods
     
     methods (Access = protected)
@@ -285,6 +292,7 @@ classdef Acquisition < handle
                     % acquisition setup
                     addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
                 end
+                obj.writePrologueNotes
                 obj.saveAcquisition();
             end
         end
@@ -320,10 +328,11 @@ classdef Acquisition < handle
             end
 
             obj.notesFileName = curnotesfn;
-            obj.notesFileID = fopen(obj.notesFileName,'a');
-            if newnoteslogical
-                obj.writePrologueNotes
+            if ~isdir(obj.D)
+                mkdir(obj.D);
             end
+            
+            obj.notesFileID = fopen(obj.notesFileName,'a');
         end
         
         function writeRunNotes(obj,varargin)
@@ -432,7 +441,7 @@ classdef Acquisition < handle
         function runAnalyses(obj,~,~,varargin)
             for a = 1:length(obj.protocol.analyses)
                 eval([obj.protocol.analyses{a}...
-                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x);'])
+                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x,sprintf(regexprep(obj.getRawFileStem,''\\'',''\\\''),obj.n-1));'])
             end
         end
             
