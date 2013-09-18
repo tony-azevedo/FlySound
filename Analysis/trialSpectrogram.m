@@ -32,28 +32,30 @@ if isempty(ax)
 else
     delete(get(ax,'children'));
 end
-title(ax,sprintf('%s', [prot '.' d '.' fly '.' cell '.' trial]));
 
-f = params.sampratein/length(t)*[0:length(t)/2];
+% df = log10(800)/256;
+% f = df:df:log10(800);
+% f = 10.^f;
+
+df = 800/256;
+f = df:df:800;
 
 if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
-    [S,F,T,P] = spectrogram(data.current,256,250,f(f<=1000),data.params.sampratein);
-    colormap(pmkmp(256,'CubicL'))
-    surf(T,F,10*log10(P),'edgecolor','none'); axis tight;
-    %surf(T,F,(P),'edgecolor','none'); axis tight;
-    % colorbar
-    view(0,90);
-    xlabel('Time (Seconds)'); ylabel('Hz');
+    [S,F,T,P] = spectrogram(data.current-mean(data.current),2048,1024,f,data.params.sampratein);
+end
+if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
+    [S,F,T,P] = spectrogram(data.voltage-mean(data.voltage),1024,512,f,data.params.sampratein);
 end
 
-if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
-    [S,F,T,P] = spectrogram(data.voltage,256,250,f(f<=1000),data.params.sampratein);
-    colormap(pmkmp(256,'CubicL'))
-    surf(T,F,10*log10(P),'edgecolor','none'); axis tight;
-    %surf(T,F,(P),'edgecolor','none'); axis tight;
-    % colorbar
-    view(0,90);
-    xlabel('Time (Seconds)'); ylabel('Hz');
-end
+P(P< mean(P(end,:))) = mean(P(end,:));
+T = T-params.preDurInSec;
+colormap(ax,'Hot') % 'Hot'
+surf(ax,T, F, 10*log10(P),'edgecolor','none');
+%set(ax, 'YScale', 'log');
+view(ax,0,90);
+axis(ax,'tight');
+
+xlabel(ax,'Time (Seconds)'); ylabel(ax,'Hz');
+title(ax,sprintf('%s', [prot '.' d '.' fly '.' cell '.' trial]));
 
 varargout = {f};
