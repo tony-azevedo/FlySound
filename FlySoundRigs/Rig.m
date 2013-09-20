@@ -52,7 +52,7 @@ classdef Rig < handle
             obj.setDisplay([],[],protocol);
 
             obj.aiSession.Rate = protocol.params.sampratein;
-            obj.aiSession.NumberOfScans = length(protocol.x);
+            obj.aiSession.NumberOfScans = length(makeInTime(protocol));
             obj.aoSession.Rate = protocol.params.samprateout;
             notify(obj,'StartRun');
             for n = 1:repeats

@@ -1,6 +1,6 @@
-classdef PiezoSine < FlySoundProtocol
+classdef PiezoCourtshipSong < FlySoundProtocol
     properties (Constant)
-        protocolName = 'PiezoSine';
+        protocolName = 'PiezoCourtshipSong';
         requiredRig = 'PiezoRig';
         analyses = {};
     end
@@ -15,7 +15,7 @@ classdef PiezoSine < FlySoundProtocol
     
     methods
         
-        function obj = PiezoSine(varargin)
+        function obj = PiezoCourtshipSong(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
@@ -25,7 +25,7 @@ classdef PiezoSine < FlySoundProtocol
             if strcmp(p.Results.modusOperandi,'Cal')
                 obj.gaincorrection = [];
             else
-                correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoSineCorrection*.mat');
+                correctionfiles = dir('C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\PiezoCourtshipCorrection*.mat');
                 if ~isempty(correctionfiles)
                     cfdate = correctionfiles(1).date;
                     cf = 1;
@@ -45,7 +45,7 @@ classdef PiezoSine < FlySoundProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
-            if ~isempty(obj.gaincorrection)
+            if ~isempty(obj.gaincorrection) && isstruct(obj.gaincorrection)
                 gain = obj.gaincorrection.gain(...
                     round(obj.gaincorrection.displacement*1e5)/1e5 == round(obj.params.displacement*1e5)/1e5,...
                     round(obj.gaincorrection.freqs*1e5)/1e5 == round(obj.params.freq*1e5)/1e5);
@@ -59,6 +59,7 @@ classdef PiezoSine < FlySoundProtocol
                 end
             else gain = 1; offset = 0;
                 if strcmp(obj.modusOperandi,'Cal')
+                    commandstim = obj.gaincorrection * obj.params.displacement + obj.params.displacementOffset;
                     notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
                 end
             end
@@ -68,11 +69,7 @@ classdef PiezoSine < FlySoundProtocol
                 offset = 0;
                 notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))
             end
-            commandstim = obj.y .*sin(2*pi*obj.params.freq*obj.x);
-            commandstim = commandstim * obj.params.displacement;
-            calstim = commandstim *gain;
-            commandstim = commandstim+obj.params.displacementOffset;
-            calstim = calstim+obj.params.displacementOffset+offset;
+            calstim = obj.y * obj.params.displacement +obj.params.displacementOffset;
             obj.out.piezocommand = calstim;
             varargout = {obj.out,calstim,commandstim};
         end
@@ -82,18 +79,17 @@ classdef PiezoSine < FlySoundProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
+            % rmpref('defaultsPiezoCourtshipSong')
             obj.params.displacementOffset = 5;
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
-            obj.params.displacements = 0.05*sqrt(2).^(0:6);
+            obj.params.sampratein = 40000;
+            [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            obj.params.sampratein = obj.params.samprateout;
+            obj.params.displacements = .1;
             obj.params.displacement = obj.params.displacements(1);
-            
+
             obj.params.ramptime = 0.04; %sec;
             
-            % obj.params.cycles = 10;
-            obj.params.freq = 25; % Hz
-            obj.params.freqs = 25 * sqrt(2) .^ (0:10);
-            obj.params.stimDurInSec = .3; % obj.params.cycles/obj.params.freq;
+            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
             obj.params.preDurInSec = .4;
             obj.params.postDurInSec = .3;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
@@ -105,14 +101,19 @@ classdef PiezoSine < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+
+            [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            [standardstim] = wavread('CourtshipSong_Standard.wav');
+            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
+
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
-            obj.params.freq = obj.params.freqs(1);
+
             y = makeOutTime(obj);
             y = y(:);
             y(:) = 0;
-            
+
             stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
                 obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
             
@@ -120,12 +121,13 @@ classdef PiezoSine < FlySoundProtocol
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
-            
-            y(stimpnts) = w;
+            y(stimpnts) = w.*stim;
             obj.y = y;
             obj.out.piezocommand = y;
             if isempty(obj.gaincorrection)
                 if strcmp(obj.modusOperandi,'Cal')
+                    obj.gaincorrection = y;
+                    obj.gaincorrection(stimpnts) = w.*standardstim;
                     notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
                 else
                     notify(obj,'StimulusProblem',StimulusProblemData('UncorrectedStimulus'))

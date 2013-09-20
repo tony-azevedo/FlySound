@@ -1,7 +1,7 @@
 function time = makeOutTime(params)
 % time = makeTime(params)
 % see also makeTime makeInTime makeOutTime
-if isa(params, 'FlySoundProtocol')
+if isa(params, 'FlySoundProtocol') || isfield(params, 'params')
     params = params.params;
 end
 

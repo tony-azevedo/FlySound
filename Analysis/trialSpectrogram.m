@@ -48,7 +48,9 @@ if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
 end
 
 P(P< mean(P(end,:))) = mean(P(end,:));
-T = T-params.preDurInSec;
+if isfield(params,'preDurInSec')
+    T = T-params.preDurInSec;
+end
 colormap(ax,'Hot') % 'Hot'
 surf(ax,T, F, 10*log10(P),'edgecolor','none');
 %set(ax, 'YScale', 'log');
@@ -58,4 +60,4 @@ axis(ax,'tight');
 xlabel(ax,'Time (Seconds)'); ylabel(ax,'Hz');
 title(ax,sprintf('%s', [prot '.' d '.' fly '.' cell '.' trial]));
 
-varargout = {f};
+varargout = {S,F,T,P};
