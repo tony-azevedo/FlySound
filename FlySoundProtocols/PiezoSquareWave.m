@@ -76,7 +76,7 @@ classdef PiezoSquareWave < FlySoundProtocol
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.displacement = 1;
-            obj.params.displacements = [.3 1 3];
+            obj.params.displacements = [3];
             obj.params.displacementOffset = 5;
             obj.params.cycleDurInSec = .1;
             

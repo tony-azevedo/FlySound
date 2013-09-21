@@ -6,6 +6,7 @@ classdef Acquisition < handle
     properties (Hidden, SetAccess = protected)
         n               % current trial
         expt_n          % current experiment trial
+        block_n
         D               % main directory
         dataFileName    % filename for data struct
         notesFileName
@@ -21,6 +22,7 @@ classdef Acquisition < handle
         analyzelistener
         flynumber
         cellnumber 
+        tags
     end
     
     properties (SetObservable, AbortSet)
@@ -57,8 +59,10 @@ classdef Acquisition < handle
             else
                 repeats = 1;
             end
+            obj.block_n = obj.block_n+1;
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
+            
         end
         
         function setProtocol(obj,prot,varargin)
@@ -90,6 +94,34 @@ classdef Acquisition < handle
             fprintf(obj.notesFileID,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
             fprintf(1,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
         end
+
+        function tag(obj,varargin)
+            if nargin > 1
+                tag = varargin;
+            else
+                tag = inputdlg('Enter tag:', 'Tag', [1 50]);
+                tag = strcat(tag{:});
+            end
+            for t = 1:length(tag);
+                obj.tags{end+1} = tag{t};
+            end
+            obj.comment(strcat(obj.tags{:}));
+        end
+        
+        function untag(obj,varargin)
+            if nargin > 1
+                untag = varargin;
+            else
+                untag = inputdlg('Enter tag:', 'Tag', [1 50]);
+                untag = strcat(untag{:});
+            end
+            
+            for t = 1:length(untag);
+                untagel = num2str(untag{t});
+                obj.tags = obj.tags(~strcmp(obj.tags,untagel));
+            end
+
+        end
         
         function showFileStem(obj)
             name = [obj.D,'\',obj.protocol.protocolName,'_Raw_', ...
@@ -107,6 +139,8 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_', ...
                 '%d.mat'];
         end
+        
+        
         
         function setIdentifiers(obj,varargin)
             p = inputParser;
@@ -227,7 +261,7 @@ classdef Acquisition < handle
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
             obj.updateFileNames();
             obj.openNotesFile();
-
+            obj.setProtocol(obj.protocol.protocolName);
         end
                 
         function nfn = cleanUpAndExit(obj)
@@ -249,21 +283,31 @@ classdef Acquisition < handle
             name = [obj.D,'\',obj.protocol.protocolName,'_Raw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*'];
             rawtrials = dir(name);
-            if isempty(rawtrials)
-                obj.n = 1;
-                obj.expt_n = 1;
-            else
-                obj.n = length(rawtrials)+1;
-            end
+
+            obj.n = length(rawtrials)+1;
+            
             expt_rawtrials = dir([obj.D,'\','*_Raw_*',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*']);
             if isempty(expt_rawtrials)
                 obj.expt_n = 1;
+                obj.block_n = 0;
             else
                 obj.expt_n = length(expt_rawtrials)+1;
+                % find latest expt_rawtrial to get the block number
+                N = 1;
+                dn = expt_rawtrials(1).datenum;
+                for num = 1:length(expt_rawtrials)
+                    if expt_rawtrials(num).datenum > dn;
+                        dn = expt_rawtrials(num).datenum;
+                        N = num;
+                    end
+                end
+                load(fullfile(obj.D,expt_rawtrials(N).name));
+                obj.block_n = params.trialBlock;
             end
-            
-            fprintf('Fly %s, Cell %s currently has %d %s trials (%d total)\n',obj.flynumber,obj.cellnumber,obj.n-1,obj.protocol.protocolName,obj.expt_n-1);
+                        
+            fprintf('Fly %s, Cell %s currently has %d %s trials \n(Total: %d trials in %d blocks)\n',...
+                obj.flynumber,obj.cellnumber,obj.n-1,obj.protocol.protocolName,obj.expt_n-1,obj.block_n);
         end
         
         function updateFileNames(obj,metprop,propevnt)
@@ -279,7 +323,8 @@ classdef Acquisition < handle
                 eval(['obj.rig = ' obj.protocol.requiredRig ';']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
-                addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
+                %addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
+                addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
                 if obj.analyze
                     obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
@@ -296,23 +341,7 @@ classdef Acquisition < handle
                 obj.saveAcquisition();
             end
         end
-        
-        function writeTrialNotes(obj,varargin)
-            fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
-                obj.expt_n,...
-                obj.protocol.protocolName,...
-                obj.n);
-            fprintf(1,'\t\t%d, %s trial %d',obj.expt_n, obj.protocol.protocolName,obj.n);
-            paramsToIter = obj.protocol.paramsToIter;
-            for pti = 1:length(paramsToIter)
-                pname = paramsToIter{pti};
-                fprintf(obj.notesFileID,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
-                fprintf(1,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
-            end
-            fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
-            fprintf(1,', %s\n',datestr(clock,13));
-        end
-        
+                
         function warn(obj,warning)
             fprintf(obj.notesFileID,'\t\t\t%s\n',warning);
             fprintf(1,'\t\t\t%s\n',warning);
@@ -334,19 +363,47 @@ classdef Acquisition < handle
             
             obj.notesFileID = fopen(obj.notesFileName,'a');
         end
+                
+        function writePrologueNotes(obj)
+            fprintf(obj.notesFileID,...
+                '%s - %s - %s; F%s_C%s\nRigName: %s\n',...
+                datestr(date,'yymmdd'),datestr(clock,13),obj.flygenotype,...
+                obj.flynumber,obj.cellnumber,...
+                obj.rig.rigName);
+            
+            devs = obj.rig.devices;
+            devnames = fieldnames(devs);
+            for d = 1:length(devnames)
+                fprintf(obj.notesFileID,...
+                    '\t%s: %s\n',...
+                    devnames{d},devs.(devnames{d}).deviceName);
+            end
+            
+            fprintf(obj.notesFileID,...
+                'For list of equipement run: equipmentSetupStruct(''%s'')\n',...
+                datestr(date,'yymmdd'));
+            
+        end
         
         function writeRunNotes(obj,varargin)
             obj.notesFileID = fopen(obj.notesFileName,'a');
             
-            fprintf(obj.notesFileID,'\n\t%s - %s - %s; F%s_C%s\n',...
+            if ~isempty(obj.tags)
+                tagstr = strcat(obj.tags{:});
+            else
+                tagstr = '';
+            end
+            fprintf(obj.notesFileID,'\n\t%s - %s - %s; F%s_C%s\n\tTrial Block %d - Tagged as {''%s''}\n ',...
                 obj.protocol.protocolName,datestr(clock,13),...
-                obj.flygenotype,obj.flynumber,obj.cellnumber);
-            fprintf(1,'\n\t%s - %s - %s; F%s_C%s\n',...
+                obj.flygenotype,obj.flynumber,obj.cellnumber,...
+                obj.block_n,tagstr);
+            fprintf(1,'\n\t%s - %s - %s; F%s_C%s\n\tTrial Block %d - Tagged as {''%s''}\n ',...
                 obj.protocol.protocolName,datestr(clock,13),...
-                obj.flygenotype,obj.flynumber,obj.cellnumber);
+                obj.flygenotype,obj.flynumber,obj.cellnumber,...
+                obj.block_n,tagstr);
             
             if isa(obj.rig,'EPhysRig')
-                obj.protocol.setParams('mode',obj.rig.devices.amplifier.mode);
+                obj.protocol.setParams('-q','mode',obj.rig.devices.amplifier.mode);
             end
 
             if isfield(obj.rig.devices,'amplifier')
@@ -369,32 +426,31 @@ classdef Acquisition < handle
             fprintf(1,'\n');
         end
         
-        function writePrologueNotes(obj)
-            fprintf(obj.notesFileID,...
-                '%s - %s - %s; F%s_C%s\nRigName: %s\n',...
-                datestr(date,'yymmdd'),datestr(clock,13),obj.flygenotype,...
-                obj.flynumber,obj.cellnumber,...
-                obj.rig.rigName);
-            
-            devs = obj.rig.devices;
-            devnames = fieldnames(devs);
-            for d = 1:length(devnames)
-                fprintf(obj.notesFileID,...
-                    '\t%s: %s\n',...
-                    devnames{d},devs.(devnames{d}).deviceName);
+        function writeTrialNotes(obj,varargin)
+            % data has been saved and obj.n increased
+            fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
+                obj.expt_n-1,...
+                obj.protocol.protocolName,...
+                obj.n-1);
+            fprintf(1,'\t\t%d, %s trial %d',obj.expt_n-1, obj.protocol.protocolName,obj.n-1);
+            paramsToIter = obj.protocol.paramsToIter;
+            for pti = 1:length(paramsToIter)
+                pname = paramsToIter{pti};
+                fprintf(obj.notesFileID,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
+                fprintf(1,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
             end
-            
-            fprintf(obj.notesFileID,...
-                'For list of equipement run: equipmentSetupStruct(''%s'')\n',...
-                datestr(date,'yymmdd'));
-            
+            fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
+            fprintf(1,', %s\n',datestr(clock,13));
         end
+
         
         function saveData(obj,varargin)
             data = obj.rig.inputs.data;
             data.params = obj.protocol.params;
             data.params.trial = obj.n;
+            data.params.trialBlock = obj.block_n;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
+            data.tags = obj.tags;
             
             save(data.name, '-struct', 'data');
             % save(obj.rig.inputs.data.name,'current','voltage','name','params');

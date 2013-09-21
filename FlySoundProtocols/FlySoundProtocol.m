@@ -71,6 +71,20 @@ classdef FlySoundProtocol < handle
         end
 
         function setParams(obj,varargin)
+            quiet = false;
+            if nargin>1
+                optionstr = varargin{1};
+                if strcmp(optionstr(1),'-')
+                    for c = 2:length(optionstr)
+                        switch optionstr(c)
+                            case 'q'
+                                quiet = true;
+                        end
+                    end
+                    varargin = varargin(2:end);
+                end
+            end
+            
             p = inputParser;
             names = fieldnames(obj.params);
             for i = 1:length(names)
@@ -82,7 +96,9 @@ classdef FlySoundProtocol < handle
                 obj.params.(results{r}) = p.Results.(results{r});
             end
             obj.setupStimulus
-            obj.showParams
+            if ~quiet
+                obj.showParams
+            end
         end
         
         function showParams(obj,varargin)
