@@ -63,4 +63,10 @@ function initialize_gui(fig_handle, handles, isreset)
 if isfield(handles, 'metricdata') && ~isreset
     return;
 end
+set(handles.figure1,'KeyPressFcn',@enter_key_callback);
 guidata(handles.figure1, handles);
+
+function enter_key_callback(hObject,key)
+if strcmp(key.Key,'return')
+    enter_Callback(hObject, [], guidata(hObject));
+end

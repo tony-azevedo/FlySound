@@ -10,9 +10,9 @@ A.untag('Trode')
 
 %% Seal
 A.setProtocol('SealAndLeak');
-A.tag('Trode')
+A.tag('Seal')
 A.run
-A.untag('Trode')
+A.untag('Seal')
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
@@ -50,8 +50,9 @@ beep
 %% PiezoSine ringing test
 A.setProtocol('PiezoSine');
 A.tag('Ringing')
-%A.tag('TTX at rest')
-A.protocol.setParams('-q','freqs',[50 100 200],'displacements',[0.4],'postDurInSec',1.5,'stimDurInSec',0.2,'ramptime',0.02);
+A.protocol.setParams('-q','freqs',[50 100 200],...
+    'displacement',[0.4],'displacements',[0.4],...
+    'postDurInSec',1.5,'stimDurInSec',0.2,'ramptime',0.02);
 A.run(10)
 A.untag('Ringing')
 beep
@@ -67,8 +68,9 @@ A.run(10)
 A.untag('Ringing')
 beep
 
-%% Courtship song
+%% Courtship song TTX
 A.setProtocol('PiezoCourtshipSong');
+A.tag('TTX')
 A.protocol.setParams('displacements',[0.1 0.2 0.4],'postDurInSec',1);
 A.run(5)
 beep

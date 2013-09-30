@@ -17,12 +17,13 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
-            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B') % AxoClamp2B
+            % setpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
+            % AxoPatch200B % AxoClamp2B % MultiClamp700B  
             acqhardware = getpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier')
                 obj.addDevice('amplifier',acqhardware.Amplifier);
             else
-                obj.addDevice('amplifier','AxoPatch200B');
+                obj.addDevice('amplifier','MultiClamp700B');
             end
             addlistener(obj.devices.amplifier,'ModeChange',@obj.changeSessionsFromMode);
         end

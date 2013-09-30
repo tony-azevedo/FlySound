@@ -60,4 +60,4 @@ axis(ax,'tight');
 xlabel(ax,'Time (Seconds)'); ylabel(ax,'Hz');
 title(ax,sprintf('%s', [prot '.' d '.' fly '.' cell '.' trial]));
 
-varargout = {S,F,T,P};
+varargout = {S,F,T,P,fig};

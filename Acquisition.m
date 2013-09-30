@@ -35,7 +35,7 @@ classdef Acquisition < handle
     
     methods
         function obj = Acquisition(varargin)
-            
+            obj.tags = {};
             obj.setIdentifiers(varargin{:})
             obj.updateFileNames()
 
@@ -103,9 +103,11 @@ classdef Acquisition < handle
                 tag = strcat(tag{:});
             end
             for t = 1:length(tag);
-                obj.tags{end+1} = tag{t};
+                if ~sum(strcmp(obj.tags,tag{t}));
+                    obj.tags{end+1} = tag{t};
+                end
             end
-            obj.comment(strcat(obj.tags{:}));
+            obj.comment(sprintf('%s; ',(obj.tags{:})));
         end
         
         function untag(obj,varargin)
@@ -261,7 +263,9 @@ classdef Acquisition < handle
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
             obj.updateFileNames();
             obj.openNotesFile();
-            obj.setProtocol(obj.protocol.protocolName);
+            if ~isempty(obj.protocol)
+                obj.setProtocol(obj.protocol.protocolName);
+            end
         end
                 
         function nfn = cleanUpAndExit(obj)
@@ -497,7 +501,7 @@ classdef Acquisition < handle
         function runAnalyses(obj,~,~,varargin)
             for a = 1:length(obj.protocol.analyses)
                 eval([obj.protocol.analyses{a}...
-                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x,sprintf(regexprep(obj.getRawFileStem,''\\'',''\\\''),obj.n-1));'])
+                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x,sprintf(regexprep(obj.getRawFileStem,''\\'',''\\\''),obj.n-1),obj.tags);'])
             end
         end
             
