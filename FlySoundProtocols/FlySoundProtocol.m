@@ -41,6 +41,8 @@ classdef FlySoundProtocol < handle
             
             obj.params.protocol = obj.protocolName;
             obj.params.mode = '';
+            obj.params.gain = [];
+            obj.params.secondary_gain = [];
             obj.defineParameters();
             obj.setupStimulus();            
             % obj.showParams;

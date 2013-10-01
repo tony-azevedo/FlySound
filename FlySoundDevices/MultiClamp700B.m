@@ -75,17 +75,25 @@ classdef MultiClamp700B < Device
                     case 'voltage'
                         % transfrom V to mV
                         if sum(strcmp({'IClamp'},obj.mode))
-                            inputstruct.voltage = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) / (10 * obj.params.scaledvoltagescale_over_gain * obj.gain);
+                            inputstruct.voltage =...
+                                (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) /...
+                                (obj.params.scaledvoltagescale_over_gain * obj.gain);
                         else
-                            inputstruct.voltage = (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) / (obj.params.scaledvoltagescale_over_gain * obj.secondary_gain);
+                            inputstruct.voltage = ...
+                                (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) /...
+                                (obj.params.scaledvoltagescale_over_gain * obj.secondary_gain);
                         end
                         units{il} = 'mV'; 
                     case 'current'
                         % transfrom V to pA
                         if sum(strcmp('VClamp',obj.mode))
-                            inputstruct.current = (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) / (obj.params.scaledcurrentscale_over_gain * obj.gain);
+                            inputstruct.current =...
+                                (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
+                                (obj.params.scaledcurrentscale_over_gain * obj.gain);
                         else
-                            inputstruct.current = (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) / (10*obj.params.scaledcurrentscale_over_gain * obj.secondary_gain);
+                            inputstruct.current = ...
+                                (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
+                                (obj.params.scaledcurrentscale_over_gain * obj.secondary_gain);
                         end
                         units{il} = 'pA';
                 end
@@ -137,7 +145,7 @@ classdef MultiClamp700B < Device
         function newgain = getgain(obj)
             obj.gain = GainGUI(obj.gain,'Primary');
             newgain = obj.gain;
-            obj.secondary_gain = GainGUI(obj.secondary_gain,'Secondary');
+            obj.secondary_gain = GainGUI(obj.secondary_gain,'Secondary - check output!');
         end        
     end
     
@@ -165,7 +173,7 @@ classdef MultiClamp700B < Device
                         
             obj.params.scaledcurrentscale_over_gain = 1e-12*obj.params.headstageresistorCC; % [V/pA] * gainsetting
             obj.params.scaledcurrentoffset = 0; 
-            obj.params.scaledvoltagescale_over_gain = 1/1000; % [mV/V] * gainsetting
+            obj.params.scaledvoltagescale_over_gain = 10/1000; % 10Vm [mV/V] * gainsetting (Look at multiclamp prim output window
             obj.params.scaledvoltageoffset = 0; 
         end
     end

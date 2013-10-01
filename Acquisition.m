@@ -59,6 +59,15 @@ classdef Acquisition < handle
             else
                 repeats = 1;
             end
+            
+            if isa(obj.rig,'EPhysRig')
+                obj.protocol.setParams('-q','mode',obj.rig.devices.amplifier.mode);
+                obj.protocol.setParams('-q','gain',obj.rig.devices.amplifier.gain);
+                if isa(obj.rig.devices.amplifier,'MultiClamp700B')
+                    obj.protocol.setParams('-q','secondary_gain',obj.rig.devices.amplifier.secondary_gain);
+                end
+            end
+
             obj.block_n = obj.block_n+1;
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
@@ -406,10 +415,6 @@ classdef Acquisition < handle
                 obj.flygenotype,obj.flynumber,obj.cellnumber,...
                 obj.block_n,tagstr);
             
-            if isa(obj.rig,'EPhysRig')
-                obj.protocol.setParams('-q','mode',obj.rig.devices.amplifier.mode);
-            end
-
             if isfield(obj.rig.devices,'amplifier')
                 fprintf(obj.notesFileID,'\t%s',obj.rig.devices.amplifier.mode);
                 fprintf(1,'\t%s',obj.rig.devices.amplifier.mode);
@@ -450,6 +455,14 @@ classdef Acquisition < handle
         
         function saveData(obj,varargin)
             data = obj.rig.inputs.data;
+            if isa(obj.rig,'EPhysRig')
+                obj.protocol.setParams('-q','mode',obj.rig.devices.amplifier.mode);
+                obj.protocol.setParams('-q','gain',obj.rig.devices.amplifier.gain);
+                if isa(obj.rig.devices.amplifier,'MultiClamp700B')
+                    obj.protocol.setParams('-q','secondary_gain',obj.rig.devices.amplifier.secondary_gain);
+                end
+            end
+
             data.params = obj.protocol.params;
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
