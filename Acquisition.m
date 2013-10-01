@@ -455,15 +455,15 @@ classdef Acquisition < handle
         
         function saveData(obj,varargin)
             data = obj.rig.inputs.data;
+            data.params = obj.protocol.params;
             if isa(obj.rig,'EPhysRig')
-                obj.protocol.setParams('-q','mode',obj.rig.devices.amplifier.mode);
-                obj.protocol.setParams('-q','gain',obj.rig.devices.amplifier.gain);
+                data.params.mode = obj.rig.devices.amplifier.mode;
+                data.params.gain = obj.rig.devices.amplifier.gain;
                 if isa(obj.rig.devices.amplifier,'MultiClamp700B')
-                    obj.protocol.setParams('-q','secondary_gain',obj.rig.devices.amplifier.secondary_gain);
+                    data.params.gain = obj.rig.devices.amplifier.secondary_gain;
                 end
             end
 
-            data.params = obj.protocol.params;
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);

@@ -16,8 +16,8 @@ A.untag('Seal')
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',1);
-A.run(1)
+A.protocol.setParams('-q','durSweep',5);
+A.run(5)
 beep 
 
 %% Steps
@@ -43,7 +43,7 @@ beep
 
 %% Courtship song
 A.setProtocol('PiezoCourtshipSong');
-A.protocol.setParams('-q','displacements',[0.1 0.2 0.4],'postDurInSec',1);
+A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
 A.run(5)
 beep
 
