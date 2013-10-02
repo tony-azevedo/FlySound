@@ -63,7 +63,10 @@ end
 
 plot(t(t>=0 & t< params.stepdur*2),y,'parent',ax,'color',[1 .7 .7],'linewidth',1); hold on
 l = line(t(t>=0 & t< params.stepdur*2),y_bar+base,'parent',ax,'color',[.7 0 0],'linewidth',1,'displayname',str);
-legend(l,str);box off; set(gca,'TickDir','out');
+text(t(stimpnts+5),mean(y_bar(stimpnts-100:stimpnts)),...
+    str,'parent',ax,...
+    'fontsize',10);
+box off; set(gca,'TickDir','out');
 
 ylabel(ax,'pA'); %xlim([0 max(t)]);
 xlabel(ax,'Time (s)'); xlim(ax,[t(1) params.stepdur*2]);
