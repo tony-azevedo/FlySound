@@ -1,4 +1,8 @@
 %% Cell-attached recordings
+% This day was pretty much a wash.  I stuggled with patching, saw spikes in
+% one B1 cell, then some weird stuff notated in the notebook, then I patch
+% some random cell with a strange response, spiking that appeared not to
+% change with application of 90mM Na.  Oh well
 % Start the bitch 
 A = Acquisition;
 
