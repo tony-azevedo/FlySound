@@ -1,5 +1,6 @@
 #include <afxwin.h> // MFC core and standard components
 #include "AxMultiClampMsg.h"
+#include "mex.h"
 //============================================================================
 // FUNCTION: DisplayErrorMsg
 // PURPOSE: Display error as text string
@@ -16,15 +17,15 @@ void DisplayErrorMsg(HMCCMSG hMCCmsg, int nError)
 // MultiClamp, set current clamp mode, execute auto fast and
 // slow compensation, and destroy the handle.
 //
-int main()
+char GetMode()
 {
-// check the API version matches the expected value
+    // check the API version matches the expected value
     if( !MCCMSG_CheckAPIVersion(MCCMSG_APIVERSION_STR) )
     {
         AfxMessageBox("Version mismatch: AXCLAMPEXMSG.DLL", MB_ICONSTOP);
         return 0;
     }
-// create DLL handle
+    // create DLL handle
     int nError = MCCMSG_ERROR_NOERROR;
     HMCCMSG hMCCmsg = MCCMSG_CreateObject(&nError);
     if( !hMCCmsg )
@@ -32,7 +33,7 @@ int main()
             DisplayErrorMsg(hMCCmsg, nError);
             return 0;
         }
-// find the first MultiClamp
+        // find the first MultiClamp
         char szError[256] = "";
         char szSerialNum[16] = ""; // Serial number of MultiClamp 700B
         UINT uModel = 0; // Identifies MultiClamp 700A or 700B model
@@ -46,18 +47,20 @@ int main()
             DisplayErrorMsg(hMCCmsg, nError);
             return 0;
         }
-// select this MultiClamp
+        // select this MultiClamp
         if( !MCCMSG_SelectMultiClamp(hMCCmsg, uModel, szSerialNum,
                 uCOMPortID, uDeviceID, uChannelID, &nError) )
         {
             DisplayErrorMsg(hMCCmsg, nError);
             return 0;
         }
-// set voltage clamp mode
-        if( !MCCMSG_SetMode(hMCCmsg, MCCMSG_MODE_VCLAMP, &nError) )
+        
+        // get the current mode
+        UINT uMode = 0;
+        if( !MCCMSG_GetMode(m_hMCCmsg, &uMode, &nError) )
         {
-            DisplayErrorMsg(hMCCmsg, nError);
-            return 0;
+            char szError[256] = "";
+            MCCMSG_BuildErrorText(m_hMCCmsg, nError, szError, sizeof(szError)); AfxMessageBox(szError, MB_ICONSTOP);
         }
 // execute auto fast compensation
         if( !MCCMSG_AutoFastComp(hMCCmsg, &nError) )
@@ -86,37 +89,56 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double *t,*y;
     size_t m,n;
     
-    /* Check for proper number of arguments */
-    
-    if (nrhs != 2) {
-        mexErrMsgIdAndTxt( "MATLAB:yprime:invalidNumInputs",
-                "Two input arguments required.");
-    } else if (nlhs > 1) {
-        mexErrMsgIdAndTxt( "MATLAB:yprime:maxlhs",
-                "Too many output arguments.");
+    HMCCMSG hMCCmsg
+    double multiplier;              /* input scalar */
+    double *inMatrix;               /* 1xN input matrix */
+    size_t ncols;                   /* size of matrix */
+    double *outMatrix;              /* output matrix */
+
+    /* check for proper number of arguments */
+    if(nrhs!=2) {
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:nrhs","Two inputs required.");
+    }
+    if(nlhs!=1) {
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:nlhs","One output required.");
+    }
+    /* make sure the first input argument is scalar */
+    if( !mxIsDouble(prhs[0]) || 
+         mxIsComplex(prhs[0]) ||
+         mxGetNumberOfElements(prhs[0])!=1 ) {
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notScalar","Input multiplier must be a scalar.");
     }
     
-    /* Check the dimensions of Y.  Y can be 4 X 1 or 1 X 4. */
-    
-    m = mxGetM(Y_IN);
-    n = mxGetN(Y_IN);
-    if (!mxIsDouble(Y_IN) || mxIsComplex(Y_IN) ||
-            (MAX(m,n) != 4) || (MIN(m,n) != 1)) {
-        mexErrMsgIdAndTxt( "MATLAB:yprime:invalidY",
-                "YPRIME requires that Y be a 4 x 1 vector.");
+    /* make sure the second input argument is type double */
+    if( !mxIsDouble(prhs[1]) || 
+         mxIsComplex(prhs[1])) {
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notDouble","Input matrix must be type double.");
     }
     
-    /* Create a matrix for the return argument */
-    YP_OUT = mxCreateDoubleMatrix( (mwSize)m, (mwSize)n, mxREAL);
+    /* check that number of rows in second input argument is 1 */
+    if(mxGetM(prhs[1])!=1) {
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notRowVector","Input must be a row vector.");
+    }
     
-    /* Assign pointers to the various parameters */
-    yp = mxGetPr(YP_OUT);
+    /* get the value of the scalar input  */
+    multiplier = mxGetScalar(prhs[0]);
+
+    /* create a pointer to the real data in the input matrix  */
+    inMatrix = mxGetPr(prhs[1]);
+
+    /* get dimensions of the input matrix */
+    ncols = mxGetN(prhs[1]);
+
+    /* create the output matrix */
+    plhs[0] = mxCreateDoubleMatrix(1,(mwSize)ncols,mxREAL);
+
+    /* get a pointer to the real data in the output matrix */
+    outMatrix = mxGetPr(plhs[0]);
     
-    t = mxGetPr(T_IN);
-    y = mxGetPr(Y_IN);
     
     /* Do the actual computations in a subroutine */
-    yprime(yp,t,y);
+    MCCMSG_GetMode(voidPtr, uint32Ptr, int32Ptr)
+    GetMode();
     return;
     
 }
