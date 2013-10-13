@@ -24,17 +24,14 @@
    #define AXMCCMSG   __declspec(dllimport)
 #endif
 
-// Here the function differs frm that sent by MDC
-#ifdef __cplusplus   
 extern "C" {
-#endif
-    
+
 // The handle type declaration.
 DECLARE_HANDLE(HMCCMSG);
 
 // API version number.
-#define MCCMSG_APIVERSION       1,0,0,8
-#define MCCMSG_APIVERSION_STR  "1.0.0.8"
+#define MCCMSG_APIVERSION       1,0,0,7
+#define MCCMSG_APIVERSION_STR  "1.0.0.7"
 
 // Windows Class name for the MultiClamp Commander msg handler hidden window.
 #define MCCMSG_CLASSNAME "MultiClampMessageHandlerClass"
@@ -88,18 +85,6 @@ AXMCCMSG BOOL WINAPI MCCMSG_SetModeSwitchEnable(HMCCMSG hMCCmsg, BOOL bEnable, i
 // Get auto or external mode switching enable
 AXMCCMSG BOOL WINAPI MCCMSG_GetModeSwitchEnable(HMCCMSG hMCCmsg, BOOL *pbEnable, int *pnError);
 
-//==============================================================================================
-// MCC Feedback Resistor functions
-//==============================================================================================
-
-// Get Feedback Resistor for Channel 1 Voltage Clamp.
-AXMCCMSG BOOL WINAPI MCCMSG_GetFeedbackResistorVC1(HMCCMSG hMCCmsg, UINT *puVal, int *pnError);
-// Get Feedback Resistor for Channel 1 Current Clamp.
-AXMCCMSG BOOL WINAPI MCCMSG_GetFeedbackResistorIC1(HMCCMSG hMCCmsg, UINT *puVal, int *pnError);
-// Get Feedback Resistor for Channel 2 Voltage Clamp.
-AXMCCMSG BOOL WINAPI MCCMSG_GetFeedbackResistorVC2(HMCCMSG hMCCmsg, UINT *puVal, int *pnError);
-// Get Feedback Resistor for Channel 2 Current Clamp.
-AXMCCMSG BOOL WINAPI MCCMSG_GetFeedbackResistorIC2(HMCCMSG hMCCmsg, UINT *puVal, int *pnError);
 
 //==============================================================================================
 // MCC Holding functions
@@ -583,9 +568,6 @@ const UINT MCCMSG_METER4                                = 3;  // 700B
 const UINT MCCMSG_TIMEOUT_DEFAULT                       = 3000; // default time out (3 sec).
 const UINT MCCMSG_SERIALNUM_SIZE                        = 16;
 
-// Here the function differs frm that sent by MDC
-#ifdef __cplusplus
-}
-#endif
+} // end of extern "C"
 
 #endif // INC_AXMULTICLAMPMSG_HPP

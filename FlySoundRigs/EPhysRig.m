@@ -36,35 +36,35 @@ classdef EPhysRig < Rig
     end
     
     methods (Access = protected)
-        function changeSessionsFromMode(obj,src,evnt)
-            for i = 1:length(src.outputPorts)
+        function changeSessionsFromMode(obj,amplifier,evnt)
+            for i = 1:length(amplifier.outputPorts)
                 % configure AO
                 for c = 1:length(obj.aoSession.Channels)
-                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(src.outputPorts(i))])
+                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
                         ch = obj.aoSession.Channels(c);
                         break
                     end
                 end
-                ch.Name = src.outputLabels{i};
-                obj.outputs.portlabels{src.outputPorts(i)+1} = src.outputLabels{i};
-                obj.outputs.device{src.outputPorts(i)+1} = src;
+                ch.Name = amplifier.outputLabels{i};
+                obj.outputs.portlabels{amplifier.outputPorts(i)+1} = amplifier.outputLabels{i};
+                obj.outputs.device{amplifier.outputPorts(i)+1} = amplifier;
                 % use the current vals to apply to outputs
             end
             % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
             obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
             obj.outputs.datacolumns = obj.outputs.datavalues;
             
-            for i = 1:length(src.inputPorts)
+            for i = 1:length(amplifier.inputPorts)
                 for c = 1:length(obj.aiSession.Channels)
-                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(src.inputPorts(i))])
+                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
                         ch = obj.aiSession.Channels(c);
                         break
                     end
                 end
-                ch.Name = src.inputLabels{i};
-                obj.inputs.portlabels{src.inputPorts(i)+1} = src.inputLabels{i};
-                obj.inputs.device{src.inputPorts(i)+1} = src;
-                obj.inputs.data.(src.inputLabels{i}) = [];
+                ch.Name = amplifier.inputLabels{i};
+                obj.inputs.portlabels{amplifier.inputPorts(i)+1} = amplifier.inputLabels{i};
+                obj.inputs.device{amplifier.inputPorts(i)+1} = amplifier;
+                obj.inputs.data.(amplifier.inputLabels{i}) = [];
             end
         end
     end

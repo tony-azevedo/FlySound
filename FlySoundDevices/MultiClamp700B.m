@@ -116,10 +116,16 @@ classdef MultiClamp700B < Device
         end
         
         function newmode = getmode(obj)
-            obj.mode = ModeGUI(obj.mode);
+            mccmode = MCCGetMode;
+            % see AxMultiClampMsg.h mode constants
+            if mccmode == 0
+                obj.mode = 'VClamp';
+            elseif mccmode == 1
+                obj.mode = 'IClamp';
+            elseif mccmode == 2
+                obj.mode = 'I=0';
+            end
             newmode = obj.mode;
-            notify(obj,'ModeChange');
-            
             if sum(strcmp('VClamp',newmode))
                     obj.outputLabels{1} = 'voltage';
                     obj.outputUnits{1} = 'mV';
@@ -135,17 +141,45 @@ classdef MultiClamp700B < Device
                     obj.inputLabels{2} = 'current';
                     obj.inputUnits{2} = 'pA';
             end
-            oldmode = obj.mode;
-            obj.mode = newmode;
-            if ~strcmp(obj.mode,oldmode)
-                notify(obj,'ModeChange');
-            end
+            notify(obj,'ModeChange');
         end
         
         function newgain = getgain(obj)
-            obj.gain = GainGUI(obj.gain,'Primary');
+            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            % see AxMultiClampMsg.h constants prim and secondary signal IDs
+            
+            obj.gain = gain1;
             newgain = obj.gain;
-            obj.secondary_gain = GainGUI(obj.secondary_gain,'Secondary - check output!');
+            obj.secondary_gain = gain2;
+            
+            % check that signal IDs are correct for this mode
+            if sum(strcmp('VClamp',obj.mode))
+                % have to record current and membrane potential
+                
+                if primarySignal ~= 0
+                    errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_VC_MEMBCURRENT',obj.mode);
+                    errordlg(errorstr,'Incorrect Signals','modal');
+                    error(errorstr); %#ok<SPERR>
+                end
+                if secondarySignal ~= 1
+                    errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_SEC_SIGNAL_VC_MEMBPOTENTIAL',obj.mode);
+                    errordlg(errorstr,'Incorrect Signals','modal');
+                    error(errorstr); %#ok<SPERR>
+                end
+                    
+                    
+            elseif sum(strcmp({'IClamp','I=0'},obj.mode)) 
+                if primarySignal ~= 7
+                    errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_IC_MEMBPOTENTIAL',obj.mode);
+                    errordlg(errorstr,'Incorrect Signals','modal');
+                    error(errorstr); %#ok<SPERR>
+                end
+                if secondarySignal ~= 8
+                    errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_SEC_SIGNAL_IC_MEMBCURRENT',obj.mode);
+                    errordlg(errorstr,'Incorrect Signals','modal');
+                    error(errorstr); %#ok<SPERR>
+                end
+            end                
         end        
     end
     
