@@ -69,6 +69,8 @@ classdef PiezoSine < FlySoundProtocol
                 notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))
             end
             commandstim = obj.y .*sin(2*pi*obj.params.freq*obj.x);
+            obj.out.speakercommand = commandstim;
+
             commandstim = commandstim * obj.params.displacement;
             calstim = commandstim *gain;
             commandstim = commandstim+obj.params.displacementOffset;

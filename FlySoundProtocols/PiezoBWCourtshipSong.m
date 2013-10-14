@@ -1,6 +1,6 @@
-classdef PiezoCourtshipSong < FlySoundProtocol
+classdef PiezoBWCourtshipSong < FlySoundProtocol
     properties (Constant)
-        protocolName = 'PiezoCourtshipSong';
+        protocolName = 'PiezoBWCourtshipSong';
         requiredRig = 'PiezoRig';
         analyses = {};
     end
@@ -15,7 +15,7 @@ classdef PiezoCourtshipSong < FlySoundProtocol
     
     methods
         
-        function obj = PiezoCourtshipSong(varargin)
+        function obj = PiezoBWCourtshipSong(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
@@ -47,6 +47,7 @@ classdef PiezoCourtshipSong < FlySoundProtocol
             obj.params.displacementOffset = 5;
             obj.params.sampratein = 40000;
             [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            stim = flipud(stim);
             obj.params.sampratein = obj.params.samprateout;
             obj.params.displacements = .1;
             obj.params.displacement = obj.params.displacements(1);
@@ -67,7 +68,9 @@ classdef PiezoCourtshipSong < FlySoundProtocol
             setupStimulus@FlySoundProtocol(obj);
 
             [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            stim = flipud(stim);
             [standardstim] = wavread('CourtshipSong_Standard.wav');
+            standardstim = flipud(standardstim);
             obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;

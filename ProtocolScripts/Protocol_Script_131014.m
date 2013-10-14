@@ -1,4 +1,7 @@
-%% Cell-attached recordings
+%% Whole cell recordings, Na exchange recordings
+
+% Good day, though a slow start.  Things worked well, got good data, looking good.
+% got some 50 mM Na data, though I saw little change.  Also, perfusion noise looked good
 
 % Start the bitch 
 A = Acquisition;
@@ -25,9 +28,19 @@ A.tag('TTX')
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',.2);
-A.run(1)
+A.protocol.setParams('-q','durSweep',5);
+A.run(5)
 beep 
+
+%% Resting potential and oscillations (5x5 sec) Minimize current
+A.setProtocol('Sweep');
+A.tag('Hyperpolarized')
+A.protocol.setParams('-q','durSweep',5);
+A.run(5)
+A.untag('Hyperpolarized')
+beep 
+
+
 
 %% Steps
 A.setProtocol('PiezoStep');
@@ -44,20 +57,20 @@ beep
 
 %% PiezoSine
 A.setProtocol('PiezoSine');
-A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[0.1 0.2 0.4 ],'postDurInSec',1.5);
+A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[0.1 0.2 0.4 ],'postDurInSec',1);
 A.run(3)
 beep
 
 %% Courtship song
 A.setProtocol('PiezoCourtshipSong');
 A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
-A.run(5)
+A.run(3)
 beep
 
 %% Backwards Courtship song
 A.setProtocol('PiezoBWCourtshipSong');
 A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
-A.run(5)
+A.run(3)
 beep
 
 %% Amplitude modulation of 100Hz stimulus
@@ -71,7 +84,7 @@ A.tag('Ringing')
 A.protocol.setParams('-q','freqs',[50 100 200],...
     'displacement',[0.4],'displacements',[0.4],...
     'postDurInSec',1.5,'stimDurInSec',0.2,'ramptime',0.02);
-A.run(5)
+A.run(3)
 A.untag('Ringing')
 beep
 

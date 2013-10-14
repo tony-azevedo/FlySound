@@ -9,6 +9,7 @@ classdef PiezoRig < EPhysRig
     methods
         function obj = PiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
+            obj.addDevice('speaker','Speaker');
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
