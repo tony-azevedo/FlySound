@@ -402,7 +402,7 @@ classdef Acquisition < handle
             obj.notesFileID = fopen(obj.notesFileName,'a');
             
             if ~isempty(obj.tags)
-                tagstr = strcat(obj.tags{:});
+                tagstr = sprintf('%s; ',obj.tags{:});
             else
                 tagstr = '';
             end
