@@ -24,6 +24,14 @@ eSS.amp1.make = 'Axon Instruments';
 eSS.amp1.model = 'AxoClamp2B';
 eSS.amp1.note = 'from Bruce Bean';
 
+eSS.amp3.make = 'AM Systems';
+eSS.amp3.model = '2400';
+eSS.amp3.note = 'Loaner, returned 10/4/13';
+
+eSS.amp4.make = 'Axon Instruments';
+eSS.amp4.model = 'MultiClamp700B';
+eSS.amp4.note = '';
+
 eSS.amp2.make = 'Axon Instruments';
 eSS.amp2.model = 'AxoPatch200B';
 
@@ -41,6 +49,14 @@ eSS.piezoAcuator.servo = 'E509X1';
 eSS.audio.make = 'Crown';
 eSS.audio.model = 'D45';
 eSS.audio.speaker = 'ScanSpeak';
+
+eSS.pv_microphone.make = 'Knowles Electronics';
+eSS.pv_microphone.model = 'pressure gradient';
+eSS.pv_microphone.note = 'Calibrated 9/27/13';
+
+eSS.pressure_microphone.make = 'Bruel and Kjaer';
+eSS.pv_microphone.model = 'pressure';
+eSS.pv_microphone.note = 'Calibrated 9/27/13';
 
 eSS.externalSoln.NaCl = 103;
 eSS.externalSoln.KCl = 3;
