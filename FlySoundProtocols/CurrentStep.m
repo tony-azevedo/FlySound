@@ -1,9 +1,9 @@
-classdef CurrentSteps < FlySoundProtocol
+classdef CurrentStep < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'CurrentSteps';
+        protocolName = 'CurrentStep';
         requiredRig = 'BasicEPhysRig';
-        analyses = {};
+        analyses = {'average'};
     end
     
     properties (Hidden)
@@ -18,16 +18,14 @@ classdef CurrentSteps < FlySoundProtocol
     
     methods
         
-        function obj = CurrentSteps(varargin)
+        function obj = CurrentStep(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
         end
         
         function varargout = getStimulus(obj,varargin)
-            nA = obj.params.step;
-                        
-            obj.out.current = obj.y * pA;
-            varargout = {obj.out,calstim,commandstim};
+            obj.out.current = obj.y * obj.params.step;
+            varargout = {obj.out};
         end
                         
     end % methods

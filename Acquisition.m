@@ -514,7 +514,7 @@ classdef Acquisition < handle
         function runAnalyses(obj,~,~,varargin)
             for a = 1:length(obj.protocol.analyses)
                 eval([obj.protocol.analyses{a}...
-                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x,sprintf(regexprep(obj.getRawFileStem,''\\'',''\\\''),obj.n-1),obj.tags);'])
+                    '(obj.rig.inputs.data,obj.protocol.params,obj.protocol.x,sprintf(regexprep(obj.getRawFileStem,''\\'',''\\\''),obj.n-1),obj.tags,obj.protocol);'])
             end
         end
             

@@ -56,7 +56,7 @@ classdef MultiClamp700B < Device
                         %warning('In Voltage Clamp - removing current stim')
                         out = rmfield(out,'current');
                     else
-                        out.current = out.current/obj.params.daqout_to_current - obj.params.daqout_to_current_offset;
+                        out.current = out.current * obj.params.daqout_to_current + obj.params.daqout_to_current_offset;
                     end
                 end
             end
