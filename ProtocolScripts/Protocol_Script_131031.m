@@ -1,7 +1,5 @@
-%% Whole cell recordings, Na exchange recordings
+%% Whole cell current injections, trying to patch using the hamamatsu
 
-% Made i through one cell with all the solutions (90,50,27) and TTX.  Big
-% spiker, spiking went away in lower Na, saw that twice
 % Start the bitch 
 A = Acquisition;
 
@@ -35,6 +33,22 @@ A.protocol.setParams('-q','durSweep',5);
 A.run(5)
 beep 
 
+%% hyperpolarize
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',5,'Vm_ID',-3);
+A.tag('Hyperpolarized')
+A.run(5)
+A.untag('Hyperpolarized')
+beep 
+
+
+%% Inject current to drive a spike
+A.setProtocol('CurrentStep');
+A.protocol.setParams('-q','preDurInSec',0.2,'postDurInSec',0.5,'stimDurInSec',0.005,'steps',[10,20,30]);
+A.run(5)
+beep 
+
+
 %% Steps
 A.setProtocol('PiezoStep');
 A.protocol.setParams('-q','Vm_id',0);
@@ -52,6 +66,7 @@ beep
 %% PiezoSine
 A.setProtocol('PiezoSine');
 A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[0.1 0.2 0.4 ],'postDurInSec',1);
+
 A.run(3)
 beep
 
