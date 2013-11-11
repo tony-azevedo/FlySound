@@ -58,7 +58,7 @@ classdef Rig < handle
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
-                    notify(obj,'StartTrial');
+                    notify(obj,'StartTrial',PassProtocolData(protocol));
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     
                     % Collect input

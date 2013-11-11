@@ -1,6 +1,10 @@
 classdef PiezoBWCourtshipSong < FlySoundProtocol
+    
     properties (Constant)
         protocolName = 'PiezoBWCourtshipSong';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
         analyses = {};
     end

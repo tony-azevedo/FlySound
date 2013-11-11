@@ -1,10 +1,14 @@
 classdef CurrentStep < FlySoundProtocol
-    
+
     properties (Constant)
         protocolName = 'CurrentStep';
-        requiredRig = 'BasicEPhysRig';
-        analyses = {'average'};
     end
+    
+    properties (SetAccess = protected)
+        requiredRig = 'BasicEPhysRig';  %CameraEPhysRig BasicEPhysRig
+        analyses = {}; %'average'
+    end
+
     
     properties (Hidden)
     end
@@ -50,6 +54,7 @@ classdef CurrentStep < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.step = obj.params.steps(1);
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);

@@ -1,11 +1,24 @@
 classdef FlySoundProtocol < handle
-    
+    % CurrentSine.m
+    % CurrentStep.m
+    % FlySoundProtocol.m
+    % PiezoBWCourtshipSong.m
+    % PiezoCourtshipSong.m
+    % PiezoSine.m
+    % PiezoSquareWave.m
+    % PiezoStep.m
+    % SealAndLeak.m
+    % SealTest.m
+    % Sweep.m
+
     properties (Constant, Abstract) 
         protocolName;
-        requiredRig;
+    end
+    properties (SetAccess = protected, Abstract)
+        requiredRig
         analyses
     end
-    
+            
     properties (Hidden, SetAccess = protected)
         target
         current
@@ -44,7 +57,9 @@ classdef FlySoundProtocol < handle
             obj.params.gain = [];
             obj.params.secondary_gain = [];
             obj.defineParameters();
-            obj.setupStimulus();            
+            obj.setupStimulus();
+            obj.queryCameraState
+
             % obj.showParams;
             obj.target = 1;
             obj.randomizeIter = 0;
@@ -98,6 +113,7 @@ classdef FlySoundProtocol < handle
                 obj.params.(results{r}) = p.Results.(results{r});
             end
             obj.setupStimulus
+            obj.queryCameraState;
             if ~quiet
                 obj.showParams
             end
@@ -207,7 +223,17 @@ classdef FlySoundProtocol < handle
             trialdata.Vm_id = p.Results.vm_id;
             trialdata.repeats = p.Results.repeats;
         end
-                                        
+                           
+        function queryCameraState(obj,varargin)
+            campref = getpref('AcquisitionHardware','cameraToggle');
+            if strcmp('on',campref)
+                cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');
+                obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                obj.out.trigger = 7.5*(obj.x >= obj.x(1)+.002-eps & obj.x < obj.x(1)+.002+eps);
+            end
+        end
+
+        
     end % protected methods
     
     methods (Static)

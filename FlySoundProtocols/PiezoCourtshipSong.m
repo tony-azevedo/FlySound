@@ -1,7 +1,11 @@
 classdef PiezoCourtshipSong < FlySoundProtocol
+
     properties (Constant)
         protocolName = 'PiezoCourtshipSong';
-        requiredRig = 'PiezoRig';
+    end
+    
+    properties (SetAccess = protected)
+    requiredRig = 'PiezoRig';
         analyses = {};
     end
     

@@ -1,14 +1,15 @@
-classdef PiezoRig < EPhysRig
+classdef VideoPiezoRig < EPhysRig
     
     properties (Constant)
-        rigName = 'PiezoRig';
+        rigName = 'VideoPiezoRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PiezoRig(varargin)
+        function obj = VideoPiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
             obj.addDevice('speaker','Speaker');
+            obj.addDevice('camera','Camera');
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end

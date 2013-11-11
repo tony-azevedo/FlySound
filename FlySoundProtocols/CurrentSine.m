@@ -2,6 +2,9 @@ classdef CurrentSine < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'CurrentSine';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'BasicEPhysRig';
         analyses = {'average'};
     end

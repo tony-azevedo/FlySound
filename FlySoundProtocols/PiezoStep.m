@@ -2,6 +2,9 @@ classdef PiezoStep < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'PiezoStep';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
         analyses = {};
     end
@@ -74,8 +77,8 @@ classdef PiezoStep < FlySoundProtocol
         function defineParameters(obj)
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
-            obj.params.displacement = 1;
             obj.params.displacements = [-1 -.3 -.1 .1 .3 1];
+            obj.params.displacement = obj.params.displacements(1);
             obj.params.displacementOffset = 5;
             obj.params.stimDurInSec = .2;
             obj.params.preDurInSec = .2;
@@ -89,6 +92,7 @@ classdef PiezoStep < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.displacement = obj.params.displacements(1);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));

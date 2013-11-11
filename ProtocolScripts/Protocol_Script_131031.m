@@ -45,7 +45,7 @@ beep
 %% Inject current to drive a spike
 A.setProtocol('CurrentStep');
 A.protocol.setParams('-q','preDurInSec',0.2,'postDurInSec',0.5,'stimDurInSec',0.005,'steps',[10,20,30]);
-A.run(5)
+A.run(1)
 beep 
 
 

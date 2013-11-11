@@ -1,18 +1,16 @@
-classdef PiezoRig < EPhysRig
+classdef PiezoCameraRig < CameraRig
     
     properties (Constant)
-        rigName = 'PiezoRig';
+        rigName = 'PiezoCameraRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PiezoRig(varargin)
+        function obj = PiezoCameraRig(varargin)
             obj.addDevice('piezo','Piezo');
             obj.addDevice('speaker','Speaker');
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
-        
+                
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})
             if nargin>3
@@ -29,6 +27,7 @@ classdef PiezoRig < EPhysRig
                 delete(findobj(ax,'tag','piezocommand'));
                 line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
+                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 0],'linewidth',1,'tag','exposure','displayname','io');
                 ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
             end
@@ -60,6 +59,9 @@ classdef PiezoRig < EPhysRig
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
             set(l,'ydata',obj.inputs.data.sgsmonitor);
 
+            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+            set(l,'ydata',obj.inputs.data.exposure);
+            
         end
 
     end

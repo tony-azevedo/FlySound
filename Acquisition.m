@@ -463,7 +463,31 @@ classdef Acquisition < handle
                     data.params.gain = obj.rig.devices.amplifier.secondary_gain;
                 end
             end
-
+            if isa(obj.rig,'CameraRig')
+                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+                if isempty(images)
+                    uiwait(msgbox('There are no images to connect to this trial'))
+                    warning('There are no images to connect to this trial')
+                else
+                    imnums = zeros(length(images));
+                    for im = 1:length(images)
+                        pattern = [obj.protocol.protocolName,'_Image_'];
+                        imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
+                        imnums(im) = str2double(imnumstr{1});
+                    end
+                    imnum = max(unique(imnums));
+                    
+                    % check record date
+                    imfile = dir([obj.D,'\',obj.protocol.protocolName,'_Image_' num2str(imnum) '*']);
+                    if now - imfile(end).datenum > datenum([0 0 0 0 0 2]);
+                        % imnum = [];
+                        warning('Images are old, but now connected to this file')
+                        data.IMAGEWARNING = 'Old images are connected to this file';
+                        beep;
+                    end
+                    data.imageNum = imnum;
+                end
+            end
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);

@@ -188,8 +188,7 @@ classdef MultiClamp700B < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            rmpref('defaultsMultiClamp700B')
-
+            try rmpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % 1
             obj.params.headstageresistorCC = 500e6; % 50e6, 5e9

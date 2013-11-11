@@ -1,16 +1,38 @@
-classdef PiezoRig < EPhysRig
+classdef CameraRig < EPhysRig
     
-    properties (Constant)
-        rigName = 'PiezoRig';
-        IsContinuous = false;
+    properties (Constant,Abstract)
+        rigName;
+        IsContinuous;
     end
     
     methods
-        function obj = PiezoRig(varargin)
-            obj.addDevice('piezo','Piezo');
-            obj.addDevice('speaker','Speaker');
+        function obj = CameraRig(varargin)
+            obj.addDevice('camera','Camera');
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            addlistener(obj,'StartTrial',@obj.readyCamera);
+        end
+
+        function in = run(obj,protocol,varargin)
+            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.4f sec',...
+                'Ready the camera:',...
+                ' - Set Directory',...
+                ' - Set Prefix: ',...
+                [protocol.protocolName '_Image_'],...
+                'Capture Mode: External Start Trigger',...
+                '{OUT TRIG Source, polarity, Kind} = {Exposure, positive, Exposure}',...
+                ' - Acq for ',...
+                protocol.params.durSweep - 0.002);
+            
+            clipboard('copy',[protocol.protocolName '_Image_']);
+            uiwait(msgbox(str,'CAMERA SETUP'));
+            
+            in = run@Rig(obj,protocol,varargin{:});
+        end
+        
+        function readyCamera(obj,fig,evnt,varargin)
+            str = sprintf('Ready the camera:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
+            uiwait(msgbox(str,'CAMERA'));
         end
         
         function setDisplay(obj,fig,evnt,varargin)
@@ -23,12 +45,8 @@ classdef PiezoRig < EPhysRig
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
-                out = protocol.getStimulus;
                 
-                delete(findobj(ax,'tag','sgsmonitor'));               
-                delete(findobj(ax,'tag','piezocommand'));
-                line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
+                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','exposure','displayname','V');
                 ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
             end
@@ -48,17 +66,12 @@ classdef PiezoRig < EPhysRig
                 inunits = obj.devices.amplifier.inputUnits{ind(1)};
                 ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
             end
-            
-            chnames = obj.getChannelNames;
-            
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','piezocommand');
-            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'piezocommand')));
-
+                        
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
-            set(l,'ydata',obj.inputs.data.sgsmonitor);
+            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+            set(l,'ydata',obj.inputs.data.exposure);
 
         end
 

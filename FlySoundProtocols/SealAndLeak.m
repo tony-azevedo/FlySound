@@ -2,6 +2,9 @@ classdef SealAndLeak < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'SealAndLeak';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'BasicEPhysRig';
         analyses = {'calculateSealMeasurements'};
     end

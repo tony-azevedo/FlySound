@@ -1,6 +1,9 @@
 classdef PiezoSine < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoSine';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
         analyses = {'analysis'};
     end
@@ -111,6 +114,7 @@ classdef PiezoSine < FlySoundProtocol
             obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
             obj.params.freq = obj.params.freqs(1);
+            obj.params.displacement = obj.params.displacements(1);
             y = makeOutTime(obj);
             y = y(:);
             y(:) = 0;

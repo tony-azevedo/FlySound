@@ -2,6 +2,9 @@ classdef PiezoSquareWave < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'PiezoSquareWave';
+    end
+    
+    properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
         analyses = {};
     end
