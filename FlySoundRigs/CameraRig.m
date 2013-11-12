@@ -27,7 +27,7 @@ classdef CameraRig < EPhysRig
             clipboard('copy',[protocol.protocolName '_Image_']);
             uiwait(msgbox(str,'CAMERA SETUP'));
             
-            in = run@Rig(obj,protocol,varargin{:});
+            in = run@EPhysRig(obj,protocol,varargin{:});
         end
         
         function readyCamera(obj,fig,evnt,varargin)

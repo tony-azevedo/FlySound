@@ -42,8 +42,9 @@ systemsound('Notify');
 
 %% Inject current to drive a spike
 A.setProtocol('CurrentStep');
-A.protocol.setParams('-q','preDurInSec',0.2,'postDurInSec',0.5,'stimDurInSec',0.005,'steps',[30]);
-A.run(1)
+A.protocol.setParams('-q','preDurInSec',0.2,...
+    'postDurInSec',0.5,'stimDurInSec',0.005,'steps',[30]);
+A.run(5)
 systemsound('Notify');
 
 %% Move the Antenna
