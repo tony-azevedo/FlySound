@@ -5,7 +5,7 @@ classdef PiezoSine < FlySoundProtocol
     
     properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
-        analyses = {'analysis'};
+        analyses = {'average'};
     end
     
     % The following properties can be set only by class methods

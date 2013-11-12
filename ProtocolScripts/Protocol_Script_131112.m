@@ -1,5 +1,4 @@
-
-%% Whole cell current injections, trying to patch using the hamamatsu
+%% Cell attached recordings, Na exchange recordings
 
 % Start the bitch 
 A = Acquisition;
@@ -26,28 +25,16 @@ A.untag('50 mM Sodium')
 A.tag('27 mM Sodium')
 A.untag('27 mM Sodium')
 A.tag('TTX')
+A.untag('TTX')
 
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
+A.tag('GABA Puffing')
 A.run(5)
 beep 
 
-%% hyperpolarize
-A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5,'Vm_ID',-3);
-A.tag('Hyperpolarized')
-A.run(5)
-A.untag('Hyperpolarized')
-beep 
-
-
-%% Inject current to drive a spike
-A.setProtocol('CurrentStep');
-A.protocol.setParams('-q','preDurInSec',0.2,'postDurInSec',0.5,'stimDurInSec',0.005,'steps',[10,20,30]);
-A.run(1)
-beep 
 
 
 %% Steps
@@ -104,11 +91,6 @@ A.tag('Seal')
 A.run
 A.untag('Seal')
 
-
-
-%% %%%%%%%  TTX %%%%%%%%%
-A.tag('TTX')
-
 %% PiezoSine ringing test
 A.setProtocol('PiezoSine');
 A.protocol.setParams('-q','freqs',[50 100 200],'displacements',[0.4],'postDurInSec',1.5,'stimDurInSec',0.2,'ramptime',0.02);
@@ -119,7 +101,6 @@ beep
 
 %% Courtship song TTX
 A.setProtocol('PiezoCourtshipSong');
-A.tag('TTX')
 A.protocol.setParams('displacements',[0.1 0.2 0.4],'postDurInSec',1);
 A.run(5)
 beep

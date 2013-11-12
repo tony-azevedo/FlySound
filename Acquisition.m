@@ -45,7 +45,7 @@ classdef Acquisition < handle
                 'PostSet',@obj.setAnalysisFlag);
 
             % set a simple protocol
-            obj.setProtocol('SealTest');
+            obj.setProtocol('SealAndLeak');
 
             obj.saveAcquisition();
 
