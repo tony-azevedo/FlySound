@@ -1,7 +1,7 @@
-classdef CurrentStep < FlySoundProtocol
+classdef CurrentLevels < FlySoundProtocol
 
     properties (Constant)
-        protocolName = 'CurrentStep';
+        protocolName = 'CurrentLevels';
     end
     
     properties (SetAccess = protected)
@@ -22,7 +22,7 @@ classdef CurrentStep < FlySoundProtocol
     
     methods
         
-        function obj = CurrentStep(varargin)
+        function obj = CurrentLevels(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
             if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
@@ -44,20 +44,25 @@ classdef CurrentStep < FlySoundProtocol
             obj.params.samprateout = 50000;
             obj.params.Vm_id = 0;
             
-            obj.params.steps = [-30 -20 -10 0 10 20 30];
-            obj.params.step = obj.params.steps(1);
+            obj.params.plateaux = [-30 -20 -10 0 10 20 30];
+            obj.params.plateau = obj.params.plateaux(1);
             
             obj.params.stimDurInSec = 0.2;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
-            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+
+            obj.params.randomize = 1;
+
+            obj.params.durSweep = (obj.params.plateaux) * obj.params.stimDurInSec+...
+                obj.params.preDurInSec + ...
+                obj.params.postDurInSec;
             obj.params = obj.getDefaults;
 
         end
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
-            obj.params.step = obj.params.steps(1);
+            obj.params.level = obj.params.levels(1);
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);

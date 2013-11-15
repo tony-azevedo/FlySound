@@ -16,13 +16,40 @@ if isempty(fig);
     fig = figure(proplist{:});
     
     % forward button
+    uicontrol('parent',fig,'style','pushbutton','units','normalized','position',[.9,.92,.1,.08],...
+        'string','<-','tag','back','callback',@callbackfnc)
     % back button
+    uicontrol('parent',fig,'style','pushbutton','units','normalized','position',[.9,.84,.1,.08],...
+        'string','->','tag','forward','callback',@callbackfnc)
+    % play button
+    uicontrol('parent',fig,'style','togglebutton','units','normalized','position',[.9,.76,.1,.08],...
+        'string','Play','tag','play','callback',@callbackfnc)
+    uicontrol('parent',fig,'style','text','units','normalized','position',[.9,.68,.1,.08],...
+        'tag','exposureNumText','backgroundcolor',get(fig,'color'))
+    
 end
 if nargin>2
     exposureNum = varargin{1};
 else
     exposureNum = 1;
 end
+exposureName = constructFilnameFromExposureNum(data,exposureNum);
+im = imread(exposureName);
+ax = findobj('tag',[mfilename 'ax']);
+if isempty(ax)
+    ax = subplot(1,1,1,'parent',fig,'tag',[mfilename 'ax']);
+else
+    delete(get(ax,'children'));
+end
+
+h = imshow(im,[],'parent',ax,'InitialMagnification','fit');
+set(findobj(fig,'tag','exposureNumText'),'string',['#' num2str(exposureNum)]);
+guidata(fig,{data,params,exposureNum});
+varargout = {h};
+
+
+function fn = constructFilnameFromExposureNum(data,exposureNum)
+
 d = ls('*_Image_*');
 jnk = d(1,:);
 pattern = ['_Image_' '\d+' '_'];
@@ -31,30 +58,35 @@ jnk = jnk(ind(1)+1:end);
 pattern = '\.tif';
 ind = regexp(jnk,pattern);
 ndigits = ind-1;
+numstem = repmat('0',ndigits,1)';
 
-imFileStem = [data.params.protocol '_Image_' num2str(data.imageNum) '_*'];
-pattern = [obj.protocol.protocolName,'_Image_'];
-imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
-d = dir([imFileStem num2str(exposureNum) '*']);
-im = Tiff(d(1).name,'r');
-ax = findobj('tag',[mfilename 'ax']);
-if isempty(ax)
-    ax = subplot(1,1,1,'parent',fig,'tag',[mfilename 'ax'],'xscale','log','yscale','log');
-else
-    delete(get(ax,'children'));
+imFileStem = [data.params.protocol '_Image_' num2str(data.imageNum) '_'];
+
+ens = num2str(exposureNum);
+numstem(end-length(ens)+1:end) = ens;
+
+d = dir([imFileStem numstem '*']);
+try fn = d(1).name;
+catch
+    error('There is no image at this exposure time: %s',[imFileStem numstem]);
 end
+fn = [imFileStem numstem '.tif'];
 
-if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
-    line(f,fft(current) .*...
-        conj(fft(current)),...
-        'parent',ax,'linestyle','none','marker','o',...
-        'markerfacecolor',[0 .5 0],'markeredgecolor',[0 .5 0],'markersize',2);
+function callbackfnc(hObject,evnt)
+c = guidata(hObject);
+
+data = c{1};
+params = c{2};
+exposureNum = c{3};
+
+call = get(hObject,'tag');
+switch call
+    case 'back'
+        exposureNum = exposureNum-1;
+        if exposureNum<1, exposureNum = 1; end
+    case 'forward'
+        exposureNum = exposureNum+1;
+        if exposureNum>sum(data.exposure), exposureNum = sum(data.exposure); end
+    case 'play'
 end
-
-if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
-    line(f,fft(voltage).*conj(fft(voltage)),...
-        'parent',ax,'linestyle','none','marker','o',...
-        'markerfacecolor',[0 0 1],'markeredgecolor',[0 0 1],'markersize',2);
-end
-
-varargout = {f};
+playImages(data,params,exposureNum);
