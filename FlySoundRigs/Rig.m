@@ -84,12 +84,12 @@ classdef Rig < handle
             
             % run a check for the mode of the amplifier and throw error
             % elegantly
-            if sum(strcmp(fieldnames(out),'voltage')) &&...
+            if ~sum(strcmp(fieldnames(out),'current')) &&...
                     strcmp(obj.devices.amplifier.mode,'IClamp')
-                error('Amplifier in IClamp but trying to put out voltage')
-            elseif sum(strcmp(fieldnames(out),'current')) &&...
+                error('Amplifier in IClamp but no current out')
+            elseif ~sum(strcmp(fieldnames(out),'voltage')) &&...
                     strcmp(obj.devices.amplifier.mode,'VClamp')
-                error('Amplifier in VClamp but trying to put out current')
+                error('Amplifier in VClamp but voltage command')
             end
       
                 

@@ -1,7 +1,7 @@
-classdef CurrentLevels < FlySoundProtocol
+classdef CurrentPlateau < FlySoundProtocol
 
     properties (Constant)
-        protocolName = 'CurrentLevels';
+        protocolName = 'CurrentPlateau';
     end
     
     properties (SetAccess = protected)
@@ -22,7 +22,7 @@ classdef CurrentLevels < FlySoundProtocol
     
     methods
         
-        function obj = CurrentLevels(varargin)
+        function obj = CurrentPlateau(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
             if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
@@ -31,7 +31,7 @@ classdef CurrentLevels < FlySoundProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
-            obj.out.current = obj.y * obj.params.step;
+            obj.out.current = obj.y;
             varargout = {obj.out};
         end
                         
@@ -47,13 +47,14 @@ classdef CurrentLevels < FlySoundProtocol
             obj.params.plateaux = [-30 -20 -10 0 10 20 30];
             obj.params.plateau = obj.params.plateaux(1);
             
-            obj.params.stimDurInSec = 0.2;
+            obj.params.plateauDurInSec = 0.2;
+            obj.params.stimDurInSec = obj.params.plateauDurInSec * length(obj.params.plateaux);
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
 
             obj.params.randomize = 1;
 
-            obj.params.durSweep = (obj.params.plateaux) * obj.params.stimDurInSec+...
+            obj.params.durSweep = obj.params.stimDurInSec+...
                 obj.params.preDurInSec + ...
                 obj.params.postDurInSec;
             obj.params = obj.getDefaults;
@@ -62,14 +63,34 @@ classdef CurrentLevels < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
-            obj.params.level = obj.params.levels(1);
+            obj.params.plateau = obj.params.plateaux(1);
+            obj.params.stimDurInSec = obj.params.plateauDurInSec * length(obj.params.plateaux);
 
-            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            obj.params.durSweep = obj.params.stimDurInSec+...
+                obj.params.preDurInSec + ...
+                obj.params.postDurInSec;
             obj.x = makeTime(obj);
+            
+            if obj.params.randomize
+                plateaux_vec = obj.params.plateaux(randperm(length(obj.params.plateaux)));
+            else
+                plateaux_vec = obj.params.plateaux;
+            end
+
+            plateaux = ones(...
+                obj.params.plateauDurInSec*obj.params.samprateout,...
+                length(obj.params.plateaux));
+            plateaux = plateaux .* repmat(...
+                plateaux_vec,...
+                obj.params.plateauDurInSec*obj.params.samprateout,...
+                1);
+            
             obj.y = zeros(size(obj.x));
             obj.y(...
                 obj.params.samprateout*(obj.params.preDurInSec)+1:...
-                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))...
+                = plateaux(:)';                        
+            
             obj.out.current = obj.y;
         end
         

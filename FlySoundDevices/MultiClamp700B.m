@@ -191,7 +191,7 @@ classdef MultiClamp700B < Device
             try rmpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % 1
-            obj.params.headstageresistorCC = 500e6; % 50e6, 5e9
+            obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9
             
             cursensitivity = obj.params.headstagegain/obj.params.headstageresistorCC*1e12; % pA/V
             obj.params.daqout_to_current = 1/cursensitivity; % nA/V, multiply DAQ voltage to get nA injected

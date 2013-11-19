@@ -42,8 +42,11 @@ classdef CurrentSine < FlySoundProtocol
             obj.params.samprateout = 50000;
             obj.params.Vm_id = 0;
             
+            obj.params.freqs = 25 * sqrt(2) .^ (0:10);
+            obj.params.freq = obj.params.freqs(1); % Hz
+
             obj.params.amps = [10 20 30];
-            obj.params.amp = obj.params.steps(1);
+            obj.params.amp = obj.params.amps(1);
             
             obj.params.stimDurInSec = 0.2;
             obj.params.preDurInSec = .5;
@@ -55,6 +58,8 @@ classdef CurrentSine < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.freq = obj.params.freqs(1); % Hz
+            obj.params.amp = obj.params.amps(1);
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);

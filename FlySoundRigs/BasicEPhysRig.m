@@ -40,7 +40,6 @@ classdef BasicEPhysRig < EPhysRig
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 delete(findobj(ax,'tag','ampinput_alt'));
-                line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
                 
                 out = protocol.getStimulus;
                 delete(findobj(ax,'tag','ampoutput'));
@@ -53,6 +52,8 @@ classdef BasicEPhysRig < EPhysRig
                     box off; set(gca,'TickDir','out');
                 end
                 xlabel('Time (s)'); %xlim([0 max(t)]);
+
+                line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
             end
         end
         
@@ -94,7 +95,7 @@ classdef BasicEPhysRig < EPhysRig
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'voltage')};
                 elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
-                    outvec = obj.outputs.datacolumns(:,strcmp(chnames.out,'current'));
+                    outvec = out.current;
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'current')};
                 end
@@ -103,8 +104,10 @@ classdef BasicEPhysRig < EPhysRig
                 l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampoutput');
                 set(l,'ydata',outvec);                
             end
+
         end
     end
     methods (Access = protected)
     end
 end
+

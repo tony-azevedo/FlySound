@@ -63,8 +63,8 @@ classdef CurrentStep < FlySoundProtocol
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
             obj.y(...
-                obj.params.samprateout*(obj.params.preDurInSec)+1:...
-                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+                round(obj.params.samprateout*(obj.params.preDurInSec))+1:...
+                round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
             obj.out.current = obj.y;
         end
         

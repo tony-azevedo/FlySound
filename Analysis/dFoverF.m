@@ -39,11 +39,16 @@ else
     delete(get(dummyax,'children'));
 end
 
-
-if nargin>2
-    montageflag = varargin{1};
-else
-    montageflag = 0;
+D ='';
+if ~isfield(data,'imageNum')
+    fn = varargin{2};
+    D = fn(1:regexp(fn,['\\' params.protocol]));
+    jnk = load(fn,'imageNum');
+    if ~isfield(jnk,'imageNum')
+        error('No image number! Not running dFoverF');
+    else
+        data.imageNum = jnk.imageNum;
+    end
 end
 
 t = makeInTime(params);
@@ -52,16 +57,16 @@ exp_t = t(data.exposure);
 %%  Currently, I'm saving images as single files.  Sucks!
 %[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');
 
-filebase = [data.params.protocol '_Image_' num2str(data.imageNum) '_'];
+filebase = [D params.protocol '_Image_' num2str(data.imageNum) '_'];
 imagefiles = dir([filebase '*']);
 num_frame = length(imagefiles);
-im = imread(imagefiles(1).name);
+im = imread([D imagefiles(1).name]);
 num_px = size(im);
 
 I = zeros([num_px(:); 1; num_frame]', 'double');  %preallocate 3-D array
 %read in .tif files
 for frame=1:num_frame
-    [I(:,:,1,frame)] = imread(imagefiles(frame).name);
+    [I(:,:,1,frame)] = imread([D imagefiles(frame).name]);
 end
 
 %% select ROI (implement at some point)
@@ -97,28 +102,28 @@ G = fspecial('gaussian',[3 3],2);
 I_dFovF_thr_filt = imfilter(I_dFovF,G);
 %I_dFovFmov = imfilter(I,G);
 
-if montageflag
-    %plot montage of dFoverF images
-    c = [min(min(min(min(I_dFovF)))) max(max(max(max(I_dFovF))))];
-    
-    Idim = size(I);
-    Checkers = ones([Idim(1:3), Idim(4)*2])*c(1);
-    Checkers(:,:,1,2:2:end) = I_dFovF_thr_filt;
-    
-    figure
-    dim1 = floor(sqrt(Idim(4)*2));
-    if ~mod(dim1,2)
-        dim1 = dim1-1;
-    end
-    montage(Checkers,'Size',[NaN dim1])
-    colormap(hot)
-    caxis(c)
-    % t=[num2str(filebase)];
-    % title(t)
-    
+% if montageflag
+%     %plot montage of dFoverF images
+%     c = [min(min(min(min(I_dFovF)))) max(max(max(max(I_dFovF))))];
+%     
+%     Idim = size(I);
+%     Checkers = ones([Idim(1:3), Idim(4)*2])*c(1);
+%     Checkers(:,:,1,2:2:end) = I_dFovF_thr_filt;
+%     
 %     figure
-%     mov = immovie(I,hot);
-%     implay(mov);
-end
+%     dim1 = floor(sqrt(Idim(4)*2));
+%     if ~mod(dim1,2)
+%         dim1 = dim1-1;
+%     end
+%     montage(Checkers,'Size',[NaN dim1])
+%     colormap(hot)
+%     caxis(c)
+%     % t=[num2str(filebase)];
+%     % title(t)
+%     
+% %     figure
+% %     mov = immovie(I,hot);
+% %     implay(mov);
+% end
 
 varargout = {I};

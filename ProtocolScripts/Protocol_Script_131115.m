@@ -1,9 +1,14 @@
 %% Whole cell current injections, trying to patch using the hamamatsu
-% Aiming for Big Spiker in the GH86-Gal4 Line.  Trying to elicit single
+% Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit single
 % spikes while hyperpolarized and trying to patch with the Hamamatsu loaner
-% camera.  Once through all the routines first, then acquire images second
-% time through by toggling the camera
+% camera.  
 
+% Image initial activity
+
+% Image spiking through hyperpolarization
+
+% Image single elicited spikes.  Apply TTX, Image single spikes
+% Image changes in flourescence through the CurrentPlateau protocol
 
 setpref('AcquisitionHardware','cameraToggle','off')
 
@@ -19,9 +24,9 @@ A.untag('Seal')
 
 %% R_input
 A.setProtocol('SealAndLeak');
-A.tag('R_input')
+A.tag('R_{input}')
 A.run
-A.untag('R_input')
+A.untag('R_{input}')
 
 %%
 toggleCameraPref('off')
