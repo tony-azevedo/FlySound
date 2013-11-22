@@ -41,7 +41,7 @@ if isempty(ax)
 else
     delete(get(ax,'children'));
 end
-
+set(findobj('string','Play','tag','play'),'userdata',ax);
 h = imshow(im,[],'parent',ax,'InitialMagnification','fit');
 set(findobj(fig,'tag','exposureNumText'),'string',['#' num2str(exposureNum)]);
 guidata(fig,{data,params,exposureNum});
@@ -88,5 +88,23 @@ switch call
         exposureNum = exposureNum+1;
         if exposureNum>sum(data.exposure), exposureNum = sum(data.exposure); end
     case 'play'
+        ax = get(hObject,'userdata');
+        movie_exposeN = exposureNum;
+        while movie_exposeN~=exposureNum-1
+            movie_exposeN = movie_exposeN+1;
+            try exposureName = constructFilnameFromExposureNum(data,movie_exposeN);
+            catch e
+                if isempty(strfind(e.message,'There is no image at this exposure'))
+                    error(e)
+                end
+                movie_exposeN = 0;
+                exposureName = constructFilnameFromExposureNum(data,movie_exposeN);
+            end
+            im = imread(exposureName);
+            imshow(im,[],'parent',ax,'InitialMagnification','fit');
+            set(findobj('tag','exposureNumText'),'string',['#' num2str(movie_exposeN)]);
+            drawnow
+            pause(0.002)
+        end
 end
 playImages(data,params,exposureNum);

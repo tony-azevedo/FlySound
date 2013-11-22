@@ -26,14 +26,52 @@ A.tag('27 mM Sodium')
 A.untag('27 mM Sodium')
 A.tag('TTX')
 A.untag('TTX')
+A.tag('GABA Puffing')
+A.untag('GABA Puffing')
 
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.tag('GABA Puffing')
 A.run(5)
-beep 
+systemsound('notify')
+
+
+%% Hyperpolarized
+% toggleCameraPref('on')
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',5);
+A.tag('Hyperpolarized')
+A.run(3)
+A.untag('Hyperpolarized')
+systemsound('Notify');
+
+%% Spiking, somewhere in between
+% toggleCameraPref('on')
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',5);
+A.tag('Spiking')
+A.run(5)
+A.untag('Spiking')
+systemsound('Notify');
+
+
+%% Inject current to drive a spike
+% toggleCameraPref('on')
+A.setProtocol('CurrentStep');
+A.protocol.setParams('-q','preDurInSec',0.2,...
+    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[40]);
+A.run(5)
+systemsound('Notify');
+
+%% Inject current to drive a spike
+% toggleCameraPref('on')
+A.setProtocol('CurrentSine');
+A.protocol.setParams('-q',...
+    'freqs',[25,50,100,200,400],'amps',[10],...
+    'postDurInSec',1);
+A.run(5)
+systemsound('Notify');
 
 
 
