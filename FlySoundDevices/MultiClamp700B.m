@@ -44,7 +44,7 @@ classdef MultiClamp700B < Device
             for ol = 1:length(outlabels)
                 if strcmp(outlabels{ol},'voltage')
                     if sum(strcmp({'IClamp'},obj.mode))
-                        %warning('In Current Clamp - removing current stim')
+                        %warning('In Current Clamp - removing voltage stim')
                         out = rmfield(out,'voltage');
                     else
                         % out.voltage = out.voltage/1000;  % mV, convert, this is the desired V injected
@@ -89,11 +89,11 @@ classdef MultiClamp700B < Device
                         if sum(strcmp('VClamp',obj.mode))
                             inputstruct.current =...
                                 (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
-                                (obj.params.scaledcurrentscale_over_gain * obj.gain);
+                                (obj.params.scaledcurrentscale_over_gainVC * obj.gain);
                         else
                             inputstruct.current = ...
                                 (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
-                                (obj.params.scaledcurrentscale_over_gain * obj.secondary_gain);
+                                (obj.params.scaledcurrentscale_over_gainCC * obj.secondary_gain);
                         end
                         units{il} = 'pA';
                 end
@@ -190,7 +190,7 @@ classdef MultiClamp700B < Device
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
             try rmpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
-            obj.params.headstagegain = .2; % 1
+            obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
             obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9
             
             cursensitivity = obj.params.headstagegain/obj.params.headstageresistorCC*1e12; % pA/V
@@ -204,10 +204,12 @@ classdef MultiClamp700B < Device
             obj.params.daqout_to_voltage = 1/obj.params.cmdsensitivity; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
             obj.params.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
                         
-            obj.params.scaledcurrentscale_over_gain = 1e-12*obj.params.headstageresistorCC; % [V/pA] * gainsetting
+            obj.params.scaledcurrentscale_over_gainVC = 1e-12*obj.params.headstageresistorVC; % [V/pA] * gainsetting
+            obj.params.scaledcurrentscale_over_gainCC = 1e-12*obj.params.headstageresistorCC; % [V/pA] * gainsetting
             obj.params.scaledcurrentoffset = 0; 
             obj.params.scaledvoltagescale_over_gain = 10/1000; % 10Vm [mV/V] * gainsetting (Look at multiclamp prim output window
             obj.params.scaledvoltageoffset = 0; 
+
         end
     end
 end

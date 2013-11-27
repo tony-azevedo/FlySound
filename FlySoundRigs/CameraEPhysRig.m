@@ -52,6 +52,7 @@ classdef CameraEPhysRig < CameraRig
                     box off; set(gca,'TickDir','out');
                 end
                 xlabel('Time (s)'); %xlim([0 max(t)]);
+                linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
         

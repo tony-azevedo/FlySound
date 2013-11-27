@@ -1,4 +1,6 @@
-%% Cell attached recordings, with patch recordings later in the day, fly 2
+%% Targeted patch recordings of VT30609 - the suspected cell, 
+% ie, 1.5 according to yesterday's recordings, top left bright one.
+% Then cell attached once I have determined the sensitivity to sound
 
 % Start the bitch 
 A = Acquisition;
@@ -18,22 +20,13 @@ A.run
 A.untag('R_input')
 
 %% 2 nd time around do this
-A.tag('90 mM Sodium')
-A.untag('90 mM Sodium')
-A.tag('50 mM Sodium')
-A.untag('50 mM Sodium')
-A.tag('27 mM Sodium')
-A.untag('27 mM Sodium')
 A.tag('TTX')
 A.untag('TTX')
-A.tag('GABA Puffing')
-A.untag('GABA Puffing')
-
 
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.run(5)
+A.run(20)
 systemsound('notify')
 
 
@@ -54,25 +47,6 @@ A.tag('Spiking')
 A.run(5)
 A.untag('Spiking')
 systemsound('Notify');
-
-
-%% Inject current to drive a spike
-% toggleCameraPref('on')
-A.setProtocol('CurrentStep');
-A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[40]);
-A.run(5)
-systemsound('Notify');
-
-%% Inject current to drive a spike
-% toggleCameraPref('on')
-A.setProtocol('CurrentSine');
-A.protocol.setParams('-q',...
-    'freqs',[25,50,100,200,400],'amps',[10],...
-    'postDurInSec',1);
-A.run(5)
-systemsound('Notify');
-
 
 
 %% Steps
@@ -110,6 +84,22 @@ beep
 %% Amplitude modulation of 100Hz stimulus
 
 
+%% Inject current to drive a spike
+% toggleCameraPref('on')
+A.setProtocol('CurrentStep');
+A.protocol.setParams('-q','preDurInSec',0.2,...
+    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[40]);
+A.run(5)
+systemsound('Notify');
+
+%% Inject current to drive a spike
+% toggleCameraPref('on')
+A.setProtocol('CurrentSine');
+A.protocol.setParams('-q',...
+    'freqs',[25,50,100,200,400],'amps',[5],...
+    'postDurInSec',1);
+A.run(5)
+systemsound('Notify');
 
 
 %% PiezoSine ringing test
@@ -124,9 +114,9 @@ beep
 
 %% Seal
 A.setProtocol('SealAndLeak');
-A.tag('Seal')
+A.tag('R_{input}')
 A.run
-A.untag('Seal')
+A.untag('R_{input}')
 
 %% PiezoSine ringing test
 A.setProtocol('PiezoSine');

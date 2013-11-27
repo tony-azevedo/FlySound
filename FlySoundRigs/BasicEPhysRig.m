@@ -54,6 +54,8 @@ classdef BasicEPhysRig < EPhysRig
                 xlabel('Time (s)'); %xlim([0 max(t)]);
 
                 line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
+                
+                linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
         

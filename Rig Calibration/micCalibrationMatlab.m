@@ -71,6 +71,12 @@ for d = 1:length(data)
 end
 
 %% Analysis
+rawfiles = dir('RawMicCal*');
+load(rawfiles(1).name);
+t = (1:length(BK_voltage))/data(1).fs_in;
+winl = .1;
+winr = .15;
+
 datafilename = dir('Calibration Parameters*');
 data = load(datafilename(1).name); data = data.data; clear datafilename
 
@@ -293,3 +299,4 @@ xlabel(k2vsfreq,'freq (Hz)')
 set(k2vsfreq,'xLim',[40,1200]);
 
     
+figure(3)

@@ -1,4 +1,9 @@
 classdef Rig < handle
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> PiezoRig 
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     
     properties (Constant, Abstract)
         rigName
@@ -86,10 +91,10 @@ classdef Rig < handle
             % elegantly
             if ~sum(strcmp(fieldnames(out),'current')) &&...
                     strcmp(obj.devices.amplifier.mode,'IClamp')
-                error('Amplifier in IClamp but no current out')
+                warning('Amplifier in IClamp but no current out')
             elseif ~sum(strcmp(fieldnames(out),'voltage')) &&...
                     strcmp(obj.devices.amplifier.mode,'VClamp')
-                error('Amplifier in VClamp but voltage command')
+                warning('Amplifier in VClamp but voltage command')
             end
       
                 

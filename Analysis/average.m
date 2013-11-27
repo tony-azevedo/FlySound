@@ -24,6 +24,8 @@ if isempty(fig);
 end
 if nargin>2
     t = varargin{1};
+else
+    t = makeInTime(params);
 end
 
 axID = '';

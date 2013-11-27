@@ -49,6 +49,7 @@ classdef CameraRig < EPhysRig
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','exposure','displayname','V');
                 ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
+                linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
         
