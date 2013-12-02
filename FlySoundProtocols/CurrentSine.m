@@ -45,6 +45,8 @@ classdef CurrentSine < FlySoundProtocol
             obj.params.freqs = 25 * sqrt(2) .^ (0:10);
             obj.params.freq = obj.params.freqs(1); % Hz
 
+            obj.params.ramptime = 0.02; %sec;
+            
             obj.params.amps = [10 20 30];
             obj.params.amp = obj.params.amps(1);
             
@@ -63,10 +65,19 @@ classdef CurrentSine < FlySoundProtocol
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);
-            obj.y = zeros(size(obj.x));
-            obj.y(...
-                obj.params.samprateout*(obj.params.preDurInSec)+1:...
-                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = 1;
+            y = makeOutTime(obj);
+            y = y(:);
+            y(:) = 0;
+            stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
+                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
+            
+            w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
+            w = [w(1:obj.params.ramptime*obj.params.samprateout);...
+                ones(length(stimpnts)-length(w),1);...
+                w(obj.params.ramptime*obj.params.samprateout+1:end)];
+            
+            y(stimpnts) = w;
+            obj.y = y;
             obj.out.current = obj.y;
         end
         

@@ -102,6 +102,20 @@ classdef FlySoundProtocol < handle
                 end
             end
             
+            if nargin>1
+                definedpstruct = varargin{1};
+                if isa(definedpstruct,'struct')
+                    if isfield(definedpstruct,'trial')
+                        definedpstruct = rmfield(definedpstruct,'trial');
+                    end
+                    if isfield(definedpstruct,'trialBlock')
+                        definedpstruct = rmfield(definedpstruct,'trialBlock');
+                    end
+                    
+                    varargin = reshape([fieldnames(definedpstruct),struct2cell(definedpstruct)]',1,[]);
+                end
+            end
+            
             p = inputParser;
             names = fieldnames(obj.params);
             for i = 1:length(names)
