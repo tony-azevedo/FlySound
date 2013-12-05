@@ -89,14 +89,15 @@ classdef Rig < handle
             
             % run a check for the mode of the amplifier and throw error
             % elegantly
-            if ~sum(strcmp(fieldnames(out),'current')) &&...
-                    strcmp(obj.devices.amplifier.mode,'IClamp')
-                warning('Amplifier in IClamp but no current out')
-            elseif ~sum(strcmp(fieldnames(out),'voltage')) &&...
+            if sum(strcmp(fieldnames(out),'current')) &&...
+                    sum(out.current ~= out.current(1)) &&...
                     strcmp(obj.devices.amplifier.mode,'VClamp')
-                warning('Amplifier in VClamp but voltage command')
+                error('Amplifier in VClamp but no current out')
+            elseif sum(strcmp(fieldnames(out),'voltage')) &&...
+                    sum(out.voltage ~= out.voltage(1)) &&...
+                    strcmp(obj.devices.amplifier.mode,'IClamp')
+                error('Amplifier in IClamp but voltage command')
             end
-      
                 
             % loop over devices, transforming data
             devs = fieldnames(obj.devices);
@@ -106,7 +107,6 @@ classdef Rig < handle
                     out = dev.transformOutputs(out);
                 end
             end
-            
             
             % make the stims the right size (keeping the array if it's the
             % same

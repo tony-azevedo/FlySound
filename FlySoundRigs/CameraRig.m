@@ -25,14 +25,23 @@ classdef CameraRig < EPhysRig
                 protocol.params.durSweep - 0.002);
             
             clipboard('copy',[protocol.protocolName '_Image_']);
-            uiwait(msgbox(str,'CAMERA SETUP'));
+            h = msgbox(str,'CAMERA SETUP');
+            pos = get(h,'position');
+            set(h, 'position',[1280 600 pos(3) pos(4)])
+            uiwait(h);
+            
             
             in = run@EPhysRig(obj,protocol,varargin{:});
         end
         
         function readyCamera(obj,fig,evnt,varargin)
+            
             str = sprintf('Ready the camera:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
-            uiwait(msgbox(str,'CAMERA'));
+            h = msgbox(str,'CAMERA');
+            pos = get(h,'position');
+            set(h, 'position',[1280 700 pos(3) pos(4)])
+            uiwait(h);
+
         end
         
         function setDisplay(obj,fig,evnt,varargin)

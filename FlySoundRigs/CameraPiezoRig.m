@@ -8,7 +8,6 @@ classdef CameraPiezoRig < CameraRig
     methods
         function obj = CameraPiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
-            obj.addDevice('speaker','Speaker');
         end
                 
         function setDisplay(obj,fig,evnt,varargin)

@@ -128,12 +128,17 @@ classdef Acquisition < handle
             end
             
             for t = 1:length(untag);
+                % convert nums or strings to strings
                 untagel = num2str(untag{t});
                 obj.tags = obj.tags(~strcmp(obj.tags,untagel));
             end
 
         end
         
+        function clearTags(obj)
+            obj.tags = {};
+        end
+
         function showFileStem(obj)
             name = [obj.D,'\',obj.protocol.protocolName,'_Raw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_', ...
@@ -336,11 +341,13 @@ classdef Acquisition < handle
                 eval(['obj.rig = ' obj.protocol.requiredRig ';']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
-                %addlistener(obj.rig,'StartTrial',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
                 if obj.analyze
                     obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
+                end
+                if isa(obj.rig,'CameraRig')
+                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                 end
                 
                 devs = fieldnames(obj.rig.devices);
@@ -463,31 +470,6 @@ classdef Acquisition < handle
                     data.params.gain = obj.rig.devices.amplifier.secondary_gain;
                 end
             end
-            if isa(obj.rig,'CameraRig')
-                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                if isempty(images)
-                    uiwait(msgbox('There are no images to connect to this trial'))
-                    warning('There are no images to connect to this trial')
-                else
-                    imnums = zeros(length(images));
-                    for im = 1:length(images)
-                        pattern = [obj.protocol.protocolName,'_Image_'];
-                        imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
-                        imnums(im) = str2double(imnumstr{1});
-                    end
-                    imnum = max(unique(imnums));
-                    
-                    % check record date
-                    imfile = dir([obj.D,'\',obj.protocol.protocolName,'_Image_' num2str(imnum) '*']);
-                    if now - imfile(end).datenum > datenum([0 0 0 0 0 2]);
-                        % imnum = [];
-                        warning('Images are old, but now connected to this file')
-                        data.IMAGEWARNING = 'Old images are connected to this file';
-                        beep;
-                    end
-                    data.imageNum = imnum;
-                end
-            end
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
@@ -497,8 +479,65 @@ classdef Acquisition < handle
             % save(obj.rig.inputs.data.name,'current','voltage','name','params');
             obj.n = obj.n + 1;
             obj.expt_n = obj.expt_n+1;
+
+            if isa(obj.rig,'CameraRig')
+                imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
+                mkdir(imagedir);
+                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+                if isempty(images)
+                    h = msgbox('No images. Save, Close Image?');
+                    set(h, 'position',[1280 700 170 52.5])
+                    uiwait(h);
+                    %warning('There are no images to connect to this trial')
+                    images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+                    if isempty(images)
+                        warning('There are no images to connect to this trial.  Data saved')
+                    end
+                end
+                if ~isempty(images)
+                    for im = 1:length(images)
+                        [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                        if ~success
+                            if strcmp(m,'The process cannot access the file because it is being used by another process.')
+                                h = msgbox('Close the file!');
+                                set(h, 'position',[1280 700 170 52.5])
+                                uiwait(h);
+                                [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                            end
+                        end
+                        if ~success
+                            error('Image File %s not moved: %s\n',images(im).name,m);
+                            
+                        end
+                    end
+                    pattern = [obj.protocol.protocolName,'_Image_'];
+                    imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
+                    data.imageNum = str2double(imnumstr{1});
+                end
+                save(data.name, '-struct', 'data');
+            end
         end
         
+        function cleanUpImages(obj,varargin)
+            images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+            if ~isempty(images)
+                dirname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
+                imagedir = regexprep(regexprep(dirname,'Raw','Images'),'.mat','');
+                if ~isdir(fullfile(obj.D,imagedir))
+                    imagedir = fullfile(obj.D,'archive');
+                    if ~isdir(imagedir);
+                        mkdir(imagedir);
+                    end
+                end
+                for im = 1:length(images)
+                    [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                    if ~success
+                        error('Image File %s not moved: %s\n',images(im).name,m);
+                    end
+                end
+            end
+        end
+            
         function saveAcquisition(obj,varargin)
             if ~isdir(obj.D)
                 mkdir(obj.D);

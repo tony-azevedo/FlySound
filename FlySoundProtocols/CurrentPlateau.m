@@ -40,6 +40,7 @@ classdef CurrentPlateau < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
+            % rmpref('defaultsCurrentPlateau')
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.Vm_id = 0;
@@ -52,7 +53,7 @@ classdef CurrentPlateau < FlySoundProtocol
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
 
-            obj.params.randomize = 1;
+            obj.params.randomize = 0;
 
             obj.params.durSweep = obj.params.stimDurInSec+...
                 obj.params.preDurInSec + ...
