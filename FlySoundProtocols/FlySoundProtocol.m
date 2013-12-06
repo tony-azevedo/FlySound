@@ -244,7 +244,7 @@ classdef FlySoundProtocol < handle
                 cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');
                 obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
                 obj.out.trigger = 7.5*(obj.x >= obj.x(1)+.002-eps & obj.x < obj.x(1)+.003+eps);
-                obj.out.shutter = obj.out.trigger + 7.5*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
+                obj.out.shutter = 10/7.5*obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
             end
         end
 
