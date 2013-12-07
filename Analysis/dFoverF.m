@@ -26,51 +26,36 @@ else
     delete(get(ax,'children'));
 end
 
-dummyax = findobj('tag',[mfilename 'dummyax']);
-if isempty(dummyax)
-    dummyax = axes('Position',get(ax,'Position'),...
-        'tag',[mfilename 'dummyax'],...
-        'parent',fig,...
-        'XAxisLocation','top',...
-        'Color','none',...
-        'Ytick',[],...
-        'XColor','k','YColor','k');
-else
-    delete(get(dummyax,'children'));
-end
+% dummyax = findobj('tag',[mfilename 'dummyax']);
+% if isempty(dummyax)
+%     dummyax = axes('Position',get(ax,'Position'),...
+%         'tag',[mfilename 'dummyax'],...
+%         'parent',fig,...
+%         'XAxisLocation','top',...
+%         'Color','none',...
+%         'Ytick',[],...
+%         'XColor','k','YColor','k');
+% else
+%     delete(get(dummyax,'children'));
+% end
 
-D ='';
-if ~isfield(data,'imageNum')
-    fn = varargin{2};
-    D = fn(1:regexp(fn,['\\' params.protocol]));
-    jnk = load(fn,'imageNum');
-    if ~isfield(jnk,'imageNum')
-        error('No image number! Not running dFoverF');
-    else
-        data.imageNum = jnk.imageNum;
-    end
-end
+imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 
 t = makeInTime(params);
 exp_t = t(data.exposure);
 
 %%  Currently, I'm saving images as single files.  Sucks!
 %[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');
-
-filebase = [D params.protocol '_Image_' num2str(data.imageNum) '_'];
-imagefiles = dir([filebase '*']);
+imagefiles = dir(fullfile(imdir,[params.protocol '_Image_*']));
 num_frame = length(imagefiles);
-im = imread([D imagefiles(1).name]);
+im = imread(fullfile(imdir,imagefiles(1).name));
 num_px = size(im);
 
 I = zeros([num_px(:); 1; num_frame]', 'double');  %preallocate 3-D array
 %read in .tif files
 for frame=1:num_frame
-    [I(:,:,1,frame)] = imread([D imagefiles(frame).name]);
+    [I(:,:,1,frame)] = imread(fullfile(imdir,imagefiles(frame).name));
 end
-
-%% select ROI (implement at some point)
-
 
 %% calculates a baseline image from frame bl_start through bl_end 
 bsln = exp_t<0;
@@ -79,14 +64,30 @@ bl_numframes = sum(bsln);
 image_sum = sum(I(:,:,1,bsln),4);
 I_F0 = imdivide(image_sum, bl_numframes);
 
-I_trace = mean(mean(I,1),2);
+%% select ROI (implement at some point)
+roifig = figure;
+imshow(I_F0,[],'initialmagnification','fit');
+roihand = imfreehand(get(roifig,'children'));
+mask = createMask(roihand);
+uiwait(roifig);
+
+
+%%
+I_masked = I;
+I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+I_F0_masked = I_F0;
+I_F0_masked(~mask)=nan;
+
+
+I_trace = nanmean(nanmean(I_masked,1),2);
 I_trace = reshape(I_trace,1,numel(I_trace));
-dFoverF_trace = I_trace/mean(mean(I_F0)) - 1;
+dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
 
 line(exp_t(1:length(I_trace)),dFoverF_trace,'parent',ax)
-axis(ax,[exp_t(1) exp_t(length(I_trace)) get(ax,'ylim')])
-line((1:length(I_trace)),dFoverF_trace,'parent',dummyax,'linestyle','none')
-axis(dummyax, [1 length(I_trace) get(ax,'ylim')]);
+axis(ax,'tight');
+%axis(ax,[exp_t(1) exp_t(length(I_trace)) get(ax,'ylim')])
+% line((1:length(I_trace)),dFoverF_trace,'parent',dummyax,'linestyle','none')
+% axis(dummyax, [1 length(I_trace) get(ax,'ylim')]);
 
 %calculate change in fluorescence frame by frame relative to baseline
 I_dFovF = I;

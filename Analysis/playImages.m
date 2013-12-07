@@ -50,7 +50,8 @@ varargout = {h};
 
 function fn = constructFilnameFromExposureNum(data,exposureNum)
 
-d = ls('*_Image_*');
+imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+d = ls(fullfile(imdir,'*_Image_*'));
 jnk = d(1,:);
 pattern = ['_Image_' '\d+' '_'];
 ind = regexp(jnk,pattern,'end');
@@ -60,7 +61,7 @@ ind = regexp(jnk,pattern);
 ndigits = ind-1;
 numstem = repmat('0',ndigits,1)';
 
-imFileStem = [data.params.protocol '_Image_' num2str(data.imageNum) '_'];
+imFileStem = [imdir '\' data.params.protocol '_Image_*_'];
 
 ens = num2str(exposureNum);
 numstem(end-length(ens)+1:end) = ens;
@@ -70,7 +71,7 @@ try fn = d(1).name;
 catch
     error('There is no image at this exposure time: %s',[imFileStem numstem]);
 end
-fn = [imFileStem numstem '.tif'];
+fn = fullfile(imdir,d(1).name);
 
 function callbackfnc(hObject,evnt)
 c = guidata(hObject);

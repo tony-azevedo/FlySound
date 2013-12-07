@@ -31,7 +31,7 @@ A = Acquisition;
 %% PiezoSine - Attempt to stimulate
 A.setProtocol('PiezoSine');
 A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[0.4],'postDurInSec',1);
-A.run(1)
+A.run(5)
 systemsound('Notify');
 
 %% Patch the neurons!
