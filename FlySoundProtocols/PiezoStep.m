@@ -1,3 +1,4 @@
+% Move the Piezo with steps, control displacements
 classdef PiezoStep < FlySoundProtocol
     
     properties (Constant)

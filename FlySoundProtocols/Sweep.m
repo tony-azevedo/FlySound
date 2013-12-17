@@ -1,3 +1,4 @@
+% Collect data
 classdef Sweep < FlySoundProtocol
     
     properties (Constant)

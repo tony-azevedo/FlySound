@@ -1,3 +1,4 @@
+% Deliver continous voltage steps,check the seal and the input resistance
 classdef SealTest < FlySoundProtocol
     
     properties (Constant)

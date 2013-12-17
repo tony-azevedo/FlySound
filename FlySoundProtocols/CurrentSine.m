@@ -1,3 +1,4 @@
+% Inject sine wave currents, control freqs, amps, ramptime
 classdef CurrentSine < FlySoundProtocol
     
     properties (Constant)

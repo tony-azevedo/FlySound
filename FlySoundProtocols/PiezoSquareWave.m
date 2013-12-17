@@ -1,3 +1,5 @@
+% Move the Piezo with square waves, control displacements, cycles,
+% cycleDurInSec
 classdef PiezoSquareWave < FlySoundProtocol
     
     properties (Constant)

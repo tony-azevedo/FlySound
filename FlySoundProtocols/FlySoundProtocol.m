@@ -1,3 +1,4 @@
+% Electrophysiology Protocol Base Class
 classdef FlySoundProtocol < handle
     % CurrentSine.m
     % CurrentStep.m

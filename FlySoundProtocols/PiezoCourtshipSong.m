@@ -1,3 +1,4 @@
+% Move the Piezo to mimic courtship song, control displacements
 classdef PiezoCourtshipSong < FlySoundProtocol
 
     properties (Constant)

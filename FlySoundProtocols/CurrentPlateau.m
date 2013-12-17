@@ -1,5 +1,7 @@
+% Inject current of different values, control plateauDirInSec, plateaux,
+% randomize
 classdef CurrentPlateau < FlySoundProtocol
-
+  
     properties (Constant)
         protocolName = 'CurrentPlateau';
     end

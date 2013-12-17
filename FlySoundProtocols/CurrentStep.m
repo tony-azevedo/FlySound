@@ -1,3 +1,4 @@
+% Inject current steps, control steps, stimDurInSec
 classdef CurrentStep < FlySoundProtocol
 
     properties (Constant)

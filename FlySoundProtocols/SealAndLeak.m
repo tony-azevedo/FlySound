@@ -1,3 +1,4 @@
+% Inject voltage steps to check the seal and the input resistance
 classdef SealAndLeak < FlySoundProtocol
     
     properties (Constant)

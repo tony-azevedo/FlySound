@@ -1,3 +1,4 @@
+% Move the Piezo to with sine waves, control displacements, freqs, ramptime
 classdef PiezoSine < FlySoundProtocol
     properties (Constant)
         protocolName = 'PiezoSine';
