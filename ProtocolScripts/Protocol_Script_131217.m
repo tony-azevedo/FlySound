@@ -28,9 +28,7 @@ A = Acquisition;
 
 %% PiezoSine - Attempt to stimulate
 A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
-A.protocol.setParams('-q','freqs',freqs,'displacements',[0.4],'postDurInSec',1);
+A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[0.4],'postDurInSec',1);
 A.run(3)
 systemsound('Notify');
 
@@ -53,7 +51,7 @@ systemsound('Notify');
 
 A.setProtocol('CurrentPlateau');
 A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30],'randomize',0);
+    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-40 0 -80 0 -160],'randomize',0);
 A.run(3)
 systemsound('Notify');
 
@@ -97,22 +95,15 @@ A.untag('R_{input}')
 %% Inject current to drive a spike
 % toggleCameraPref('on')
 A.setProtocol('CurrentSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
-
 A.protocol.setParams('-q',...
-    'freqs',freqs,...
-    'amps',[5 10 20],...
+    'freqs',[25,50,100,200,400],'amps',[5 10 20],...
     'postDurInSec',1);
 A.run(5)
 systemsound('Notify');
 
 %% PiezoSine
 A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
-
-A.protocol.setParams('-q','freqs',freqs,'displacements',[.1 .2 0.4],'postDurInSec',1);
+A.protocol.setParams('-q','freqs',[25,50,100,200,400],'displacements',[.1 .2 0.4],'postDurInSec',1);
 A.run(3)
 systemsound('Notify');
 

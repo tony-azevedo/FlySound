@@ -8,7 +8,7 @@ classdef CurrentPlateau < FlySoundProtocol
     
     properties (SetAccess = protected)
         requiredRig = 'BasicEPhysRig';  %CameraEPhysRig BasicEPhysRig
-        analyses = {'dFoverF'}; %'average'
+        analyses = {}; %'average','dFoverF'
     end
 
     

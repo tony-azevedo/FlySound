@@ -66,8 +66,8 @@ freqs = 25 * sqrt(2) .^ (0:10);
 %freqs = freqs([1 3 4 5 6 7 9]); %  25 50 70.7107  100 141.4214  200 400
 A.protocol.setParams('-q',...
     'freqs',freqs,...
-    'amps',[5 10 20],...  % Tune this if necessary
-    'postDurInSec',1);
+    'amps',[2.5 5 10],...  % Tune this if necessary
+    'postDurInSec',.5);
 A.run(5)
 systemsound('Notify');
 
