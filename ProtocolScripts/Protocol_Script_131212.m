@@ -29,7 +29,6 @@ A = Acquisition;
 %% PiezoSine - Attempt to stimulate
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
 A.protocol.setParams('-q','freqs',freqs,'displacements',[0.4],'postDurInSec',1);
 A.run(3)
 systemsound('Notify');
@@ -45,7 +44,7 @@ A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',15);
 A.tag('Voltage Clamp, break in')
 A.run(1)
-A.untag('Voltage Clamp')
+A.untag('Voltage Clamp, break in')
 systemsound('Notify');
 
 %% Immediately go to different plateaus to measure ArcLight 
@@ -53,14 +52,14 @@ systemsound('Notify');
 
 A.setProtocol('CurrentPlateau');
 A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30],'randomize',0);
+    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-40 0 -80 0 -120],'randomize',0);
 A.run(3)
 systemsound('Notify');
 
 %% Hyperpolarize and inject current to drive a spike
 A.setProtocol('CurrentStep');
 A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[20]);  % tune this
+    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[40]);  % tune this
 A.tag('Hyperpolize')
 A.run(5)
 A.untag('Hyperpolize')
@@ -93,26 +92,25 @@ A.untag('R_{input}')
 
 %% Then run TTX to try to eliminate spiking
 
+A.tag('TTX')
 
 %% Inject current to drive a spike
 % toggleCameraPref('on')
 A.setProtocol('CurrentSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
-
+%freqs = freqs([1 3 5 6 7 9 10]); %  25 50 70.7107  100 141.4214  200 400
 A.protocol.setParams('-q',...
     'freqs',freqs,...
-    'amps',[5 10 20],...
+    'amps',[2.5 5 10 ],...
     'postDurInSec',1);
-A.run(5)
+A.run(3)
 systemsound('Notify');
 
 %% PiezoSine
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
-
-A.protocol.setParams('-q','freqs',freqs,'displacements',[.1 .2 0.4],'postDurInSec',1);
+%freqs = freqs([1 3 5 6 7 9 10]); %  25 50 70.7107  100 141.4214  200 400
+A.protocol.setParams('-q','freqs',freqs,'displacements',[0.1 0.2 0.4],'postDurInSec',1);
 A.run(3)
 systemsound('Notify');
 
