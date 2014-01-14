@@ -240,6 +240,9 @@ classdef FlySoundProtocol < handle
         end
                            
         function queryCameraState(obj,varargin)
+            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','cameraToggle')
+                addpref('AcquisitionHardware','cameraToggle','off')
+            end
             campref = getpref('AcquisitionHardware','cameraToggle');
             if strcmp('on',campref)
                 cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');

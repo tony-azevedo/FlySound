@@ -40,6 +40,8 @@ classdef CameraRig < EPhysRig
             h = msgbox(str,'CAMERA');
             pos = get(h,'position');
             set(h, 'position',[1280 700 pos(3) pos(4)])
+            clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
+
             uiwait(h);
 
         end

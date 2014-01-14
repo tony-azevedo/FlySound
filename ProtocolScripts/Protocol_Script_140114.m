@@ -27,10 +27,10 @@ A = Acquisition;
 % (2ms exposure time)
 
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',15);
-A.tag('Voltage Clamp, break in')
+A.protocol.setParams('-q','durSweep',5);
+A.tag('baseline fluorescence')
 A.run(1)
-A.untag('Voltage Clamp')
+A.untag('baseline fluorescence')
 systemsound('Notify');
 
 %% PiezoSine - Attempt to stimulate

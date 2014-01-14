@@ -67,7 +67,7 @@ classdef CameraEPhysRig < CameraRig
                 invecalt = obj.inputs.data.voltage;
                 ind = find(strcmp(obj.devices.amplifier.inputLabels,'voltage'));
                 inaltunits = obj.devices.amplifier.inputUnits{ind(1)};
-            elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
+            elseif sum(strcmp({'IClamp','IClamp_fast','I=0'},obj.devices.amplifier.mode))
                 invec = obj.inputs.data.voltage;
                 ind = find(strcmp(obj.devices.amplifier.inputLabels,'voltage'));
                 inunits = obj.devices.amplifier.inputUnits{ind(1)};
@@ -97,7 +97,7 @@ classdef CameraEPhysRig < CameraRig
                     outvec = out.voltage;
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'voltage')};
-                elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
+                elseif sum(strcmp({'IClamp','IClamp_fast','I=0'},obj.devices.amplifier.mode))
                     outvec = obj.outputs.datacolumns(:,strcmp(chnames.out,'current'));
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'current')};

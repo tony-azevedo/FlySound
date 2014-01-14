@@ -4,9 +4,6 @@ classdef MultiClamp700B < Device
         deviceName = 'MultiClamp700B';
     end
     
-    properties (Hidden, SetAccess = protected)
-    end
-    
     properties (SetAccess = protected)
     end
 
