@@ -50,17 +50,17 @@ A.untag('Seal')
 %% Try to break in while imaging!
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',15);
-A.tag('Current Clamp, break in')
+A.tag('Voltage Clamp, break in')
 A.run(1)
-A.untag('Current Clamp, break in')
+A.untag('Voltage Clamp, break in')
 systemsound('Notify');
 
 %% Immediately go to different plateaus to measure ArcLight 
 % switch to current clamp
 
-A.setProtocol('CurrentPlateau');
+A.setProtocol('VoltagePlateau');
 A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30],'randomize',0);
+    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30 0 -40 0 -50 0 10 0 20 0 30],'randomize',0);
 A.run(3)
 systemsound('Notify');
 

@@ -54,9 +54,9 @@ classdef Rig < handle
             else
                 repeats = 1;
             end
-            if isfield(obj,'TrialDisplay')
-
-            delete(obj.TrialDisplay);
+            if isprop(obj,'TrialDisplay')
+                
+                delete(obj.TrialDisplay);
             end
             obj.setDisplay([],[],protocol);
 

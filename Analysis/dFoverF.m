@@ -25,6 +25,9 @@ if isempty(ax)
 else
     delete(get(ax,'children'));
 end
+if nargin>2
+    button = 'No';
+end
 
 % dummyax = findobj('tag',[mfilename 'dummyax']);
 % if isempty(dummyax)
@@ -39,10 +42,19 @@ end
 %     delete(get(dummyax,'children'));
 % end
 
+
 imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 
 t = makeInTime(params);
 exp_t = t(data.exposure);
+
+if exist('button','var') && isfield(data,'dFoverF')
+    line(exp_t,data.dFoverF,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
+    axis(ax,'tight');
+    ylabel(ax,'% \Delta F / F')
+    xlabel(ax,'Time (s)')
+    return
+end
 
 %%  Currently, I'm saving images as single files.  Sucks!
 %[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');
@@ -58,18 +70,36 @@ for frame=1:num_frame
 end
 
 %% calculates a baseline image from frame bl_start through bl_end 
-bsln = exp_t<0;
-
-bl_numframes = sum(bsln);
-image_sum = sum(I(:,:,1,bsln),4);
+if sum(exp_t<0)
+    bsln = exp_t<0 & exp_t>exp_t(1)+.02;
+else
+    bsln = exp_t<1 & exp_t>exp_t(1)+.02;
+end
+bl_numframes = nansum(bsln);
+image_sum = nansum(I(:,:,1,bsln),4);
 I_F0 = imdivide(image_sum, bl_numframes);
 
 %% select ROI (implement at some point)
 roifig = figure;
 imshow(I_F0,[],'initialmagnification','fit');
-roihand = imfreehand(get(roifig,'children'));
-mask = createMask(roihand);
-uiwait(roifig);
+title('Draw ROI, close figure when done')
+
+button = 'Yes';
+if isfield(data,'ROI')
+    line(data.ROI(:,1),data.ROI(:,2));
+    button = questdlg('Make new ROI?','ROI','No');
+end
+if strcmp(button,'Yes');
+    roihand = imfreehand(get(roifig,'children'),'Closed',1);
+    % if isfield(data,'ROI')
+    %     roihand.setPosition(data.ROI)
+    % end
+    data.ROI = wait(roihand);
+    mask = createMask(roihand);
+else
+    mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
+end
+close(roifig);
 
 
 %%
@@ -83,24 +113,30 @@ I_trace = nanmean(nanmean(I_masked,1),2);
 I_trace = reshape(I_trace,1,numel(I_trace));
 dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
 
-line(exp_t(1:length(I_trace)),dFoverF_trace,'parent',ax)
+line(exp_t(1:length(I_trace)),dFoverF_trace,'parent',ax,'tag','dFoverF_trace')
 axis(ax,'tight');
 %axis(ax,[exp_t(1) exp_t(length(I_trace)) get(ax,'ylim')])
 % line((1:length(I_trace)),dFoverF_trace,'parent',dummyax,'linestyle','none')
 % axis(dummyax, [1 length(I_trace) get(ax,'ylim')]);
+ylabel('% \Delta F / F')
+xlabel('Time (s)')
+
+data.dFoverF = dFoverF_trace;
+
+save(regexprep(data.name,'Acquisition','Raw_Data'), '-struct', 'data');
 
 %calculate change in fluorescence frame by frame relative to baseline
-I_dFovF = I;
-for frame=1:num_frame
-    I_dFovF(:,:,1,frame) = (I(:,:,1,frame) ./ I_F0)-1;
-    I_dFovF(I_dFovF(:,:,1,frame) >= 500,1,frame) = 0;
-end
+% I_dFovF = I;
+% for frame=1:num_frame
+%     I_dFovF(:,:,1,frame) = (I(:,:,1,frame) ./ I_F0)-1;
+%     I_dFovF(I_dFovF(:,:,1,frame) >= 500,1,frame) = 0;
+% end
 
 %apply Gaussian filter:
 %rotationally symmetric Gaussian lowpass filter of size 5x5 with standard deviation
 %sigma 2 (positive). 
-G = fspecial('gaussian',[3 3],2);
-I_dFovF_thr_filt = imfilter(I_dFovF,G);
+% G = fspecial('gaussian',[3 3],2);
+% I_dFovF_thr_filt = imfilter(I_dFovF,G);
 %I_dFovFmov = imfilter(I,G);
 
 % if montageflag
