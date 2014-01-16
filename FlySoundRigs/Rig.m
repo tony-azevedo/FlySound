@@ -54,6 +54,10 @@ classdef Rig < handle
             else
                 repeats = 1;
             end
+            if isfield(obj,'TrialDisplay')
+
+            delete(obj.TrialDisplay);
+            end
             obj.setDisplay([],[],protocol);
 
             obj.aiSession.Rate = protocol.params.sampratein;

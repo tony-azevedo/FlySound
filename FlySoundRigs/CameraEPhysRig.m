@@ -80,6 +80,7 @@ classdef CameraEPhysRig < CameraRig
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+            fprintf('%s: %g exposure lines found\n',mfilename,length(l));
             set(l,'ydata',obj.inputs.data.exposure*max(get(findobj(obj.TrialDisplay,'tag','outputax'),'ylim')));
 
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');

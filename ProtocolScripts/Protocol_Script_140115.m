@@ -105,19 +105,19 @@ A.untag('R_{input}')
 % toggleCameraPref('on')
 A.setProtocol('CurrentSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
+freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  282.8427  400.0000  565.6854
 
 A.protocol.setParams('-q',...
     'freqs',freqs,...
     'amps',[5 10 20],...
     'postDurInSec',1);
-A.run(5)
+A.run(3)
 systemsound('Notify');
 
 %% PiezoSine
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  200 400
+freqs = freqs([1 3 4 5 6 7 8 9 10]); %  25 50 70.7107  100 141.4214  282.8427  400.0000  565.6854
 
 A.protocol.setParams('-q','freqs',freqs,'displacements',[.1 .2 0.4],'postDurInSec',1);
 A.run(3)
