@@ -162,6 +162,8 @@ classdef Acquisition < handle
             p = inputParser;
             p.addParamValue('flygenotype','',@ischar);
             p.addParamValue('flynumber',[],@isnumeric);
+            %             p.addParamValue('flyage',2,@isnumeric);
+            %             p.addParamValue('flysex','female',@ischar);
             p.addParamValue('cellnumber',[],@isnumeric);
             p.addParamValue('aiSamprate',10000,@isnumeric);
             p.addParamValue('modusOperandi','Run',...

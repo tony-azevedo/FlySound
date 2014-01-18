@@ -1,7 +1,7 @@
 function varargout = playImages(data,params,varargin)
 % powerSpectrum(data,params,time,mode)
 
-fig = findobj('tag',mfilename); 
+fig = findobj('tag',mfilename);
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...
@@ -43,8 +43,8 @@ im = imread(exposureName);
 c.data = data;
 c.params = params;
 c.exposureNum = exposureNum;
-if ~isfield(c,'cLims')
-    c.cLims = [min(min(im)) max(max(im))];
+if ~isfield(c,'clims')
+    c.clims = [min(min(im)) max(max(im))];
 end
 
 c.dFfig = findobj('tag','dFoverF');
@@ -56,24 +56,13 @@ else
     delete(get(ax,'children'));
 end
 set(findobj('string','Play','tag','play'),'userdata',ax);
-h = imshow(im,c.cLims,'parent',ax,'InitialMagnification','fit');
+h = imshow(im,c.clims,'parent',ax,'InitialMagnification','fit');
 set(findobj(fig,'tag','exposureNumText'),'string',['#' num2str(exposureNum)]);
 
 if ~isempty(c.dFfig)
-    l = findobj(c.dFfig,'tag','playImagesLine');
-    delete(l)
-    ax = findobj(c.dFfig,'tag','dFoverFax');
-    l = get(ax,'children');
-    imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
-    if ~strcmp(get(l,'displayname'),imdir)
-        dFoverF(data,params,'No');
-        l = get(ax,'children');
-    end
-    exp_t = get(l,'xdata');
-    ex = exp_t(exposureNum);
-    line([ex ex],get(ax,'ylim'),'parent',ax,'tag','playImagesLine','color',[0 1 0]);
+    drawDFoverFLine(c,data,exposureNum)
 end
-
+drawnow
 guidata(fig,c);
 varargout = {h};
 
@@ -113,7 +102,7 @@ c = guidata(hObject);
 data = c.data;
 params = c.params;
 exposureNum = c.exposureNum;
-cLims = c.cLims;
+clims = c.clims;
 
 step = 1;
 call = get(hObject,'tag');
@@ -148,12 +137,31 @@ switch call
                 continue
             end
             im = imread(exposureName);
-            cLims = [min(cLims(1),min(min(im))), max(cLims(2),max(max(im)))];
-            imshow(im,[],'parent',ax,'InitialMagnification','fit');
+            clims = [min(clims(1),min(min(im))), max(clims(2),max(max(im)))];
+            imshow(im,clims,'parent',ax,'InitialMagnification','fit');
             set(findobj('tag','exposureNumText'),'string',['#' num2str(movie_exposeN)]);
+            
+            drawDFoverFLine(c,data,movie_exposeN)
             drawnow
             pause(0.002)
         end
-        c.clims = cLims;
+        c.clims = clims;
+        guidata(hObject,c);
 end
 playImages(data,params,exposureNum);
+
+
+function drawDFoverFLine(c,data,exposureNum)
+l = findobj(c.dFfig,'tag','playImagesLine');
+delete(l)
+ax = findobj(c.dFfig,'tag','dFoverFax');
+l = get(ax,'children');
+imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+if ~strcmp(get(l,'displayname'),imdir)
+    dFoverF(data,data.params,'No');
+    l = get(ax,'children');
+end
+exp_t = get(l,'xdata');
+ex = exp_t(exposureNum);
+line([ex ex],get(ax,'ylim'),'parent',ax,'tag','playImagesLine','color',[0 1 0]);
+

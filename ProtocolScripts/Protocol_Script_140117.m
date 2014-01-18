@@ -59,8 +59,8 @@ systemsound('Notify');
 % switch to current clamp
 
 A.setProtocol('VoltagePlateau');
-A.protocol.setParams('-q','preDurInSec',1.5,...
-    'postDurInSec',1.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30 0 -40 0 -50 0 10 0 20 0 30],'randomize',0);
+A.protocol.setParams('-q','preDurInSec',0.2,...
+    'postDurInSec',0.5,'stimDurInSec',0.02,'plateaux',[-10 0 -20 0 -30 0 -40 0 -50 0 10 0 20 0 30],'randomize',0);
 A.run(3)
 systemsound('Notify');
 
@@ -86,7 +86,7 @@ systemsound('Notify');
 %% Inject current to drive a spike
 A.setProtocol('CurrentStep');
 A.protocol.setParams('-q','preDurInSec',0.2,...
-    'postDurInSec',0.5,'stimDurInSec',0.01,'steps',[-80]);
+    'postDurInSec',0.5,'stimDurInSec',0.02,'steps',[50]);
 A.run(5)
 systemsound('Notify');
 
