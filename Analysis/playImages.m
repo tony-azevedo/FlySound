@@ -140,8 +140,10 @@ switch call
             clims = [min(clims(1),min(min(im))), max(clims(2),max(max(im)))];
             imshow(im,clims,'parent',ax,'InitialMagnification','fit');
             set(findobj('tag','exposureNumText'),'string',['#' num2str(movie_exposeN)]);
-            
-            drawDFoverFLine(c,data,movie_exposeN)
+            c.dFfig = findobj('tag','dFoverF');
+            if ~isempty(c.dFfig)
+                drawDFoverFLine(c,data,movie_exposeN)
+            end
             drawnow
             pause(0.002)
         end
@@ -159,6 +161,8 @@ l = get(ax,'children');
 imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 if ~strcmp(get(l,'displayname'),imdir)
     dFoverF(data,data.params,'No');
+    drawnow
+    ax = findobj(c.dFfig,'tag','dFoverFax');
     l = get(ax,'children');
 end
 exp_t = get(l,'xdata');
