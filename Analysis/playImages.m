@@ -123,7 +123,7 @@ switch call
     case 'forward'
         playflag = 0;
         exposureNum = exposureNum+step;
-        if exposureNum>sum(data.exposure), exposureNum = sum(data.exposure); end
+        if exposureNum>length(data.exposure_time), exposureNum = length(data.exposure_time); end
         
     case 'play'
         ax = get(hObject,'userdata');

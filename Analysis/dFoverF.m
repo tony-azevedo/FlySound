@@ -46,7 +46,7 @@ end
 imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 
 t = makeInTime(params);
-exp_t = t(data.exposure);
+exp_t = data.exposure_time;
 
 if exist('button','var') && isfield(data,'dFoverF')
     line(exp_t,data.dFoverF,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
@@ -113,7 +113,7 @@ I_trace = nanmean(nanmean(I_masked,1),2);
 I_trace = reshape(I_trace,1,numel(I_trace));
 dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
 
-line(exp_t(1:length(I_trace)),dFoverF_trace,'parent',ax,'tag','dFoverF_trace')
+line(data.exposure_time,dFoverF_trace,'parent',ax,'tag','dFoverF_trace')
 axis(ax,'tight');
 %axis(ax,[exp_t(1) exp_t(length(I_trace)) get(ax,'ylim')])
 % line((1:length(I_trace)),dFoverF_trace,'parent',dummyax,'linestyle','none')

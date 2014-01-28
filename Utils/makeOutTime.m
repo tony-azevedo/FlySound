@@ -5,7 +5,7 @@ if isa(params, 'FlySoundProtocol') || isfield(params, 'params')
     params = params.params;
 end
 
-time = (0:1:params.durSweep*params.samprateout)/params.samprateout;
+time = (0:1:params.durSweep*params.samprateout - 1)/params.samprateout;
 if isfield(params,'preDurInSec');
     time = time-params.preDurInSec;
 end
