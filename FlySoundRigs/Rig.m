@@ -54,9 +54,10 @@ classdef Rig < handle
             else
                 repeats = 1;
             end
-            if isprop(obj,'TrialDisplay')
-                
-                delete(obj.TrialDisplay);
+            if isprop(obj,'TrialDisplay') && ~isempty(obj.TrialDisplay)
+                if ishandle(obj.TrialDisplay)
+                    delete(obj.TrialDisplay);
+                end
             end
             obj.setDisplay([],[],protocol);
 
@@ -68,15 +69,17 @@ classdef Rig < handle
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
                     notify(obj,'StartTrial',PassProtocolData(protocol));
+                    disp(obj.aoSession)
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     
+                    disp(obj.aiSession)
                     % Collect input
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
+                    disp(obj.aiSession)
                     obj.transformInputs(in);
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);
                     notify(obj,'DataSaved');
-
                 end
                 protocol.reset;
             end
@@ -252,6 +255,7 @@ classdef Rig < handle
 
                 for i = 1:length(dev.inputPorts)
                     ch = obj.aiSession.addAnalogInputChannel('Dev1',dev.inputPorts(i), 'Voltage'); 
+                    ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
                     obj.inputs.device{dev.inputPorts(i)+1} = dev;

@@ -42,7 +42,10 @@ if nargin>5
         axID = [axID p num2str(prot.params.(p))];
         spID = [spID prot.params.(p)];
     end
-    [~,subplotind] = intersect(prot.paramIter',spID,'rows');    
+    [~,subplotind] = intersect(prot.paramIter',spID,'rows');
+    if isempty(subplotind)
+        subplotind = 1;
+    end
 end
 
 current = data.current(1:length(t))-mean(data.current(1:length(t)));

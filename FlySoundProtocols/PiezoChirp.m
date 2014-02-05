@@ -1,4 +1,5 @@
-% Drive piezo with frequency sweep, control displacements
+% Drive piezo with frequency sweep, control displacements, freqStart,
+% freqEnd
 classdef PiezoChirp < FlySoundProtocol
     
     properties (Constant)
@@ -50,18 +51,24 @@ classdef PiezoChirp < FlySoundProtocol
         function defineParameters(obj)
             % rmpref('defaultsPiezoCourtshipSong')
             obj.params.displacementOffset = 5;
-            obj.params.sampratein = 40000;
-            [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
-            stim = flipud(stim);
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 50000;
+            % [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            % stim = flipud(stim);
+            
             obj.params.sampratein = obj.params.samprateout;
             obj.params.displacements = .1;
             obj.params.displacement = obj.params.displacements(1);
 
             obj.params.ramptime = 0.04; %sec;
             
-            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
-            obj.params.preDurInSec = .4;
-            obj.params.postDurInSec = .3;
+            obj.params.freqStart = 25;
+            obj.params.freqEnd = 800;
+            
+            obj.params.stimDurInSec = 10;
+            obj.params.preDurInSec = .5;
+            obj.params.postDurInSec = .5;
+            
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;
@@ -71,12 +78,7 @@ classdef PiezoChirp < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
-
-            [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
-            stim = flipud(stim);
-            [standardstim] = wavread('CourtshipSong_Standard.wav');
-            standardstim = flipud(standardstim);
-            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
+            obj.params.displacement = obj.params.displacements(1);
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeOutTime(obj);
@@ -88,11 +90,16 @@ classdef PiezoChirp < FlySoundProtocol
 
             stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
                 obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
-            
+
             w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
+            
+            % [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
+            stim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
+            standardstim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
+            
             y(stimpnts) = w.*stim;
             obj.y = y;
             obj.out.piezocommand = y;

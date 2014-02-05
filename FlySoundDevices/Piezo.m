@@ -21,7 +21,7 @@ classdef Piezo < Device
             
             obj.inputLabels = {'sgsmonitor'};
             obj.inputUnits = {'V'};
-            obj.inputPorts = 5;
+            obj.inputPorts = 2;
             obj.outputLabels = {'piezocommand'};
             obj.outputUnits = {'V'};
             obj.outputPorts = 2;
