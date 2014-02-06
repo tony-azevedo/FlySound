@@ -8,8 +8,9 @@ classdef CameraRig < EPhysRig
     methods
         function obj = CameraRig(varargin)
             obj.addDevice('camera','Camera');
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            obj.aiSession.addTriggerConnection('Dev2/PFI0','External','StartTrigger');
+            obj.aiSession.addTriggerConnection('Dev2/PFI1','External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External','Dev2/PFI3','StartTrigger');
             addlistener(obj,'StartTrial',@obj.readyCamera);
         end
 

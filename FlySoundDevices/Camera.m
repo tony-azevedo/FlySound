@@ -21,10 +21,10 @@ classdef Camera < Device
             
             obj.inputLabels = {'exposure'};
             obj.inputUnits = {'V'};
-            obj.inputPorts = 18;
-            obj.outputLabels = {'trigger','shutter'};
+            obj.inputPorts = 3;
+            obj.outputLabels = {'shutter'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = [1 3];
+            obj.outputPorts = [3];
         end
         
         function varargout = transformInputs(obj,inputstruct)

@@ -17,8 +17,8 @@ classdef BasicEPhysRig < EPhysRig
     
     methods
         function obj = BasicEPhysRig(varargin)
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            obj.aiSession.addTriggerConnection('Dev2/PFI1','External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External','Dev2/PFI3','StartTrigger');
         end
         
         function setDisplay(obj,fig,evnt,varargin)

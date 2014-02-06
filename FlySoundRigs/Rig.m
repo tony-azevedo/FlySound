@@ -243,7 +243,7 @@ classdef Rig < handle
                 dev = obj.devices.(keys{k});
                 for i = 1:length(dev.outputPorts)
                     % configure AO
-                    ch = obj.aoSession.addAnalogOutputChannel('Dev1',dev.outputPorts(i), 'Voltage');
+                    ch = obj.aoSession.addAnalogOutputChannel('Dev2',dev.outputPorts(i), 'Voltage');
                     ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
                     obj.outputs.device{dev.outputPorts(i)+1} = dev;
@@ -254,7 +254,7 @@ classdef Rig < handle
                 obj.outputs.datacolumns = obj.outputs.datavalues;
 
                 for i = 1:length(dev.inputPorts)
-                    ch = obj.aiSession.addAnalogInputChannel('Dev1',dev.inputPorts(i), 'Voltage'); 
+                    ch = obj.aiSession.addAnalogInputChannel('Dev2',dev.inputPorts(i), 'Voltage'); 
                     ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
