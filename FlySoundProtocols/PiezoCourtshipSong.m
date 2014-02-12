@@ -1,5 +1,5 @@
 % Move the Piezo to mimic courtship song, control displacements
-classdef PiezoCourtshipSong < FlySoundProtocol
+classdef PiezoCourtshipSong < PiezoProtocol
 
     properties (Constant)
         protocolName = 'PiezoCourtshipSong';
@@ -21,7 +21,7 @@ classdef PiezoCourtshipSong < FlySoundProtocol
     methods
         
         function obj = PiezoCourtshipSong(varargin)
-            obj = obj@FlySoundProtocol(varargin{:});
+            obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
@@ -42,6 +42,17 @@ classdef PiezoCourtshipSong < FlySoundProtocol
             obj.out.speakercommand = obj.uncorrectedcommand;
             varargout = {obj.out,calstim,commandstim};
         end
+        
+        function varargout = getCalibratedStimulus(obj)
+            varargout{1} = obj.y * obj.params.displacement + obj.params.displacementOffset;
+        end
+        
+        function fn = getCalibratedStimulusFileName(obj)
+            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\',...
+                sprintf('%s',...
+                obj.protocolName)];
+        end
+
         
     end % methods
     
@@ -71,9 +82,15 @@ classdef PiezoCourtshipSong < FlySoundProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
 
-            [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
-            [standardstim] = wavread('CourtshipSong_Standard.wav');
-            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
+            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            if ~isempty(stimfn)
+                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+                [standardstim] = audioread('CourtshipSong_Standard.wav');
+            else
+                [standardstim,obj.params.samprateout] = audioread('CourtshipSong_Standard.wav');
+                stim = standardstim;
+            end
+            obj.params.stimDurInSec = length(standardstim)/obj.params.samprateout;
 
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeOutTime(obj);
@@ -90,14 +107,24 @@ classdef PiezoCourtshipSong < FlySoundProtocol
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
+            
             y(stimpnts) = w.*stim;
             obj.y = y;
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
             obj.uncorrectedcommand(stimpnts) = w.*standardstim;
+
+            if isempty(stimfn)
+                audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
+                    stim,...
+                    obj.params.samprateout,...
+                    'BitsPerSample',32);
+            end
+            
             if strcmp(obj.modusOperandi,'Cal')
                 notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
             end
+            
         end
     end % protected methods
     

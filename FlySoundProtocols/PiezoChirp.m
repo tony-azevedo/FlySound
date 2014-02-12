@@ -1,6 +1,6 @@
 % Drive piezo with frequency sweep, control displacements, freqStart,
-% freqEnd
-classdef PiezoChirp < FlySoundProtocol
+% freqEnd, stimDurInSec
+classdef PiezoChirp < PiezoProtocol
     
     properties (Constant)
         protocolName = 'PiezoChirp';
@@ -22,7 +22,7 @@ classdef PiezoChirp < FlySoundProtocol
     methods
         
         function obj = PiezoChirp(varargin)
-            obj = obj@FlySoundProtocol(varargin{:});
+            obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
@@ -44,6 +44,19 @@ classdef PiezoChirp < FlySoundProtocol
             varargout = {obj.out,calstim,commandstim};
         end
         
+        function varargout = getCalibratedStimulus(obj)
+            varargout{1} = obj.uncorrectedcommand * obj.params.displacement + obj.params.displacementOffset;
+        end
+        
+        function fn = getCalibratedStimulusFileName(obj)
+            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\',...
+                sprintf('%s_sdis%.0f_freqS%.0f_freqE%.0f',...
+                obj.protocolName,...
+                obj.params.stimDurInSec,...
+                obj.params.freqStart,...
+                obj.params.freqEnd)];
+        end
+
     end % methods
     
     methods (Access = protected)
@@ -79,7 +92,11 @@ classdef PiezoChirp < FlySoundProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.displacement = obj.params.displacements(1);
-
+            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            if ~isempty(stimfn)
+                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+            end
+            
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
@@ -97,14 +114,24 @@ classdef PiezoChirp < FlySoundProtocol
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
             
             % [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
-            stim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
             standardstim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
+            if isempty(stimfn)
+                stim = standardstim;
+            end
             
             y(stimpnts) = w.*stim;
             obj.y = y;
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
             obj.uncorrectedcommand(stimpnts) = w.*standardstim;
+            
+            if isempty(stimfn)
+                audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
+                    stim,...
+                    obj.params.samprateout,...
+                    'BitsPerSample',32);
+            end
+
             if strcmp(obj.modusOperandi,'Cal')
                 notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
             end

@@ -69,13 +69,13 @@ classdef Rig < handle
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
                     notify(obj,'StartTrial',PassProtocolData(protocol));
-                    disp(obj.aoSession)
+                    %disp(obj.aoSession)
                     obj.aoSession.startBackground; % Start the session that receives start trigger first
                     
-                    disp(obj.aiSession)
+                    %disp(obj.aiSession)
                     % Collect input
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
-                    disp(obj.aiSession)
+                    %disp(obj.aiSession)
                     obj.transformInputs(in);
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);

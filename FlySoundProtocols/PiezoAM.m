@@ -1,12 +1,13 @@
-% Move the Piezo to mimic courtship song, control displacements
-classdef PiezoBWCourtshipSong < PiezoProtocol
-
+% Drive piezo with frequency sweep, control displacements, freqStart,
+% freqEnd, stimDurInSec
+classdef PiezoAM < PiezoProtocol
+    
     properties (Constant)
-        protocolName = 'PiezoBWCourtshipSong';
+        protocolName = 'PiezoAM';
     end
     
     properties (SetAccess = protected)
-    requiredRig = 'PiezoRig';
+        requiredRig = 'PiezoRig';
         analyses = {};
     end
     
@@ -20,7 +21,7 @@ classdef PiezoBWCourtshipSong < PiezoProtocol
     
     methods
         
-        function obj = PiezoBWCourtshipSong(varargin)
+        function obj = PiezoAM(varargin)
             obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
@@ -49,29 +50,40 @@ classdef PiezoBWCourtshipSong < PiezoProtocol
         
         function fn = getCalibratedStimulusFileName(obj)
             fn = ['C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\',...
-                sprintf('%s',...
-                obj.protocolName)];
+                sprintf('%s_freqC%.0f_freqE%.0f_modD%.0f',...
+                obj.protocolName,...
+                obj.params.freqCarrier,...
+                obj.params.freqEnvelope,...
+                obj.params.modulationDepth)];
         end
 
-        
     end % methods
     
     methods (Access = protected)
         
         function defineParameters(obj)
-            % rmpref('defaultsPiezoCourtshipSong')
+            % rmpref('defaultsPiezoAM')
             obj.params.displacementOffset = 5;
-            obj.params.sampratein = 40000;
-            [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 50000;
+            
             obj.params.sampratein = obj.params.samprateout;
-            obj.params.displacements = .1;
+            obj.params.displacements = [.1, .2];
             obj.params.displacement = obj.params.displacements(1);
 
             obj.params.ramptime = 0.04; %sec;
+                        
+            obj.params.freqCarriers = [50, 141, 400];
+            obj.params.freqCarrier = obj.params.freqCarriers(1);
+            obj.params.freqEnvelopes = [10, 20, 40];
+            obj.params.freqEnvelope = obj.params.freqEnvelopes(1);
+            obj.params.modulationDepths = 1;
+            obj.params.modulationDepth = obj.params.modulationDepths(1);
             
-            obj.params.stimDurInSec = length(stim)/obj.params.samprateout;
-            obj.params.preDurInSec = .4;
-            obj.params.postDurInSec = .3;
+            obj.params.stimDurInSec = 2;
+            obj.params.preDurInSec = .5;
+            obj.params.postDurInSec = .5;
+            
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;
@@ -81,52 +93,58 @@ classdef PiezoBWCourtshipSong < PiezoProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            
+            obj.params.freqCarrier = obj.params.freqCarriers(1);
+            obj.params.freqEnvelope = obj.params.freqEnvelopes(1);
+            obj.params.modulationDepth = obj.params.modulationDepths(1);
+            obj.params.displacement = obj.params.displacements(1);
 
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)
                 [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
-                [standardstim] = audioread('CourtshipSong_Standard.wav');
-                standardstim = flipud(standardstim);
-            else
-                [standardstim,obj.params.samprateout] = audioread('CourtshipSong_Standard.wav');
-                standardstim = flipud(standardstim);
-                stim = standardstim;
             end
-            obj.params.stimDurInSec = length(standardstim)/obj.params.samprateout;
-
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
-
-            y = makeOutTime(obj);
-            y = y(:);
+            y = obj.x;
             y(:) = 0;
-
+                
             stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
                 obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
-            
+
             w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
+            
+            envelope = 1-...
+                obj.params.modulationDepth *...
+                cos(2 * pi * obj.params.freqEnvelope * obj.x(stimpnts));
+            standardstim =  envelope.*...
+                sin(2 * pi * obj.params.freqCarrier * obj.x(stimpnts));
+            
+            if isempty(stimfn)
+                stim = standardstim;
+            else
+                stim = stim(1:length(stimpnts));
+            end
             
             y(stimpnts) = w.*stim;
             obj.y = y;
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
             obj.uncorrectedcommand(stimpnts) = w.*standardstim;
-
+            
             if isempty(stimfn)
                 audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
                     stim,...
                     obj.params.samprateout,...
                     'BitsPerSample',32);
             end
-            
+
             if strcmp(obj.modusOperandi,'Cal')
                 notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
             end
-            
         end
     end % protected methods
     
