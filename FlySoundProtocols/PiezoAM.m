@@ -32,9 +32,6 @@ classdef PiezoAM < PiezoProtocol
         
         function varargout = getStimulus(obj,varargin)
             commandstim = obj.uncorrectedcommand * obj.params.displacement + obj.params.displacementOffset;
-            if strcmp(obj.modusOperandi,'Cal')
-                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
-            end
             calstim = obj.y * obj.params.displacement + obj.params.displacementOffset;
             if max(calstim > 10) || min(calstim < 0)
                 notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))

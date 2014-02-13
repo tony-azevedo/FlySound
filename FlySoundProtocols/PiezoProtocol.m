@@ -62,6 +62,15 @@ classdef PiezoProtocol < FlySoundProtocol
                 error('A.protocol is not in calibration mode.  Call A.setProtocol(''<protocol>'',''modusOperandi'',''Cal'')');
             end
             
+            fprintf('Calibration stimulus should not be ramped\n')
+            fprintf('Calibration stimulus should use maximal displacement\n')
+            
+            ramptime = A.protocol.params.ramptime;
+            displacements = A.protocol.params.displacements;
+            
+            A.protocol.setParams('ramptime',0);
+            A.protocol.setParams('displacements',max(displacements));
+            
             t = makeInTime(A.protocol);
             N = 3;
             
@@ -95,7 +104,6 @@ classdef PiezoProtocol < FlySoundProtocol
                 plot(ax,t,trials,'color',[.7 .7 1])
                 plot(ax,t,sgs,'color',[0 0 1])
                 
-                
                 sgs = sgs - mean(sgs(10:2000));
                 stim = stim - stim(1);
                 targetstim = targetstim - targetstim(1);
@@ -107,7 +115,12 @@ classdef PiezoProtocol < FlySoundProtocol
                 i_del = Lags(C==max(C));  % assume lag is causal.  If not it's an error.
                 
                 if i_del < 0
-                    error('No causal delay between stimulus and response')
+                    disp(i_del)
+                    [~,locs]= findpeaks(C);
+                    lags = Lags(locs);
+                    i_del = lags(find(lags>0,1));
+                    warning('No causal delay between stimulus and response')
+                    disp(i_del)
                 end
                 %     t_del = t(end)-t(end+i_del+1);
                 % else
@@ -120,13 +133,28 @@ classdef PiezoProtocol < FlySoundProtocol
                 
                 diff = targetstim(1:end-i_del)-sgs(i_del+1:end);
                 diff = diff/A.protocol.params.displacement;
+
+                % end of the stimulus can produce transients in diff that
+                % are impossible to get rid of.  Taper instead
+                stimpnts = round(A.protocol.params.samprateout*A.protocol.params.preDurInSec+1:...
+                    A.protocol.params.samprateout*(A.protocol.params.preDurInSec+A.protocol.params.stimDurInSec));
+                
+                taper_time = 0.005;
+                w = window(@triang,2*taper_time*A.protocol.params.samprateout);
+                w = [w(1:taper_time*A.protocol.params.samprateout);...
+                    ones(length(stimpnts)-length(w),1);...
+                    w(taper_time*A.protocol.params.samprateout+1:end)];
+                
+                taper = zeros(size(t));
+                taper(stimpnts) = w;
+                diff = diff .* taper(1:length(diff));
                 diff = diff(t(1:end-i_del)>=0 & t(1:end-i_del)<A.protocol.params.stimDurInSec);
                 
                 [oldstim,fs] = audioread([A.protocol.getCalibratedStimulusFileName,'.wav']);
                 info = audioinfo([A.protocol.getCalibratedStimulusFileName,'.wav']);
                 NBITS = info.BitsPerSample;
                 
-                newstim = oldstim+diff;
+                newstim = diff+oldstim(1:length(diff));
                 
                 figure(104),clf, hold on
                 plot(oldstim,'color',[.7 .7 .7])
@@ -151,6 +179,8 @@ classdef PiezoProtocol < FlySoundProtocol
                     ps{2*p_ind} = unique(paramIter(p_ind,:));
                 end
                 A.protocol.setParams(ps{:});
+                A.protocol.setParams('ramptime',ramptime);
+                A.protocol.setParams('displacements',displacements);
             end
         end
     end
