@@ -30,12 +30,12 @@ A.run(5)
 systemsound('notify')
 
 
-%% Hyperpolarized
+%% Depolarized
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.tag('Hyperpolarized')
+A.tag('Depolarized')
 A.run(3)
-A.untag('Hyperpolarized')
+A.untag('Depolarized')
 systemsound('Notify');
 
 %% Spiking, somewhere in between
@@ -50,45 +50,45 @@ systemsound('Notify');
 A.setProtocol('PiezoStep');
 A.protocol.setParams('-q','Vm_id',0);
 A.run(5)
-beep 
+systemsound('Notify');
 
 %% Big Step
 A.setProtocol('PiezoSquareWave');
 A.protocol.setParams('-q','Vm_id',0);
 A.protocol.setParams('-q','cycles',6,'displacement',1);
 A.run(5)
-beep 
+systemsound('Notify');
 
 %% PiezoChirp
 A.setProtocol('PiezoChirp');
 A.run(3)
-beep
+systemsound('Notify');
 
 %% PiezoSine
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
-A.protocol.setParams('-q','freqs',freqs,'displacements',[0.1 0.2 0.4]);
+A.protocol.setParams('-q','freqs',freqs,'displacements',[0.2 0.4 0.8 1.6]);
 A.run(3)
-beep
+systemsound('Notify');
 
 %% Courtship song
 A.setProtocol('PiezoCourtshipSong');
-A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
+A.protocol.setParams('-q','displacements',[0.2 0.4 0.8 1.6],'postDurInSec',1);
 A.run(3)
-beep
+systemsound('Notify');
 
 %% Backwards Courtship song
 A.setProtocol('PiezoBWCourtshipSong');
 A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
 A.run(3)
-beep
+systemsound('Notify');
 
 %% Hyperpolarized PiezoChirp
 A.setProtocol('PiezoChirp');
 A.tag('Hyperpolarized')
 A.run(3)
 A.untag('Hyperpolarized')
-beep
+systemsound('Notify');
 
 %% Hyperpolarized PiezoSine
 A.setProtocol('PiezoSine');

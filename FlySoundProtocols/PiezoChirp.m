@@ -13,7 +13,6 @@ classdef PiezoChirp < PiezoProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
-        uncorrectedcommand
     end
     
     events
@@ -31,17 +30,34 @@ classdef PiezoChirp < PiezoProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
-            commandstim = obj.uncorrectedcommand * obj.params.displacement + obj.params.displacementOffset;
-            if strcmp(obj.modusOperandi,'Cal')
-                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
+            stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
+                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
+            
+            standardstim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
+            obj.uncorrectedcommand(stimpnts) = obj.y(stimpnts) .* standardstim;
+            calstim = obj.uncorrectedcommand;
+
+            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            if ~isempty(stimfn)
+                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+                calstim(obj.x>=0 & obj.x <obj.params.stimDurInSec) = ...
+                    obj.y(obj.x>=0 & obj.x <obj.params.stimDurInSec) .* ...
+                    stim(1:obj.params.stimDurInSec*obj.params.samprateout);
+            else
+                % otherwise, figure out what to do
+                obj.treatUncalibratedStimulus
             end
-            calstim = obj.y * obj.params.displacement + obj.params.displacementOffset;
+            
             if max(calstim > 10) || min(calstim < 0)
                 notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))
             end
-            obj.out.piezocommand = calstim;
-            obj.out.speakercommand = obj.uncorrectedcommand;
-            varargout = {obj.out,calstim,commandstim};
+            
+            obj.out.piezocommand = calstim * obj.params.displacement + obj.params.displacementOffset;
+            obj.out.speakercommand = obj.y .* obj.uncorrectedcommand;
+
+            varargout = {obj.out,...
+                obj.out.piezocommand,...
+                obj.out.speakercommand * obj.params.displacement + obj.params.displacementOffset};
         end
         
         function varargout = getCalibratedStimulus(obj)
@@ -94,7 +110,7 @@ classdef PiezoChirp < PiezoProtocol
             obj.params.displacement = obj.params.displacements(1);
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)
-                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+                [~,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
             end
             
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
@@ -112,29 +128,13 @@ classdef PiezoChirp < PiezoProtocol
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...
                 ones(length(stimpnts)-length(w),1);...
                 w(obj.params.ramptime*obj.params.samprateout+1:end)];
-            
-            % [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
-            standardstim = chirp(obj.x(stimpnts),obj.params.freqStart,obj.params.stimDurInSec,obj.params.freqEnd);
-            if isempty(stimfn)
-                stim = standardstim;
-            end
-            
-            y(stimpnts) = w.*stim;
+                        
+            y(stimpnts) = w;
             obj.y = y;
+            
+            % Allocate
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
-            obj.uncorrectedcommand(stimpnts) = w.*standardstim;
-            
-            if isempty(stimfn)
-                audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
-                    stim,...
-                    obj.params.samprateout,...
-                    'BitsPerSample',32);
-            end
-
-            if strcmp(obj.modusOperandi,'Cal')
-                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
-            end
         end
     end % protected methods
     

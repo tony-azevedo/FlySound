@@ -117,12 +117,18 @@ classdef FlySoundProtocol < handle
                 end
             end
             
-            p = inputParser;
+            p = inputParser; 
+            p.PartialMatching = 0;
             names = fieldnames(obj.params);
             for i = 1:length(names)
-                p.addParamValue(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
+                p.addParameter(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
             end
-            parse(p,varargin{:});
+            try
+                parse(p,varargin{:});
+            catch e
+                dots = regexp(e.message,'\.');
+                error(e.identifier,e.message(1:dots(1)))
+            end
             results = fieldnames(p.Results);
             for r = 1:length(results)
                 obj.params.(results{r}) = p.Results.(results{r});

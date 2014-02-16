@@ -1,16 +1,13 @@
 % Electrophysiology Protocol Base Class
 classdef PiezoProtocol < FlySoundProtocol
-    % CurrentSine.m
-    % CurrentStep.m
-    % FlySoundProtocol.m
+    % PiezoAM.m
     % PiezoBWCourtshipSong.m
+    % PiezoChirp.m
     % PiezoCourtshipSong.m
     % PiezoSine.m
     % PiezoSquareWave.m
     % PiezoStep.m
-    % SealAndLeak.m
-    % SealTest.m
-    % Sweep.m
+    % PiezeTest.m
 
     properties (Constant, Abstract) 
         protocolName;
@@ -27,6 +24,8 @@ classdef PiezoProtocol < FlySoundProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = protected)
+        uncorrectedcommand
+        correctedcommand
     end
     
     events
@@ -39,6 +38,28 @@ classdef PiezoProtocol < FlySoundProtocol
             obj = obj@FlySoundProtocol(varargin{:});
         end
         
+        function treatUncalibratedStimulus(obj)
+            % if not clibrating, notify that this is an uncalibrated
+            % stimulus and ask if we should proceed 
+            if ~strcmp(obj.modusOperandi,'Cal')
+                ButtonName = questdlg('Uncalibrated Stimulus. Continue?', ...
+                         'Uncalibrated!', ...
+                         'Yes','No', 'No');
+                switch ButtonName
+                    case 'No'
+                        error('Uncalibrated Stimulus');
+                end
+                notify(obj,'StimulusProblem',StimulusProblemData('CalibratingStimulus'));
+            end
+            
+            % if either calibrating or continuing, save a file (would be the
+            % first)
+            audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
+                obj.uncorrectedcommand(obj.x>=0),...
+                obj.params.samprateout,...
+                'BitsPerSample',32);
+
+        end
     end % methods
     
     methods (Abstract, Static, Access = protected)

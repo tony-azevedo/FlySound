@@ -1,7 +1,7 @@
 % Move the Piezo to with sine waves, control displacements, freqs, ramptime
-classdef PiezoSineV2 < PiezoProtocol
+classdef PiezoSine < PiezoProtocol
     properties (Constant)
-        protocolName = 'PiezoSineV2';
+        protocolName = 'PiezoSine';
     end
     
     properties (SetAccess = protected)
@@ -11,7 +11,7 @@ classdef PiezoSineV2 < PiezoProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
-        uncorrectedcommand
+        gaincorrection  % set this property when setting up the stimulus, 
     end
     
     events
@@ -19,7 +19,7 @@ classdef PiezoSineV2 < PiezoProtocol
     
     methods
         
-        function obj = PiezoSineV2(varargin)
+        function obj = PiezoSine(varargin)
             obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParamValue('modusOperandi','Run',...
@@ -33,16 +33,15 @@ classdef PiezoSineV2 < PiezoProtocol
             calstim = obj.y .* obj.uncorrectedcommand;
             
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            % If the calibrated stimulus file exists, load it
             if ~isempty(stimfn)
                 [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
-                calstim(obj.x>=0 & obj.x <obj.params.stimDurInSec) = ...
-                    obj.y(obj.x>=0 & obj.x <obj.params.stimDurInSec) .* ...
+                calstim(obj.x>=0 & obj.x <obj.params.stimDurInSec-eps) = ...
+                    obj.y(obj.x>=0 & obj.x <obj.params.stimDurInSec-eps) .* ...
                     stim(1:obj.params.stimDurInSec*obj.params.samprateout);
             else
-                audiowrite([obj.getCalibratedStimulusFileName,'.wav'],...
-                    obj.uncorrectedcommand(obj.x>=0),...
-                    obj.params.samprateout,...
-                    'BitsPerSample',32);
+                % otherwise, figure out what to do
+                obj.treatUncalibratedStimulus
             end
             
             if max(calstim > 10) || min(calstim < 0)
@@ -60,15 +59,6 @@ classdef PiezoSineV2 < PiezoProtocol
         
         
         function varargout = getCalibratedStimulus(obj)
-            varargout{1} = obj.y * obj.params.displacement + obj.params.displacementOffset;
-            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
-            if ~isempty(stimfn)
-                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
-                calstim(obj.x>=0 & obj.x <obj.params.stimDurInSec) = ...
-                    obj.y(obj.x>=0 & obj.x <obj.params.stimDurInSec) .* ...
-                    stim(1:obj.params.stimDurInSec*obj.params.samprateout);
-                varargout{1} = calstim * obj.params.displacement + obj.params.displacementOffset;
-            end
         end
         
         function fn = getCalibratedStimulusFileName(obj)
@@ -108,9 +98,15 @@ classdef PiezoSineV2 < PiezoProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            
+            obj.params.freq = obj.params.freqs(1);
+            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            if ~isempty(stimfn)
+                [~,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+            end
+            
             obj.x = makeOutTime(obj);
             obj.x = obj.x(:);
-            obj.params.freq = obj.params.freqs(1);
             obj.params.displacement = obj.params.displacements(1);
             y = makeOutTime(obj);
             y = y(:);
@@ -126,6 +122,8 @@ classdef PiezoSineV2 < PiezoProtocol
             
             y(stimpnts) = w;
             obj.y = y;
+            
+            % Allocate
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
         end
