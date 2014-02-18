@@ -5,7 +5,7 @@ if ~isfield(data,'exposure')
     fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
     return
 end
-fig = findobj('tag',mfilename); 
+fig = findobj('tag',mfilename); figure(fig); 
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...

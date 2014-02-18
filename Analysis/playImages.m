@@ -1,7 +1,11 @@
 function varargout = playImages(data,params,varargin)
-% powerSpectrum(data,params,time,mode)
 
-fig = findobj('tag',mfilename);
+if ~isfield(data,'exposure')
+    fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
+    return
+end
+
+fig = findobj('tag',mfilename); figure(fig); 
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...
