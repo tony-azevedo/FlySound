@@ -12,7 +12,6 @@ classdef PiezoBWCourtshipSong < PiezoProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
-        uncorrectedcommand
     end
     
     events

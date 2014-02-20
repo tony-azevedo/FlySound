@@ -26,7 +26,7 @@ A.untag('TTX')
 %% Resting potential and oscillations (5x5 sec) Minimize current
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.run(3)
+A.run(5)
 systemsound('notify')
 
 

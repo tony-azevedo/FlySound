@@ -59,21 +59,17 @@ A.protocol.setParams('-q','cycles',6,'displacement',1);
 A.run(3)
 beep 
 
-%% PiezoChirp
-A.setProtocol('PiezoChirp');
-A.run(3)
-beep
-
 %% PiezoSine
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:10); 
 A.protocol.setParams('-q','freqs',freqs,'displacements',[0.1 0.2 0.4 0.8 1.6]);
+A.protocol.randomize
 A.run(3)
 beep
 
 %% Courtship song
 A.setProtocol('PiezoCourtshipSong');
-A.protocol.setParams('-q','displacements',[0.2 0.4],'postDurInSec',1);
+A.protocol.setParams('-q','displacements',[0.2 0.4 0.8],'postDurInSec',1);
 A.run(3)
 beep
 
@@ -83,29 +79,29 @@ A.protocol.setParams('-q','displacements',[0.2 0.4 0.8],'postDurInSec',1);
 A.run(3)
 beep
 
-%% Hyperpolarized PiezoChirp
+%% PiezoChirp Up
 A.setProtocol('PiezoChirp');
-A.tag('Hyperpolarized')
+A.protocol.setParams('-q','displacements',[0.1 0.2 0.4 0.8]);
 A.run(3)
-A.untag('Hyperpolarized')
 beep
 
-%% Hyperpolarized PiezoSine
-A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
-A.protocol.setParams('-q','freqs',freqs,'displacements',[0.1 0.2 0.4],'postDurInSec',1);
-A.tag('Hyperpolarized')
+%% PiezoChirp Down
+A.setProtocol('PiezoChirp','modusOperandi','Cal');
+A.protocol.setParams('-q','displacements',[0.1 0.2 0.4 0.8],...
+    'freqStart',800,...
+    'freqEnd',25);
+% A.protocol.CalibrateStimulus(A)
 A.run(3)
-A.untag('Hyperpolarized')
 beep
+
+%% Hyperpolarization is not as interesting in these cells
+
 
 %% CurrentSine
-A.setProtocol('CurrentSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
+A.setProtocol('CurrentStep');
 A.protocol.setParams('-q',...
-    'freqs',freqs,...
-    'amps',[5 10 20],...  % Tune this if necessary
-    'postDurInSec',1);
+    'steps',[5 10 20],...  % Tune this if necessary
+    'stimDurInSec',.4);
 A.run(5)
 systemsound('Notify');
 
