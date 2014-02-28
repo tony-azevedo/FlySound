@@ -5,7 +5,7 @@ if ~isfield(data,'exposure')
     return
 end
 
-fig = findobj('tag',mfilename); figure(fig); 
+fig = findobj('tag',mfilename);
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...
@@ -36,6 +36,7 @@ if isempty(fig);
 else
     c = guidata(fig);
 end
+figure(fig); 
 if nargin>2
     exposureNum = varargin{1};
 else

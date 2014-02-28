@@ -1,11 +1,22 @@
 function varargout = dFoverF(data,params,varargin)
 % dFoverF(data,params,montageflag)
 
+p = inputParser;
+p.PartialMatching = 0;
+p.addParamValue('NewROI','',@ischar);
+p.addParamValue('dFoFfig',[],@isnumeric);
+parse(p,varargin{:});
+
 if ~isfield(data,'exposure')
     fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
+    varargout = {[]};
     return
 end
-fig = findobj('tag',mfilename); figure(fig); 
+if isempty(p.Results.dFoFfig)
+    fig = findobj('tag',mfilename);
+else
+    fig = p.Results.dFoFfig;
+end
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...
@@ -19,40 +30,35 @@ if isempty(fig);
     proplist =  getpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
+figure(fig); 
 ax = findobj('tag',[mfilename 'ax']);
 if isempty(ax)
-    ax = subplot(1,1,1,'parent',fig,'tag',[mfilename 'ax']);
+    ax = subplot(2,1,1,'parent',fig,'tag',[mfilename 'ax']);
 else
-    delete(get(ax,'children'));
+    cla(ax,'reset');
 end
-if nargin>2
-    button = 'No';
-end
+absolute_ax = subplot(2,1,2,'parent',fig,'tag',[mfilename 'absolute_ax']);
+cla(absolute_ax,'reset');
 
-% dummyax = findobj('tag',[mfilename 'dummyax']);
-% if isempty(dummyax)
-%     dummyax = axes('Position',get(ax,'Position'),...
-%         'tag',[mfilename 'dummyax'],...
-%         'parent',fig,...
-%         'XAxisLocation','top',...
-%         'Color','none',...
-%         'Ytick',[],...
-%         'XColor','k','YColor','k');
-% else
-%     delete(get(dummyax,'children'));
-% end
-
+button = p.Results.NewROI;
 
 imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 
-t = makeInTime(params);
 exp_t = data.exposure_time;
 
-if exist('button','var') && isfield(data,'dFoverF')
+if sum(exp_t<0)
+    bsln = exp_t<0 & exp_t>exp_t(1)+.02;
+else
+    bsln = exp_t<1 & exp_t>exp_t(1)+.02;
+end
+bl_numframes = nansum(bsln);
+
+if strcmp(button,'No') && isfield(data,'dFoverF')
     line(exp_t,data.dFoverF,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
     axis(ax,'tight');
     ylabel(ax,'% \Delta F / F')
     xlabel(ax,'Time (s)')
+    varargout = {[]};
     return
 end
 
@@ -69,13 +75,6 @@ for frame=1:num_frame
     [I(:,:,1,frame)] = imread(fullfile(imdir,imagefiles(frame).name));
 end
 
-%% calculates a baseline image from frame bl_start through bl_end 
-if sum(exp_t<0)
-    bsln = exp_t<0 & exp_t>exp_t(1)+.02;
-else
-    bsln = exp_t<1 & exp_t>exp_t(1)+.02;
-end
-bl_numframes = nansum(bsln);
 image_sum = nansum(I(:,:,1,bsln),4);
 I_F0 = imdivide(image_sum, bl_numframes);
 
@@ -115,52 +114,12 @@ dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
 
 line(data.exposure_time,dFoverF_trace,'parent',ax,'tag','dFoverF_trace')
 axis(ax,'tight');
-%axis(ax,[exp_t(1) exp_t(length(I_trace)) get(ax,'ylim')])
-% line((1:length(I_trace)),dFoverF_trace,'parent',dummyax,'linestyle','none')
-% axis(dummyax, [1 length(I_trace) get(ax,'ylim')]);
+
 ylabel('% \Delta F / F')
 xlabel('Time (s)')
 
 data.dFoverF = dFoverF_trace;
 
 save(regexprep(data.name,'Acquisition','Raw_Data'), '-struct', 'data');
-
-%calculate change in fluorescence frame by frame relative to baseline
-% I_dFovF = I;
-% for frame=1:num_frame
-%     I_dFovF(:,:,1,frame) = (I(:,:,1,frame) ./ I_F0)-1;
-%     I_dFovF(I_dFovF(:,:,1,frame) >= 500,1,frame) = 0;
-% end
-
-%apply Gaussian filter:
-%rotationally symmetric Gaussian lowpass filter of size 5x5 with standard deviation
-%sigma 2 (positive). 
-% G = fspecial('gaussian',[3 3],2);
-% I_dFovF_thr_filt = imfilter(I_dFovF,G);
-%I_dFovFmov = imfilter(I,G);
-
-% if montageflag
-%     %plot montage of dFoverF images
-%     c = [min(min(min(min(I_dFovF)))) max(max(max(max(I_dFovF))))];
-%     
-%     Idim = size(I);
-%     Checkers = ones([Idim(1:3), Idim(4)*2])*c(1);
-%     Checkers(:,:,1,2:2:end) = I_dFovF_thr_filt;
-%     
-%     figure
-%     dim1 = floor(sqrt(Idim(4)*2));
-%     if ~mod(dim1,2)
-%         dim1 = dim1-1;
-%     end
-%     montage(Checkers,'Size',[NaN dim1])
-%     colormap(hot)
-%     caxis(c)
-%     % t=[num2str(filebase)];
-%     % title(t)
-%     
-% %     figure
-% %     mov = immovie(I,hot);
-% %     implay(mov);
-% end
 
 varargout = {I};

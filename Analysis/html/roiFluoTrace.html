@@ -1,0 +1,450 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>roiFluoTrace</title><meta name="generator" content="MATLAB 8.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-02-27"><meta name="DC.source" content="roiFluoTrace.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#3">Currently, I'm saving images as single files.  Sucks!</a></li><li><a href="#4">Do motion correction here</a></li><li><a href="#5">select ROI</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> varargout = roiFluoTrace(data,params,varargin)
+</pre><pre class="codeinput"><span class="comment">% dFoverF(data,params,montageflag)</span>
+
+p = inputParser;
+p.PartialMatching = 0;
+p.addParamValue(<span class="string">'NewROI'</span>,<span class="string">''</span>,@ischar);
+p.addParamValue(<span class="string">'dFoFfig'</span>,[],@isnumeric);
+p.addParamValue(<span class="string">'MotionCorrection'</span>,true,@islogical);
+p.addParamValue(<span class="string">'ShowMovies'</span>,false,@islogical);
+p.addParamValue(<span class="string">'MovieLocation'</span>,<span class="string">''</span>,@ischar);
+
+parse(p,varargin{:});
+
+varargout = {[]};
+
+<span class="keyword">if</span> ~isfield(data,<span class="string">'exposure'</span>)
+    fprintf(1,<span class="string">'No Camera Input: Exiting dFoverF routine\n'</span>);
+    <span class="keyword">return</span>
+<span class="keyword">end</span>
+<span class="keyword">if</span> isempty(p.Results.dFoFfig)
+    fig = findobj(<span class="string">'tag'</span>,mfilename);
+<span class="keyword">else</span>
+    fig = p.Results.dFoFfig;
+    subplot(2,1,1,<span class="string">'parent'</span>,fig,<span class="string">'tag'</span>,[mfilename <span class="string">'ax'</span>]);
+<span class="keyword">end</span>
+<span class="keyword">if</span> isempty(fig);
+    <span class="keyword">if</span> ~ispref(<span class="string">'AnalysisFigures'</span>) ||~ispref(<span class="string">'AnalysisFigures'</span>,mfilename) <span class="comment">% rmpref('AnalysisFigures','powerSpectrum')</span>
+        proplist = {<span class="keyword">...</span>
+            <span class="string">'tag'</span>,mfilename,<span class="keyword">...</span>
+            <span class="string">'Position'</span>,[1030 181 560 275],<span class="keyword">...</span>
+            <span class="string">'NumberTitle'</span>, <span class="string">'off'</span>,<span class="keyword">...</span>
+            <span class="string">'Name'</span>, mfilename,<span class="keyword">...</span><span class="comment"> % 'DeleteFcn',@obj.setDisplay);</span>
+            };
+        setpref(<span class="string">'AnalysisFigures'</span>,mfilename,proplist);
+    <span class="keyword">end</span>
+    proplist =  getpref(<span class="string">'AnalysisFigures'</span>,mfilename);
+    fig = figure(proplist{:});
+<span class="keyword">end</span>
+figure(fig);
+ax = findobj(fig,<span class="string">'tag'</span>,[mfilename <span class="string">'ax'</span>]);
+<span class="keyword">if</span> isempty(ax)
+    ax = subplot(2,1,1,<span class="string">'parent'</span>,fig,<span class="string">'tag'</span>,[mfilename <span class="string">'ax'</span>]);
+<span class="keyword">else</span>
+    cla(ax,<span class="string">'reset'</span>);
+<span class="keyword">end</span>
+absolute_ax = subplot(2,1,2,<span class="string">'parent'</span>,fig,<span class="string">'tag'</span>,[mfilename <span class="string">'absolute_ax'</span>]);
+cla(absolute_ax,<span class="string">'reset'</span>);
+
+button = p.Results.NewROI;
+
+imdir = regexprep(regexprep(regexprep(data.name,<span class="string">'Raw'</span>,<span class="string">'Images'</span>),<span class="string">'.mat'</span>,<span class="string">''</span>),<span class="string">'Acquisition'</span>,<span class="string">'Raw_Data'</span>);
+
+exp_t = data.exposure_time;
+
+<span class="keyword">if</span> sum(exp_t&lt;0)
+    bsln = exp_t&lt;0 &amp; exp_t&gt;exp_t(1)+.02;
+<span class="keyword">else</span>
+    bsln = exp_t&lt;1 &amp; exp_t&gt;exp_t(1)+.02;
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> strcmp(button,<span class="string">'No'</span>) &amp;&amp; isfield(data,<span class="string">'roiFluoTrace'</span>) &amp;&amp; ~p.Results.MotionCorrection
+    dFoverF_trace = 100 * (data.roiFluoTrace/nanmean(data.roiFluoTrace(bsln)) - 1);
+    line(exp_t,dFoverF_trace,<span class="string">'parent'</span>,ax,<span class="string">'tag'</span>,<span class="string">'dFoverF_trace'</span>,<span class="string">'displayname'</span>,imdir)
+    axis(ax,<span class="string">'tight'</span>);
+    ylabel(ax,<span class="string">'% \Delta F / F'</span>)
+    xlabel(ax,<span class="string">'Time (s)'</span>)
+
+    line(exp_t,data.roiFluoTrace,<span class="string">'parent'</span>,absolute_ax,<span class="string">'tag'</span>,<span class="string">'fluo_trace'</span>,<span class="string">'displayname'</span>,imdir)
+    axis(absolute_ax,<span class="string">'tight'</span>);
+    ylabel(absolute_ax,<span class="string">'F (counts)'</span>)
+    xlabel(absolute_ax,<span class="string">'Time (s)'</span>)
+    <span class="keyword">return</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Error using roiFluoTrace (line 16)
+Not enough input arguments.
+</pre><h2>Currently, I'm saving images as single files.  Sucks!<a name="3"></a></h2><pre class="codeinput"><span class="comment">%[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');</span>
+imagefiles = dir(fullfile(imdir,[params.protocol <span class="string">'_Image_*'</span>]));
+num_frame = length(imagefiles);
+im = imread(fullfile(imdir,imagefiles(1).name));
+num_px = size(im);
+
+I = zeros([num_px(:); 1; num_frame]', <span class="string">'double'</span>);  <span class="comment">%preallocate 3-D array</span>
+<span class="comment">%read in .tif files</span>
+<span class="keyword">for</span> frame=1:num_frame
+    [I(:,:,1,frame)] = imread(fullfile(imdir,imagefiles(frame).name));
+<span class="keyword">end</span>
+
+I_F0 = nanmean(I(:,:,1,bsln),4);
+</pre><h2>Do motion correction here<a name="4"></a></h2><pre class="codeinput"><span class="keyword">if</span> p.Results.MotionCorrection
+    I_uncorrected = I;
+    ref_frame = I(:,:,1,1);
+    ref_FFT = fft2(ref_frame);
+    <span class="keyword">for</span> frame=2:num_frame
+        [~, Greg] = dftregistration(ref_FFT,fft2(I(:,:,1,frame)),1);
+        I(:,:,1,frame) = real(ifft2(Greg));
+    <span class="keyword">end</span>
+
+    I_F0_uncorrected = I_F0;
+    I_F0 = nanmean(I(:,:,1,bsln),4);
+
+    <span class="keyword">if</span> ~isempty(p.Results.MovieLocation)
+        [protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
+
+        vidObj = VideoWriter([p.Results.MovieLocation <span class="string">'\'</span> protocol <span class="string">'_'</span> dateID <span class="string">'_'</span> flynum <span class="string">'_'</span> cellnum <span class="string">'_'</span> trialnum],<span class="string">'MPEG-4'</span>);
+        set(vidObj,<span class="string">'FrameRate'</span>,round(1/diff(exp_t([1 2]))))
+
+        I_uncorrected = squeeze(I_uncorrected);
+        I = squeeze(I);
+
+        I_uncorrected_norm = <span class="keyword">...</span>
+            (I_uncorrected - min(min(min(I_uncorrected))))/<span class="keyword">...</span>
+            (max(max(max(I_uncorrected))) - min(min(min(I_uncorrected))));
+        I_norm = <span class="keyword">...</span>
+            (I - min(min(min(I))))/<span class="keyword">...</span>
+            (max(max(max(I))) - min(min(min(I))));
+
+        open(vidObj);
+
+        <span class="comment">% Create an animation.</span>
+        <span class="comment">% set(gca,'nextplot','replacechildren');</span>
+        <span class="keyword">for</span> frame=1:num_frame
+            <span class="comment">% Write each frame to the file.</span>
+            writeVideo(vidObj,I_norm(:,:,frame));
+        <span class="keyword">end</span>
+        close(vidObj);
+
+        varargout = {fullfile(get(vidObj,<span class="string">'Path'</span>), get(vidObj,<span class="string">'Filename'</span>))};
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+I_uncorrected = squeeze(I_uncorrected);
+I = squeeze(I);
+</pre><h2>select ROI<a name="5"></a></h2><pre class="codeinput"><span class="keyword">if</span> ~isfield(data,<span class="string">'ROI'</span>) || ~strcmp(p.Results.NewROI,<span class="string">'No'</span>);
+    roifig = figure;
+    set(roifig,<span class="string">'position'</span>,[1111 459 560 420]);
+    imshow(I_F0,[],<span class="string">'initialmagnification'</span>,<span class="string">'fit'</span>);
+    title(<span class="string">'Draw ROI, close figure when done'</span>)
+
+    <span class="keyword">if</span> isfield(data,<span class="string">'ROI'</span>)
+        line(data.ROI(:,1),data.ROI(:,2));
+        button = questdlg(<span class="string">'Make new ROI?'</span>,<span class="string">'ROI'</span>,<span class="string">'No'</span>);
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> strcmp(button,<span class="string">'Yes'</span>);
+        roihand = imfreehand(get(roifig,<span class="string">'children'</span>),<span class="string">'Closed'</span>,1);
+        data.ROI = wait(roihand);
+        mask = createMask(roihand);
+    <span class="keyword">else</span>
+        mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
+    <span class="keyword">end</span>
+    close(roifig);
+<span class="keyword">elseif</span> strcmp(p.Results.NewROI,<span class="string">'No'</span>)
+    mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
+<span class="keyword">end</span>
+</pre><pre class="codeinput">I_masked = I;
+I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+
+I_F0_masked = I_F0;
+I_F0_masked(~mask)=nan;
+
+I_trace = nanmean(nanmean(I_masked,1),2);
+I_trace = reshape(I_trace,1,numel(I_trace));
+dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
+
+line(exp_t,dFoverF_trace,<span class="string">'parent'</span>,ax,<span class="string">'tag'</span>,<span class="string">'dFoverF_trace'</span>,<span class="string">'displayname'</span>,imdir)
+axis(ax,<span class="string">'tight'</span>);
+ylabel(ax,<span class="string">'% \Delta F / F'</span>)
+xlabel(ax,<span class="string">'Time (s)'</span>)
+
+line(exp_t,I_trace,<span class="string">'parent'</span>,absolute_ax,<span class="string">'tag'</span>,<span class="string">'fluo_trace'</span>,<span class="string">'displayname'</span>,imdir)
+axis(absolute_ax,<span class="string">'tight'</span>);
+ylabel(absolute_ax,<span class="string">'F (counts)'</span>)
+xlabel(absolute_ax,<span class="string">'Time (s)'</span>)
+<span class="keyword">if</span> p.Results.MotionCorrection
+    I_masked = I_uncorrected;
+    I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+
+    I_trace_uncorrected = nanmean(nanmean(I_masked,1),2);
+    I_trace_uncorrected = reshape(I_trace_uncorrected,1,numel(I_trace_uncorrected));
+    line(exp_t,I_trace_uncorrected,<span class="string">'color'</span>,[1 0 0],<span class="string">'parent'</span>,absolute_ax,<span class="string">'tag'</span>,<span class="string">'fluo_trace'</span>,<span class="string">'displayname'</span>,imdir)
+<span class="keyword">end</span>
+
+data.roiFluoTrace = I_trace;
+
+save(regexprep(data.name,<span class="string">'Acquisition'</span>,<span class="string">'Raw_Data'</span>), <span class="string">'-struct'</span>, <span class="string">'data'</span>);
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2013b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function varargout = roiFluoTrace(data,params,varargin)
+% dFoverF(data,params,montageflag)
+
+p = inputParser;
+p.PartialMatching = 0;
+p.addParamValue('NewROI','',@ischar);
+p.addParamValue('dFoFfig',[],@isnumeric);
+p.addParamValue('MotionCorrection',true,@islogical);
+p.addParamValue('ShowMovies',false,@islogical);
+p.addParamValue('MovieLocation','',@ischar);
+
+parse(p,varargin{:});
+
+varargout = {[]};
+
+if ~isfield(data,'exposure')
+    fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
+    return
+end
+if isempty(p.Results.dFoFfig)
+    fig = findobj('tag',mfilename);
+else
+    fig = p.Results.dFoFfig;
+    subplot(2,1,1,'parent',fig,'tag',[mfilename 'ax']);
+end
+if isempty(fig);
+    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+        proplist = {...
+            'tag',mfilename,...
+            'Position',[1030 181 560 275],...
+            'NumberTitle', 'off',...
+            'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
+            };
+        setpref('AnalysisFigures',mfilename,proplist);
+    end
+    proplist =  getpref('AnalysisFigures',mfilename);
+    fig = figure(proplist{:});
+end
+figure(fig);
+ax = findobj(fig,'tag',[mfilename 'ax']);
+if isempty(ax)
+    ax = subplot(2,1,1,'parent',fig,'tag',[mfilename 'ax']);
+else
+    cla(ax,'reset');
+end
+absolute_ax = subplot(2,1,2,'parent',fig,'tag',[mfilename 'absolute_ax']);
+cla(absolute_ax,'reset');
+
+button = p.Results.NewROI;
+
+imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+
+exp_t = data.exposure_time;
+
+if sum(exp_t<0)
+    bsln = exp_t<0 & exp_t>exp_t(1)+.02;
+else
+    bsln = exp_t<1 & exp_t>exp_t(1)+.02;
+end
+
+if strcmp(button,'No') && isfield(data,'roiFluoTrace') && ~p.Results.MotionCorrection
+    dFoverF_trace = 100 * (data.roiFluoTrace/nanmean(data.roiFluoTrace(bsln)) - 1);
+    line(exp_t,dFoverF_trace,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
+    axis(ax,'tight');
+    ylabel(ax,'% \Delta F / F')
+    xlabel(ax,'Time (s)')
+    
+    line(exp_t,data.roiFluoTrace,'parent',absolute_ax,'tag','fluo_trace','displayname',imdir)
+    axis(absolute_ax,'tight');
+    ylabel(absolute_ax,'F (counts)')
+    xlabel(absolute_ax,'Time (s)')
+    return
+end
+
+%%  Currently, I'm saving images as single files.  Sucks!
+%[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');
+imagefiles = dir(fullfile(imdir,[params.protocol '_Image_*']));
+num_frame = length(imagefiles);
+im = imread(fullfile(imdir,imagefiles(1).name));
+num_px = size(im);
+
+I = zeros([num_px(:); 1; num_frame]', 'double');  %preallocate 3-D array
+%read in .tif files
+for frame=1:num_frame
+    [I(:,:,1,frame)] = imread(fullfile(imdir,imagefiles(frame).name));
+end
+
+I_F0 = nanmean(I(:,:,1,bsln),4);
+
+%% Do motion correction here
+
+if p.Results.MotionCorrection
+    I_uncorrected = I;
+    ref_frame = I(:,:,1,1);
+    ref_FFT = fft2(ref_frame);
+    for frame=2:num_frame
+        [~, Greg] = dftregistration(ref_FFT,fft2(I(:,:,1,frame)),1);
+        I(:,:,1,frame) = real(ifft2(Greg));
+    end
+    
+    I_F0_uncorrected = I_F0;
+    I_F0 = nanmean(I(:,:,1,bsln),4);
+        
+    if ~isempty(p.Results.MovieLocation)
+        [protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
+
+        vidObj = VideoWriter([p.Results.MovieLocation '\' protocol '_' dateID '_' flynum '_' cellnum '_' trialnum],'MPEG-4');
+        set(vidObj,'FrameRate',round(1/diff(exp_t([1 2]))))
+        
+        I_uncorrected = squeeze(I_uncorrected);
+        I = squeeze(I);
+
+        I_uncorrected_norm = ...
+            (I_uncorrected - min(min(min(I_uncorrected))))/...
+            (max(max(max(I_uncorrected))) - min(min(min(I_uncorrected))));
+        I_norm = ...
+            (I - min(min(min(I))))/...
+            (max(max(max(I))) - min(min(min(I))));
+        
+        open(vidObj);
+        
+        % Create an animation.
+        % set(gca,'nextplot','replacechildren');
+        for frame=1:num_frame
+            % Write each frame to the file.
+            writeVideo(vidObj,I_norm(:,:,frame));
+        end
+        close(vidObj);
+      
+        varargout = {fullfile(get(vidObj,'Path'), get(vidObj,'Filename'))};
+    end
+end
+
+I_uncorrected = squeeze(I_uncorrected);
+I = squeeze(I);
+
+%% select ROI 
+
+if ~isfield(data,'ROI') || ~strcmp(p.Results.NewROI,'No');
+    roifig = figure;
+    set(roifig,'position',[1111 459 560 420]);
+    imshow(I_F0,[],'initialmagnification','fit');
+    title('Draw ROI, close figure when done')
+    
+    if isfield(data,'ROI')
+        line(data.ROI(:,1),data.ROI(:,2));
+        button = questdlg('Make new ROI?','ROI','No');
+    end
+    if strcmp(button,'Yes');
+        roihand = imfreehand(get(roifig,'children'),'Closed',1);
+        data.ROI = wait(roihand);
+        mask = createMask(roihand);
+    else
+        mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
+    end
+    close(roifig);
+elseif strcmp(p.Results.NewROI,'No')
+    mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
+end
+
+
+%%
+I_masked = I;
+I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+
+I_F0_masked = I_F0;
+I_F0_masked(~mask)=nan;
+
+I_trace = nanmean(nanmean(I_masked,1),2);
+I_trace = reshape(I_trace,1,numel(I_trace));
+dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
+
+line(exp_t,dFoverF_trace,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
+axis(ax,'tight');
+ylabel(ax,'% \Delta F / F')
+xlabel(ax,'Time (s)')
+
+line(exp_t,I_trace,'parent',absolute_ax,'tag','fluo_trace','displayname',imdir)
+axis(absolute_ax,'tight');
+ylabel(absolute_ax,'F (counts)')
+xlabel(absolute_ax,'Time (s)')
+if p.Results.MotionCorrection
+    I_masked = I_uncorrected;
+    I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+        
+    I_trace_uncorrected = nanmean(nanmean(I_masked,1),2);
+    I_trace_uncorrected = reshape(I_trace_uncorrected,1,numel(I_trace_uncorrected));
+    line(exp_t,I_trace_uncorrected,'color',[1 0 0],'parent',absolute_ax,'tag','fluo_trace','displayname',imdir)
+end
+
+data.roiFluoTrace = I_trace;
+
+save(regexprep(data.name,'Acquisition','Raw_Data'), '-struct', 'data');
+
+
+##### SOURCE END #####
+--></body></html>
