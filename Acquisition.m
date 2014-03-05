@@ -22,6 +22,8 @@ classdef Acquisition < handle
         analyzelistener
         flynumber
         cellnumber 
+        amplifier1Device
+
         tags
     end
     
@@ -46,9 +48,6 @@ classdef Acquisition < handle
 
             % set a simple protocol
             obj.setProtocol('SealAndLeak');
-
-            obj.saveAcquisition();
-
             obj.analyze = 1;
 
         end
@@ -78,6 +77,7 @@ classdef Acquisition < handle
             if ~isempty(obj.rig) && obj.rig.IsContinuous
                 obj.rig.stop
             end
+            
             protstr = ['obj.protocol = ' prot '('];
             if nargin>2
                 for i = 1:length(varargin)
@@ -159,12 +159,15 @@ classdef Acquisition < handle
         
         
         function setIdentifiers(obj,varargin)
+            
             p = inputParser;
             p.addParamValue('flygenotype','',@ischar);
             p.addParamValue('flynumber',[],@isnumeric);
             %             p.addParamValue('flyage',2,@isnumeric);
             %             p.addParamValue('flysex','female',@ischar);
             p.addParamValue('cellnumber',[],@isnumeric);
+            p.addParamValue('amplifier1Device','',...
+                @(x) any(validatestring(x,{'MultiClamp700B','MultiClamp700BAux'})));            
             p.addParamValue('aiSamprate',10000,@isnumeric);
             p.addParamValue('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
@@ -175,8 +178,9 @@ classdef Acquisition < handle
             obj.flygenotype = '';
             obj.flynumber = '';
             obj.cellnumber = '';
+            obj.amplifier1Device = '';
             
-            numlines = [1 1 1];
+            numlines = [1 1 1 1];
             defAns = {'','',''};
             inputprompts{1} = 'Fly Genotype: ';
             if isfield(p.Results,'flygenotype') && ~isempty(p.Results.flygenotype)
@@ -198,6 +202,13 @@ classdef Acquisition < handle
                 defAns{3} = obj.cellnumber;
                 numlines(3) = 0;
             end
+
+            inputprompts{4} = 'Amp 1 Device: ';
+            if isfield(p.Results,'amplifier1Device') && ~isempty(p.Results.amplifier1Device)
+                obj.amplifier1Device = p.Results.amplifier1Device;
+                defAns{4} = obj.amplifier1Device;
+                numlines(4) = 0;
+            end
             
             if ispref('AcquisitionPrefs')
                 acquisitionPrefs = getpref('AcquisitionPrefs');
@@ -205,6 +216,7 @@ classdef Acquisition < handle
                 acquisitionPrefs.flygenotype = [];
                 acquisitionPrefs.flynumber = [];
                 acquisitionPrefs.cellnumber = [];
+                acquisitionPrefs.amplifier1Device = [];
                 acquisitionPrefs.last_timestamp = 0;
             end
             
@@ -247,13 +259,34 @@ classdef Acquisition < handle
                     undefinedID = 1;
                 end
             end
-            
+            if isempty(obj.amplifier1Device)
+                if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)
+                    if ~sum(strcmp(acquisitionPrefs.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux'}))
+                        error('AcuisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700BAux''}')
+                    end
+                    obj.amplifier1Device = acquisitionPrefs.amplifier1Device;
+                    defAns{4} = acquisitionPrefs.amplifier1Device;
+                    usingAcqPrefs = 1;
+                else
+                    if ~isempty(acquisitionPrefs.amplifier1Device);
+                        defAns{4} = acquisitionPrefs.amplifier1Device;
+                    end
+                    undefinedID = 1;
+                end
+            end
+
             if undefinedID
                 while undefinedID
                     answer = inputdlg(inputprompts,dlgtitle,numlines,defAns);
+
                     obj.flygenotype = answer{1};
                     obj.flynumber  = answer{2};
                     obj.cellnumber = answer{3};
+                    obj.amplifier1Device = answer{4};
+                    if ~sum(strcmp(obj.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux'}))
+                        error('AcuisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700BAux''}')
+                    end
+
                     if ~isempty(obj.flynumber) && ~isempty(obj.cellnumber)
                         break
                     end
@@ -266,17 +299,18 @@ classdef Acquisition < handle
                     %                         obj.flygenotype,...
                     %                         obj.flynumber,...
                     %                         obj.cellnumber));
-                    fprintf('Identifiers are current: \nfly genotype - %s\nfly number - %s\ncell number - %s\n',...
+                    fprintf('Identifiers are current: \nfly genotype - %s\nfly number - %s\ncell number - %s\namplifier 1 - %s\n',...
                         obj.flygenotype,...
                         obj.flynumber,...
-                        obj.cellnumber);
+                        obj.cellnumber,...
+                        obj.amplifier1Device);
                 end
             end
             
             % then set preferences to current values
             setpref('AcquisitionPrefs',...
-                {'flygenotype','flynumber','cellnumber','last_timestamp'},...
-                {obj.flygenotype,obj.flynumber,obj.cellnumber, now});
+                {'flygenotype','flynumber','cellnumber','amplifier1Device','last_timestamp'},...
+                {obj.flygenotype,obj.flynumber,obj.cellnumber, obj.amplifier1Device, now});
             obj.updateFileNames();
             obj.openNotesFile();
             if ~isempty(obj.protocol)
@@ -339,8 +373,22 @@ classdef Acquisition < handle
         end
         
         function setRig(obj,varargin)
-            if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName)
-                eval(['obj.rig = ' obj.protocol.requiredRig ';']);
+            
+            % Main Amp (amplifier1Device) may have changed
+            if ~isempty(obj.rig)
+                changeMainAmp = 0;
+                devicenames = fieldnames(obj.rig.devices);
+                mainamps = {'amplifier','amplifier_1'};
+                for ma_ind = 1:length(mainamps)
+                    if sum(strcmp(devicenames,mainamps(ma_ind)))
+                        changeMainAmp = ~strcmp(obj.amplifier1Device,obj.rig.devices.(devicenames{strcmp(devicenames,mainamps(ma_ind))}).deviceName);
+                    end
+                end
+            end
+            
+            if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName) || changeMainAmp
+                
+                eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
                 addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
@@ -549,7 +597,8 @@ classdef Acquisition < handle
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;
             acqStruct.flynumber = obj.flynumber;
-            acqStruct.cellnumber = obj.cellnumber;             %#ok<STRNU>
+            acqStruct.cellnumber = obj.cellnumber;             
+            acqStruct.amplifier1Device = obj.amplifier1Device;  %#ok<STRNU>            
             save(name,'acqStruct');
             
             rigStruct = obj.rig.getRigStruct(); %#ok<NASGU>

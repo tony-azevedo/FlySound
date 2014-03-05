@@ -1,10 +1,9 @@
 classdef MultiClamp700B < Device
     
-    properties (Constant)
-        deviceName = 'MultiClamp700B';
+    properties (SetAccess = protected)
     end
     
-    properties (SetAccess = protected)
+    properties 
     end
 
     properties (Hidden, SetAccess = protected)
@@ -21,6 +20,9 @@ classdef MultiClamp700B < Device
     
     methods
         function obj = MultiClamp700B(varargin)
+            obj = obj@Device(varargin{:});
+
+            obj.deviceName = 'MultiClamp700B';
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'primary','secondary'};
             obj.inputUnits = {'mV','pA'};
@@ -59,7 +61,7 @@ classdef MultiClamp700B < Device
             end
             if isempty(fieldnames(out))
                 notify(obj,'BadMode');
-                error('Amplifier in %s mode - No appropriate output',obj.mode);
+                error('%s in %s mode - No appropriate output',obj.deviceName,obj.mode);
             end
             varargout = {out};
         end
@@ -98,22 +100,16 @@ classdef MultiClamp700B < Device
             varargout = {inputstruct,units};
         end
         
-        function setModeSession(obj)
-            % Need to replace this with some interaction with the
-            % Multiclamp commander.
-            
+        function setModeSession(obj)            
             % add listener to the MC telegraphs...
         end
         
         function setGainSession(obj)
-            % Need to replace this with some interaction with the
-            % Multiclamp commander.
-            
             % add listener to the MC telegraphs...
         end
-        
+                    
         function newmode = getmode(obj)
-            mccmode = MCCGetMode;
+            mccmode = obj.subclassModeFunction();
             % see AxMultiClampMsg.h mode constants
             if mccmode == 0
                 obj.mode = 'VClamp';
@@ -142,7 +138,7 @@ classdef MultiClamp700B < Device
         end
         
         function newgain = getgain(obj)
-            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            [gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
             % see AxMultiClampMsg.h constants prim and secondary signal IDs
             
             obj.gain = gain1;
@@ -180,6 +176,17 @@ classdef MultiClamp700B < Device
         end        
     end
     
+    methods (Static)
+        function mccmode = subclassModeFunction
+            mccmode = MCCGetMode;
+        end
+        
+        function varargout = subclassGainFunction
+            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            varargout = {gain1,primarySignal,gain2,secondarySignal};
+        end
+    end
+    
     methods (Access = protected)
                 
         function defineParameters(obj)
@@ -209,4 +216,5 @@ classdef MultiClamp700B < Device
 
         end
     end
+   
 end

@@ -1,7 +1,7 @@
 classdef AxoPatch200B < Device
     
     properties (Constant)
-        deviceName = 'AxoPatch200B';
+        
     end
     
     properties (Hidden, SetAccess = protected)
@@ -22,6 +22,9 @@ classdef AxoPatch200B < Device
     
     methods
         function obj = AxoPatch200B(varargin)
+            obj = obj@Device(varargin{:});
+            obj.deviceName = 'AxoPatch200B';
+            
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};

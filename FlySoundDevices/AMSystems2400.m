@@ -1,12 +1,8 @@
 classdef AMSystems2400 < Device
     
     properties (Constant)
-        deviceName = 'AMSystems2400';
     end
-    
-    properties (Hidden, SetAccess = protected)
-    end
-    
+        
     properties (SetAccess = protected)
     end
 
@@ -23,6 +19,9 @@ classdef AMSystems2400 < Device
     
     methods
         function obj = AMSystems2400(varargin)
+            obj = obj@Device(varargin{:});
+            obj.deviceName = 'AMSystems2400';
+
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};

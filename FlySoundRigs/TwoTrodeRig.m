@@ -1,7 +1,7 @@
-classdef BasicEPhysRig < EPhysRig
+classdef TwoTrodeRig < Rig
     
     properties (Constant)
-        rigName = 'BasicEPhysRig';
+        rigName = 'TwoTrodeRig';
         IsContinuous = false;
     end
     
@@ -16,12 +16,38 @@ classdef BasicEPhysRig < EPhysRig
     end
     
     methods
-        function obj = BasicEPhysRig(varargin)
-            obj = obj@EPhysRig(varargin{:});
+        
+        function obj = TwoTrodeRig(varargin)
+            % acqhardware = getpref('AcquisitionHardware');
+            % if isfield(acqhardware,'Amplifier')
+            %    obj.addDevice('amplifier',acqhardware.Amplifier);
+            
+            ampDevices = {'MultiClamp700B','MultiClamp700BAux'};
+            p = inputParser;
+            p.PartialMatching = 0;
+            p.addParamValue('amplifier1Device','MultiClamp700B',@ischar);            
+            parse(p,varargin{:});
+            
+            obj.addDevice('amplifier_1',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
+            obj.addDevice('amplifier_2',ampDevices{~strcmp(ampDevices,p.Results.amplifier1Device)});
+
+            addlistener(obj.devices.amplifier_1,'ModeChange',@obj.changeSessionsFromMode);
+            addlistener(obj.devices.amplifier_2,'ModeChange',@obj.changeSessionsFromMode);
+            
             obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
             obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
         end
         
+        function in = run(obj,protocol,varargin)
+            obj.devices.amplifier_1.getmode;
+            obj.devices.amplifier_1.getgain;
+
+            obj.devices.amplifier_2.getmode;
+            obj.devices.amplifier_2.getgain;
+            
+            in = run@Rig(obj,protocol,varargin{:});
+        end        
+                
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})
             if nargin>3
@@ -59,7 +85,7 @@ classdef BasicEPhysRig < EPhysRig
                 linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
-        
+
         function displayTrial(obj,protocol)
             if ~ishghandle(obj.TrialDisplay), obj.setDisplay(protocol), end
 
@@ -110,7 +136,55 @@ classdef BasicEPhysRig < EPhysRig
 
         end
     end
+    
     methods (Access = protected)
+        
+        function changeSessionsFromMode(obj,amplifier,evnt)
+            for i = 1:length(amplifier.outputPorts)
+                % configure AO
+                for c = 1:length(obj.aoSession.Channels)
+                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
+                        ch = obj.aoSession.Channels(c);
+                        break
+                    end
+                end
+                ch.Name = amplifier.outputLabels{i};
+                obj.outputs.portlabels{amplifier.outputPorts(i)+1} = amplifier.outputLabels{i};
+                obj.outputs.device{amplifier.outputPorts(i)+1} = amplifier;
+                % use the current vals to apply to outputs
+            end
+            % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
+            obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
+            obj.outputs.datacolumns = obj.outputs.datavalues;
+            
+            for i = 1:length(amplifier.inputPorts)
+                for c = 1:length(obj.aiSession.Channels)
+                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
+                        ch = obj.aiSession.Channels(c);
+                        break
+                    end
+                end
+                ch.Name = amplifier.inputLabels{i};
+                obj.inputs.portlabels{amplifier.inputPorts(i)+1} = amplifier.inputLabels{i};
+                obj.inputs.device{amplifier.inputPorts(i)+1} = amplifier;
+                obj.inputs.data.(amplifier.inputLabels{i}) = [];
+            end
+        end
+        
+        function obj = checkAmplifierModes(obj,out)
+            % run a check for the mode of the amplifier and throw error
+            % elegantly
+            if sum(strcmp(fieldnames(out),'current_1')) &&...
+                    sum(out.current_1 ~= out.current_1(1)) &&...
+                    strcmp(obj.devices.amplifier_1.mode,'VClamp')
+                error('Amplifier in VClamp but no current out')
+            elseif sum(strcmp(fieldnames(out),'voltage')) &&...
+                    sum(out.voltage ~= out.voltage(1)) &&...
+                    strcmp(obj.devices.amplifier.mode,'IClamp')
+                error('Amplifier in IClamp but voltage command')
+            end
+        end
+        
     end
 end
 

@@ -1,10 +1,9 @@
 classdef AxoClamp2B < Device
     
     properties (Constant)
-        deviceName = 'AxoClamp2B';
     end
     
-    properties (Hidden, SetAccess = protected)
+    properties (SetAccess = protected)
     end
 
     
@@ -13,6 +12,9 @@ classdef AxoClamp2B < Device
     
     methods
         function obj = AxoClamp2B(varargin)
+            obj = obj@Device(varargin{:});
+            obj.deviceName = 'AxoClamp2B';
+
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'current','voltage'};
             obj.inputUnits = {'pA','mV'};

@@ -1,6 +1,7 @@
 % Electrophysiology Protocol Base Class
 classdef FlySoundProtocol < handle
     % CurrentSine.m
+    % CurrentSine2T.m
     % CurrentStep.m
     % FlySoundProtocol.m
     % PiezoBWCourtshipSong.m

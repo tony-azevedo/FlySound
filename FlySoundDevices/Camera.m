@@ -1,7 +1,7 @@
 classdef Camera < Device
     
     properties (Constant)
-        deviceName = 'Camera';
+        
     end
     
     properties (Hidden, SetAccess = protected)
@@ -17,6 +17,7 @@ classdef Camera < Device
     
     methods
         function obj = Camera(varargin)
+            obj.deviceName = 'Camera';
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {'exposure'};

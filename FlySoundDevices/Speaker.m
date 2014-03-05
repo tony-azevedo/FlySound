@@ -1,7 +1,6 @@
 classdef Speaker < Device
     
     properties (Constant)
-        deviceName = 'Speaker';
     end
     
     properties (Hidden, SetAccess = protected)
@@ -17,6 +16,7 @@ classdef Speaker < Device
     
     methods
         function obj = Speaker(varargin)
+            obj.deviceName = 'Speaker';
             % This and the transformInputs function are hard coded
             
             % obj.inputLabels = {'sgsmonitor'};

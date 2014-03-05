@@ -1,6 +1,7 @@
 classdef Rig < handle
     % current hierarchy:
     %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
     %                   -> PiezoRig 
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
@@ -42,7 +43,8 @@ classdef Rig < handle
             obj.params = obj.getDefaults();
         end
         
-        function addDevice(obj,devicekey,deviceclass)
+        function addDevice(obj,devicekey,deviceclass,varargin)
+            
             eval(['obj.devices.(devicekey) = ' deviceclass ';']);
             obj.setSessions(devicekey);
         end
@@ -94,18 +96,9 @@ classdef Rig < handle
                         
         function transformOutputs(obj,out)
             
-            % run a check for the mode of the amplifier and throw error
-            % elegantly
-            if sum(strcmp(fieldnames(out),'current')) &&...
-                    sum(out.current ~= out.current(1)) &&...
-                    strcmp(obj.devices.amplifier.mode,'VClamp')
-                error('Amplifier in VClamp but no current out')
-            elseif sum(strcmp(fieldnames(out),'voltage')) &&...
-                    sum(out.voltage ~= out.voltage(1)) &&...
-                    strcmp(obj.devices.amplifier.mode,'IClamp')
-                error('Amplifier in IClamp but voltage command')
-            end
-                
+            % check that amps are in the right modes
+            checkAmplifierModes(obj,out);
+            
             % loop over devices, transforming data
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -271,6 +264,20 @@ classdef Rig < handle
             end
             for ch = 1:length(obj.aiSession.Channels)
                 chNames.in{ch} = obj.aiSession.Channels(ch).Name;
+            end
+        end
+        
+        function obj = checkAmplifierModes(obj,out)
+            % run a check for the mode of the amplifier and throw error
+            % elegantly
+            if sum(strcmp(fieldnames(out),'current')) &&...
+                    sum(out.current ~= out.current(1)) &&...
+                    strcmp(obj.devices.amplifier.mode,'VClamp')
+                error('Amplifier in VClamp but no current out')
+            elseif sum(strcmp(fieldnames(out),'voltage')) &&...
+                    sum(out.voltage ~= out.voltage(1)) &&...
+                    strcmp(obj.devices.amplifier.mode,'IClamp')
+                error('Amplifier in IClamp but voltage command')
             end
         end
     end
