@@ -5,8 +5,6 @@ classdef CurrentSine2T < CurrentSine
     end
     
     properties (SetAccess = protected)
-        requiredRig = 'TwoTrodeRig';
-        analyses = {};%{'average'};
     end
     
     properties (Hidden)
@@ -24,6 +22,9 @@ classdef CurrentSine2T < CurrentSine
         function obj = CurrentSine2T(varargin)
             % In case more construction is needed
             obj = obj@CurrentSine(varargin{:});
+            obj.requiredRig = 'TwoTrodeRig';
+            obj.analyses = {};
+
         end
         
         function varargout = getStimulus(obj,varargin)
@@ -36,33 +37,11 @@ classdef CurrentSine2T < CurrentSine
     end % methods
     
     methods (Access = protected)
-                                
-        function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
-            obj.params.Vm_id = 0;
-            
-            obj.params.freqs = 25 * sqrt(2) .^ (0:10);
-            obj.params.freq = obj.params.freqs(1); % Hz
-
-            obj.params.ramptime = 0.02; %sec;
-            
-            obj.params.amps = [10 20 30];
-            obj.params.amp = obj.params.amps(1);
-            
-            obj.params.stimDurInSec = 0.2;
-            obj.params.preDurInSec = .5;
-            obj.params.postDurInSec = .5;
-            obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-            obj.params = obj.getDefaults;
-
-        end
-        
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.freq = obj.params.freqs(1); % Hz
             obj.params.amp = obj.params.amps(1);
-
+            
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);
             y = makeOutTime(obj);
@@ -78,9 +57,9 @@ classdef CurrentSine2T < CurrentSine
             
             y(stimpnts) = w;
             obj.y = y;
-            obj.out.current = obj.y;
+            obj.out.current_1 = obj.y;
+            setupStimulus@FlySoundProtocol(obj);
         end
-        
         
     end % protected methods
     

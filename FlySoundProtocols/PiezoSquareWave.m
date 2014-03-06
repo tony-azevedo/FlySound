@@ -25,7 +25,7 @@ classdef PiezoSquareWave < FlySoundProtocol
         function obj = PiezoSquareWave(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
-            p.addParamValue('modusOperandi','Run',...
+            p.addParameter('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             parse(p,varargin{:});
             

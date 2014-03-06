@@ -3,8 +3,8 @@ function varargout = dFoverF(data,params,varargin)
 
 p = inputParser;
 p.PartialMatching = 0;
-p.addParamValue('NewROI','',@ischar);
-p.addParamValue('dFoFfig',[],@isnumeric);
+p.addParameter('NewROI','',@ischar);
+p.addParameter('dFoFfig',[],@isnumeric);
 parse(p,varargin{:});
 
 if ~isfield(data,'exposure')

@@ -49,7 +49,7 @@ classdef FlySoundProtocol < handle
         
         function obj = FlySoundProtocol(varargin)
             p = inputParser;
-            p.addParamValue('modusOperandi','Run',...
+            p.addParameter('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             parse(p,varargin{:});
             obj.modusOperandi = p.Results.modusOperandi;
@@ -63,7 +63,6 @@ classdef FlySoundProtocol < handle
             obj.queryCameraState
 
             % obj.showParams;
-            obj.target = 1;
             obj.randomizeIter = 0;
             obj.current = 1;
         end        

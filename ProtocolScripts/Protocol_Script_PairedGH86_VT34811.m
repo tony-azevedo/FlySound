@@ -3,31 +3,36 @@
 
 % Start the bitch 
 A = Acquisition;
+A.setIdentifiers('amplifier1Device','MultiClamp700BAux')
 
 %% trode- use the resistance button
 
 %% Seal on Trode #1
 % assume I'm patching the B1 with Left electrode - more stable
-A.setProtocol('SealAndLeak','amplifier1Device','MultiClamp700BAux');
+A.setIdentifiers('amplifier1Device','MultiClamp700BAux')
+A.setProtocol('SealAndLeak');
 A.tag('Seal')
 A.run
 A.untag('Seal')
 
 %% Input Resistance on Trode #1
-A.setProtocol('SealAndLeak','amplifier1Device','MultiClamp700BAux');
+A.setIdentifiers('amplifier1Device','MultiClamp700BAux')
+A.setProtocol('SealAndLeak');
 A.tag('R_input')
 A.run
 A.untag('R_input')
 
 
 %% Seal on Trode #2
-A.setProtocol('SealAndLeak','amplifier1Device','MultiClamp700B');
+A.setIdentifiers('amplifier1Device','MultiClamp700B')
+A.setProtocol('SealAndLeak');
 A.tag('Seal')
 A.run
 A.untag('Seal')
 
 %% Input Resistance on Trode #2
-A.setProtocol('SealAndLeak','amplifier1Device','MultiClamp700B');
+A.setIdentifiers('amplifier1Device','MultiClamp700B')
+A.setProtocol('SealAndLeak');
 A.tag('R_input')
 A.run
 A.untag('R_input')
@@ -36,107 +41,43 @@ A.untag('R_input')
 A.tag('TTX')
 A.untag('TTX')
 
+%% Make sure you're on the right cell
+A.setIdentifiers('amplifier1Device','MultiClamp700BAux')
+
 %% Resting potential and oscillations (5x5 sec) Minimize current
-A.setProtocol('Sweep');
+A.setProtocol('Sweep2T');
 A.protocol.setParams('-q','durSweep',5);
 A.run(3)
 systemsound('notify')
 
-
-%% Hyperpolarized
-A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
-A.tag('Hyperpolarized')
-A.run(3)
-A.untag('Hyperpolarized')
-systemsound('Notify');
-
-%% Spiking, somewhere in between
-A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
-A.tag('Spiking')
-A.run(5)
-A.untag('Spiking')
-systemsound('Notify');
-
-%% Steps
-A.setProtocol('PiezoStep');
-A.protocol.setParams('-q','Vm_id',0);
-A.run(5)
-beep 
-
-%% Big Step
-A.setProtocol('PiezoSquareWave');
-A.protocol.setParams('-q','Vm_id',0);
-A.protocol.setParams('-q','cycles',6,'displacement',1);
-A.run(3)
-beep 
-
-%% PiezoSine
-A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
-A.protocol.setParams('-q','freqs',freqs,'displacements',[0.1 0.2 0.4 0.8 1.6]);
-A.protocol.randomize
-A.run(3)
-beep
-
-%% Courtship song
-A.setProtocol('PiezoCourtshipSong');
-A.protocol.setParams('-q','displacements',[0.2 0.4 0.8],'postDurInSec',1);
-A.run(3)
-beep
-
-%% Backwards Courtship song
-A.setProtocol('PiezoBWCourtshipSong');
-A.protocol.setParams('-q','displacements',[0.2 0.4 0.8],'postDurInSec',1);
-A.run(3)
-beep
-
-%% PiezoChirp Up
-A.setProtocol('PiezoChirp');
-A.protocol.setParams('-q','displacements',[0.1 0.2 0.4 0.8]);
-A.run(3)
-beep
-
-%% PiezoChirp Down
-A.setProtocol('PiezoChirp','modusOperandi','Cal');
-A.protocol.setParams('-q','displacements',[0.1 0.2 0.4 0.8],...
-    'freqStart',800,...
-    'freqEnd',25);
-% A.protocol.CalibrateStimulus(A)
-A.run(3)
-beep
-
-%% Hyperpolarization is not as interesting in these cells
-
-
-%% CurrentSine
-A.setProtocol('CurrentStep');
-A.protocol.setParams('-q',...
-    'steps',[5 10 20],...  % Tune this if necessary
-    'stimDurInSec',.4);
-A.run(5)
-systemsound('Notify');
-
-%% Hyperpolarized CurrentSine
-A.setProtocol('CurrentSine');
-freqs = 25 * sqrt(2) .^ (0:10); 
+%% Assume B1 on left electrode
+A.setProtocol('CurrentSine2T');
+freqs = 25 * sqrt(2) .^ (-1:10); 
 A.protocol.setParams('-q',...
     'freqs',freqs,...
-    'amps',[5 10 20],...  % Tune this if necessary
-    'postDurInSec',1);
+    'amps',[2 4 8],...  % Tune this if necessary
+    'stimDurInSec',.4);
 
-A.tag('Hyperpolarized')
+A.run(1)
+systemsound('Notify');
+
+%% Assume B1 on left electrode
+A.setProtocol('CurrentStep2T');
+A.protocol.setParams('-q',...
+    'steps',[-8 -4 -2 2 4 8],...  % Tune this if necessary
+    'postDurInSec',.2,...
+    'preDurInSec',.2,...
+    'stimDurInSec',.02);
 A.run(5)
-A.untag('Hyperpolarized')
 systemsound('Notify');
 
 
-%% Seal
-A.setProtocol('SealAndLeak');
-A.tag('R_{input}')
-A.run
-A.untag('R_{input}')
+%% Assume B1 on left electrode
+A.setProtocol('CurrentStep2T');
+A.protocol.setParams('-q',...
+    'steps',[2 4 8],...  % Tune this if necessary
+    'stimDurInSec',.4);
+A.run(1)
+systemsound('Notify');
 
-%% Amplitude modulation of 100Hz stimulus
 

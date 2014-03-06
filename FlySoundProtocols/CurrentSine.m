@@ -80,6 +80,8 @@ classdef CurrentSine < FlySoundProtocol
             y(stimpnts) = w;
             obj.y = y;
             obj.out.current = obj.y;
+            setupStimulus@FlySoundProtocol(obj);
+
         end
         
         

@@ -158,7 +158,7 @@ classdef Rig < handle
             p = inputParser;
             names = fieldnames(obj.params);
             for i = 1:length(names)
-                p.addParamValue(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
+                p.addParameter(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
             end
             parse(p,varargin{:});
             results = fieldnames(p.Results);
@@ -252,9 +252,8 @@ classdef Rig < handle
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
                     obj.inputs.device{dev.inputPorts(i)+1} = dev;
-                    obj.inputs.data.(dev.inputLabels{i}) = [];
+                    % obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
-                %obj.inputs.labels = obj.inputs.portlabels(strncmp(obj.inputs.portlabels,'',0));
             end
         end
         

@@ -1,13 +1,10 @@
 % Collect data
-classdef Sweep < FlySoundProtocol
+classdef Sweep2T < Sweep
     
     properties (Constant)
-        protocolName = 'Sweep';
     end
     
     properties (SetAccess = protected)
-        requiredRig = 'BasicEPhysRig';
-        analyses = {'powerSpectrum'};
     end
     
     properties (SetAccess = protected)
@@ -16,8 +13,9 @@ classdef Sweep < FlySoundProtocol
     
     methods
         
-        function obj = Sweep(varargin)
-            ...
+        function obj = Sweep2T(varargin)
+            obj.requiredRig = 'TwoTrodeRig';
+            obj.analyses = {};
         end
         
         function varargout = getStimulus(obj,varargin)
@@ -38,8 +36,7 @@ classdef Sweep < FlySoundProtocol
        
         function setupStimulus(obj,varargin)
             obj.x = makeOutTime(obj);
-            obj.out.voltage = zeros(size(obj.x));
-            obj.out.current = zeros(size(obj.x));
+            obj.out.zeros = obj.x;
         end
                 
     end % protected methods

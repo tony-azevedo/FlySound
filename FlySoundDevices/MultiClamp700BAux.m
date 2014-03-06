@@ -29,16 +29,23 @@ classdef MultiClamp700BAux < MultiClamp700B
             obj.getgain;
 
         end            
+        
     end
 
     methods (Static)
         function mccmode = subclassModeFunction
-            mccmode = MCCGetMode;
+            tic
+            fprintf(1,'\nGetting %s mode:\n',mfilename);
+            mccmode = MCCGetModeAux;
+            toc
         end
         
         function varargout = subclassGainFunction
-            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            tic
+            fprintf(1,'\nGetting %s gain:\n',mfilename);
+            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGainAux;
             varargout = {gain1,primarySignal,gain2,secondarySignal};
+            toc
         end
     end
 

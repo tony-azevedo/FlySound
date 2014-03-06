@@ -23,7 +23,7 @@ classdef EPhysRig < Rig
             ampDevices = {'MultiClamp700B','MultiClamp700BAux'};
             p = inputParser;
             p.PartialMatching = 0;
-            p.addParamValue('amplifier1Device','MultiClamp700B',@ischar);            
+            p.addParameter('amplifier1Device','MultiClamp700B',@ischar);            
             parse(p,varargin{:});
             
             acqhardware = getpref('AcquisitionHardware');

@@ -161,15 +161,21 @@ classdef Acquisition < handle
         function setIdentifiers(obj,varargin)
             
             p = inputParser;
-            p.addParamValue('flygenotype','',@ischar);
-            p.addParamValue('flynumber',[],@isnumeric);
-            %             p.addParamValue('flyage',2,@isnumeric);
-            %             p.addParamValue('flysex','female',@ischar);
-            p.addParamValue('cellnumber',[],@isnumeric);
-            p.addParamValue('amplifier1Device','',...
-                @(x) any(validatestring(x,{'MultiClamp700B','MultiClamp700BAux'})));            
-            p.addParamValue('aiSamprate',10000,@isnumeric);
-            p.addParamValue('modusOperandi','Run',...
+            p.PartialMatching = 0;
+
+            p.addParameter('flygenotype','',@ischar);
+            p.addParameter('flynumber',[],@isnumeric);
+            %             p.addParameter('flyage',2,@isnumeric);
+            %             p.addParameter('flysex','female',@ischar);
+            p.addParameter('cellnumber',[],@isnumeric);
+            
+            errorStr = 'Amp 1 Device must be ''MultiClamp700B'' or ''MultiClamp700BAux''';
+            validationFcn = @(x) assert(logical(sum(strcmp(x,{'MultiClamp700B','MultiClamp700BAux'}))),errorStr);
+            p.addParameter('amplifier1Device','',...
+                validationFcn);           
+            
+            p.addParameter('aiSamprate',10000,@isnumeric);
+            p.addParameter('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             
             parse(p,varargin{:});
@@ -186,28 +192,24 @@ classdef Acquisition < handle
             if isfield(p.Results,'flygenotype') && ~isempty(p.Results.flygenotype)
                 obj.flygenotype = p.Results.flygenotype;
                 defAns{1} = obj.flygenotype;
-                numlines(1) = 0;
             end
             
             inputprompts{2} = 'Fly Number: ';
             if isfield(p.Results,'flynumber') && ~isempty(p.Results.flynumber)
                 obj.flynumber = num2str(p.Results.flynumber);
                 defAns{2} = obj.flynumber;
-                numlines(2) = 0;
             end
             
             inputprompts{3} = 'Cell Number: ';
             if isfield(p.Results,'cellnumber') && ~isempty(p.Results.cellnumber)
                 obj.cellnumber = num2str(p.Results.cellnumber);
                 defAns{3} = obj.cellnumber;
-                numlines(3) = 0;
             end
 
             inputprompts{4} = 'Amp 1 Device: ';
             if isfield(p.Results,'amplifier1Device') && ~isempty(p.Results.amplifier1Device)
                 obj.amplifier1Device = p.Results.amplifier1Device;
                 defAns{4} = obj.amplifier1Device;
-                numlines(4) = 0;
             end
             
             if ispref('AcquisitionPrefs')
@@ -472,9 +474,18 @@ classdef Acquisition < handle
                 obj.flygenotype,obj.flynumber,obj.cellnumber,...
                 obj.block_n,tagstr);
             
+            
             if isfield(obj.rig.devices,'amplifier')
                 fprintf(obj.notesFileID,'\t%s',obj.rig.devices.amplifier.mode);
                 fprintf(1,'\t%s',obj.rig.devices.amplifier.mode);
+            end
+            if isa(obj.rig,'TwoTrodeRig')
+                fprintf(obj.notesFileID,'\t{%s,%s}',...
+                            obj.rig.devices.amplifier_1.mode,...
+                            obj.rig.devices.amplifier_2.mode);
+                fprintf(1,'\t{%s,%s}',...
+                            obj.rig.devices.amplifier_1.mode,...
+                            obj.rig.devices.amplifier_2.mode);
             end
             
             paramnames = fieldnames(obj.protocol.params);
@@ -517,7 +528,19 @@ classdef Acquisition < handle
                 data.params.mode = obj.rig.devices.amplifier.mode;
                 data.params.gain = obj.rig.devices.amplifier.gain;
                 if isa(obj.rig.devices.amplifier,'MultiClamp700B')
-                    data.params.gain = obj.rig.devices.amplifier.secondary_gain;
+                    data.params.secondary_gain = obj.rig.devices.amplifier.secondary_gain;
+                end
+            end
+            if isa(obj.rig,'TwoTrodeRig')
+                data.params.mode_1 = obj.rig.devices.amplifier_1.mode;
+                data.params.mode_2 = obj.rig.devices.amplifier_2.mode;
+                data.params.gain_1 = obj.rig.devices.amplifier_1.gain;
+                data.params.gain_2 = obj.rig.devices.amplifier_2.gain;
+                if isa(obj.rig.devices.amplifier_1,'MultiClamp700B')
+                    data.params.secondary_gain_1 = obj.rig.devices.amplifier_1.secondary_gain;
+                end
+                if isa(obj.rig.devices.amplifier_2,'MultiClamp700B')
+                    data.params.secondary_gain_2 = obj.rig.devices.amplifier_2.secondary_gain;
                 end
             end
             data.params.trial = obj.n;

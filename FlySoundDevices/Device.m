@@ -42,7 +42,7 @@ classdef Device < handle
             p = inputParser;
             names = fieldnames(obj.params);
             for i = 1:length(names)
-                p.addParamValue(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
+                p.addParameter(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
             end
             parse(p,varargin{:});
             results = fieldnames(p.Results);

@@ -10,6 +10,8 @@ classdef MultiClamp700B < Device
         modeSession
         gainSession
         secondary_gain
+        amplifierDevNumber = '_1';
+        partOfSet = false;
     end
 
     
@@ -20,7 +22,7 @@ classdef MultiClamp700B < Device
     
     methods
         function obj = MultiClamp700B(varargin)
-            obj = obj@Device(varargin{:});
+            obj = obj@Device();
 
             obj.deviceName = 'MultiClamp700B';
             % This and the transformInputs function are hard coded
@@ -38,28 +40,52 @@ classdef MultiClamp700B < Device
             obj.getgain;
         end
         
+        function obj = setOrder(obj,varargin)
+            p = inputParser;
+            p.PartialMatching = 0;
+            p.addParameter('amplifierDevNumber',1,@isnumeric);
+            p.parse(varargin{:});
+            
+            obj.amplifierDevNumber = ['_' num2str(p.Results.amplifierDevNumber)];
+            obj.partOfSet = true;
+        end
+        
         function varargout = transformOutputs(obj,out)
             outlabels = fieldnames(out);
             for ol = 1:length(outlabels)
-                if strcmp(outlabels{ol},'voltage')
-                    if sum(strcmp({'IClamp'},obj.mode))
-                        %warning('In Current Clamp - removing voltage stim')
-                        out = rmfield(out,'voltage');
-                    else
-                        % out.voltage = out.voltage/1000;  % mV, convert, this is the desired V injected
-                        out.voltage = out.voltage * obj.params.daqout_to_voltage + obj.params.daqout_to_voltage_offset;
+                
+                % Do this only if the Device cares about this outlabel
+                if ismember(obj.outputLabels,outlabels{ol})
+                                      
+                    % If part of a set of Multiclamps, make sure it's the
+                    % right voltage_? trace
+                    if ~isempty(strfind(outlabels{ol},'voltage')) && ...
+                        (~obj.partOfSet || ~isempty(strfind(outlabels{ol},obj.amplifierDevNumber)))
+                        if sum(strcmp({'IClamp'},obj.mode))
+                            %warning('In Current Clamp - removing voltage stim')
+                            out = rmfield(out,outlabels{ol});
+                        else
+                            % out.voltage = out.voltage/1000;  % mV, convert, this is the desired V injected
+                            out.(outlabels{ol}) = out.(outlabels{ol}) * obj.params.daqout_to_voltage + obj.params.daqout_to_voltage_offset;
+                        end
                     end
-                end
-                if strcmp(outlabels{ol},'current')
-                    if sum(strcmp('VClamp',obj.mode))
-                        %warning('In Voltage Clamp - removing current stim')
-                        out = rmfield(out,'current');
-                    else
-                        out.current = out.current * obj.params.daqout_to_current + obj.params.daqout_to_current_offset;
+
+                    % If part of a set of Multiclamps, make sure it's the
+                    % right current_? trace
+                    if ~isempty(strfind(outlabels{ol},'current')) && ...
+                        (~obj.partOfSet || ~isempty(strfind(outlabels{ol},obj.amplifierDevNumber)))
+                        if sum(strcmp('VClamp',obj.mode))
+                            %warning('In Voltage Clamp - removing current stim')
+                            out = rmfield(out,outlabels{ol});
+                        else
+                            out.(outlabels{ol}) = out.(outlabels{ol}) * obj.params.daqout_to_current + obj.params.daqout_to_current_offset;
+                        end
                     end
+                    
                 end
             end
-            if isempty(fieldnames(out))
+            % if some field were removed, we were in the wrong mode
+            if length(fieldnames(out)) < length(outlabels)
                 notify(obj,'BadMode');
                 error('%s in %s mode - No appropriate output',obj.deviceName,obj.mode);
             end
@@ -70,31 +96,40 @@ classdef MultiClamp700B < Device
             inlabels = fieldnames(inputstruct);
             units = {};
             for il = 1:length(inlabels)
-                switch inlabels{il}
-                    case 'voltage'
+                if sum(strcmp(obj.inputLabels,inlabels{il}))
+                    if ~isempty(strfind(inlabels{il},'voltage')) && ...
+                            (~obj.partOfSet || ~isempty(strfind(inlabels{il},obj.amplifierDevNumber)))
+                        
                         % transfrom V to mV
                         if sum(strcmp({'IClamp'},obj.mode))
-                            inputstruct.voltage =...
+                            inputstruct.(inlabels{il}) =...
                                 (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) /...
                                 (obj.params.scaledvoltagescale_over_gain * obj.gain);
                         else
-                            inputstruct.voltage = ...
+                            inputstruct.(inlabels{il}) = ...
                                 (inputstruct.(inlabels{il})-obj.params.scaledvoltageoffset) /...
                                 (obj.params.scaledvoltagescale_over_gain * obj.secondary_gain);
                         end
-                        units{il} = 'mV'; 
-                    case 'current'
+                        units{il} = 'mV';
+                        
+                    end
+                    
+                    
+                    if ~isempty(strfind(inlabels{il},'current')) && ...
+                            (~obj.partOfSet || ~isempty(strfind(inlabels{il},obj.amplifierDevNumber)))
                         % transfrom V to pA
                         if sum(strcmp('VClamp',obj.mode))
-                            inputstruct.current =...
+                            inputstruct.(inlabels{il}) =...
                                 (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
                                 (obj.params.scaledcurrentscale_over_gainVC * obj.gain);
                         else
-                            inputstruct.current = ...
+                            inputstruct.(inlabels{il}) = ...
                                 (inputstruct.(inlabels{il})-obj.params.scaledcurrentoffset) /...
                                 (obj.params.scaledcurrentscale_over_gainCC * obj.secondary_gain);
                         end
                         units{il} = 'pA';
+                    end
+                    
                 end
             end
             varargout = {inputstruct,units};
@@ -134,6 +169,15 @@ classdef MultiClamp700B < Device
                     obj.inputLabels{2} = 'current';
                     obj.inputUnits{2} = 'pA';
             end
+            if obj.partOfSet
+                for o_ind = 1:length(obj.outputLabels)
+                    obj.outputLabels{o_ind} = [obj.outputLabels{o_ind} obj.amplifierDevNumber];
+                end
+                for i_ind = 1:length(obj.inputLabels)
+                    obj.inputLabels{i_ind} = [obj.inputLabels{i_ind} obj.amplifierDevNumber];
+                end
+            end
+            
             notify(obj,'ModeChange');
         end
         
@@ -178,12 +222,18 @@ classdef MultiClamp700B < Device
     
     methods (Static)
         function mccmode = subclassModeFunction
+            tic
+            fprintf(1,'\nGetting %s mode:\n',mfilename);
             mccmode = MCCGetMode;
+            toc
         end
         
         function varargout = subclassGainFunction
+            tic
+            fprintf(1,'\nGetting %s gain:\n',mfilename);
             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
             varargout = {gain1,primarySignal,gain2,secondarySignal};
+            toc
         end
     end
     

@@ -3,11 +3,11 @@ function varargout = roiFluoTrace(data,params,varargin)
 
 p = inputParser;
 p.PartialMatching = 0;
-p.addParamValue('NewROI','',@ischar);
-p.addParamValue('dFoFfig',[],@isnumeric);
-p.addParamValue('MotionCorrection',true,@islogical);
-p.addParamValue('ShowMovies',false,@islogical);
-p.addParamValue('MovieLocation','',@ischar);
+p.addParameter('NewROI','',@ischar);
+p.addParameter('dFoFfig',[],@isnumeric);
+p.addParameter('MotionCorrection',true,@islogical);
+p.addParameter('ShowMovies',false,@islogical);
+p.addParameter('MovieLocation','',@ischar);
 
 parse(p,varargin{:});
 
