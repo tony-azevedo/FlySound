@@ -59,12 +59,15 @@ classdef FlySoundProtocol < handle
             obj.params.gain = [];
             obj.params.secondary_gain = [];
             obj.defineParameters();
-            obj.setupStimulus();
-            obj.queryCameraState
-
+            
             % obj.showParams;
             obj.randomizeIter = 0;
             obj.current = 1;
+            obj.target = 1;
+            
+            obj.setupStimulus();
+            obj.queryCameraState
+
         end        
         
         function stim = next(obj)

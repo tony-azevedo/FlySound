@@ -15,6 +15,7 @@ A.tag('Seal')
 A.run
 A.untag('Seal')
 
+
 %% Input Resistance on Trode #1
 A.setIdentifiers('amplifier1Device','MultiClamp700BAux')
 A.setProtocol('SealAndLeak');
