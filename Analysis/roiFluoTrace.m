@@ -13,7 +13,7 @@ parse(p,varargin{:});
 
 varargout = {[]};
 
-if ~isfield(data,'exposure')
+if ~isfield(data,'exposure') || sum(data.exposure) == 0
     fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
     return
 end
