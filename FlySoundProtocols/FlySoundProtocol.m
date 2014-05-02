@@ -49,7 +49,7 @@ classdef FlySoundProtocol < handle
         
         function obj = FlySoundProtocol(varargin)
             p = inputParser;
-            p.addParameter('modusOperandi','Run',...
+            p.addParamValue('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
             parse(p,varargin{:});
             obj.modusOperandi = p.Results.modusOperandi;
