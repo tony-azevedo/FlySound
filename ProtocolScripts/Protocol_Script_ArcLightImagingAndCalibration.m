@@ -1,4 +1,4 @@
-%% Whole cell current injections, trying to patch using the hamamatsu
+%% Whole cell voltage clamp, trying to patch using the hamamatsu
 % Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit single
 % spikes while hyperpolarized and trying to patch with the Hamamatsu loaner
 % camera.  
