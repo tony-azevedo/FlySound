@@ -3,6 +3,8 @@ classdef Rig < handle
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
     %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
     

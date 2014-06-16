@@ -254,13 +254,35 @@ classdef FlySoundProtocol < handle
             end
             campref = getpref('AcquisitionHardware','cameraToggle');
             if strcmp('on',campref)
-                cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');
+                try cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');
+                catch
+                    crm = load('cameraRigMap');
+                    cameraRigMap = crm.cameraRigMap;
+                    setpref('AcquisitionHardware','cameraRigMap',cameraRigMap)
+                end
                 obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
                 obj.out.trigger = 10*(obj.x >= obj.x(1)+.0001-eps & obj.x < obj.x(1)+.001+eps);
                 obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
             end
         end
 
+        function query2PState(obj,varargin)
+            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','twoPToggle')
+                addpref('AcquisitionHardware','twoPToggle','off')
+            end
+            twoPpref = getpref('AcquisitionHardware','twoPToggle');
+            if strcmp('on',twoPpref)
+                try twoPRigMap = getpref('AcquisitionHardware','twoPRigMap');
+                catch
+                    tpm = load('twoPRigMap');
+                    twoPRigMap = tpm.twoPRigMap;
+                    setpref('AcquisitionHardware','twoPRigMap',twoPRigMap)
+                end
+                obj.requiredRig = twoPRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                obj.out.trigger = 10*(obj.x >= obj.x(1)+.0001-eps & obj.x < obj.x(1)+.001+eps);
+                %obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
+            end
+        end
         
     end % protected methods
     

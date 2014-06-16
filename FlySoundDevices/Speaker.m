@@ -17,11 +17,6 @@ classdef Speaker < Device
     methods
         function obj = Speaker(varargin)
             obj.deviceName = 'Speaker';
-            % This and the transformInputs function are hard coded
-            
-            % obj.inputLabels = {'sgsmonitor'};
-            % obj.inputUnits = {'V'};
-            % obj.inputPorts = 5;
             obj.outputLabels = {'speakercommand'};
             obj.outputUnits = {'V'};
             obj.outputPorts = 3;

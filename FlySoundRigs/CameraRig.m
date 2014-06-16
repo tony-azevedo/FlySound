@@ -27,7 +27,8 @@ classdef CameraRig < EPhysRig
             clipboard('copy',[protocol.protocolName '_Image_']);
             h = msgbox(str,'CAMERA SETUP');
             pos = get(h,'position');
-            set(h, 'position',[1280 600 pos(3) pos(4)])
+            %set(h, 'position',[1280 600 pos(3) pos(4)])
+            set(h, 'position',[5 658 pos(3) pos(4)])
             uiwait(h);
             
             
@@ -39,7 +40,8 @@ classdef CameraRig < EPhysRig
             str = sprintf('Ready the camera:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
             h = msgbox(str,'CAMERA');
             pos = get(h,'position');
-            set(h, 'position',[1280 700 pos(3) pos(4)])
+            %set(h, 'position',[1280 700 pos(3) pos(4)])
+            set(h, 'position',[5 480 pos(3) pos(4)])
             clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
 
             uiwait(h);

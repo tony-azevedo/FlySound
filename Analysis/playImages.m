@@ -165,7 +165,7 @@ ax = findobj(c.dFfig,'tag','dFoverFax');
 l = get(ax,'children');
 imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
 if ~strcmp(get(l,'displayname'),imdir)
-    dFoverF(data,data.params,'No');
+    dFoverF(data,data.params,'NewROI','No');
     drawnow
     ax = findobj(c.dFfig,'tag','dFoverFax');
     l = get(ax,'children');

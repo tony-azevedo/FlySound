@@ -39,7 +39,7 @@ classdef PiezoProtocol < FlySoundProtocol
         end
         
         function treatUncalibratedStimulus(obj)
-            % if not clibrating, notify that this is an uncalibrated
+            % if not calibrating, notify that this is an uncalibrated
             % stimulus and ask if we should proceed 
             if ~strcmp(obj.modusOperandi,'Cal')
                 ButtonName = questdlg('Uncalibrated Stimulus. Continue?', ...

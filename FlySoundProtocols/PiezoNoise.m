@@ -91,15 +91,16 @@ classdef PiezoChirp < PiezoProtocol
             % stim = flipud(stim);
             
             obj.params.sampratein = obj.params.samprateout;
-            obj.params.displacements = .1;
+            obj.params.stddisplacements = .2;
             obj.params.displacement = obj.params.displacements(1);
 
             obj.params.ramptime = 0.04; %sec;
             
-            obj.params.freqStart = 25;
-            obj.params.freqEnd = 800;
+            obj.params.seed = 25;
+            obj.params.besselN = 8;
+            obj.params.besselW0 = 800;
             
-            obj.params.stimDurInSec = 10;
+            obj.params.stimDurInSec = 30;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             
