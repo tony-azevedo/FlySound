@@ -6,7 +6,7 @@
 setpref('AcquisitionHardware','twoPToggle','on')
 
 % Start the bitch 
-clear all, close all
+%clear all, close all
 A = Acquisition;
 
 % 64x64 on images on 1x to allow more light in.  This works better.  Procedure is:

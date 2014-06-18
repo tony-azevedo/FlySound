@@ -79,10 +79,6 @@ classdef TwoPhotonEPhysRig < TwoPhotonRig
             ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
-            %fprintf('%s: %g exposure lines found\n',mfilename,length(l));
-            set(l,'ydata',obj.inputs.data.exposure*max(get(findobj(obj.TrialDisplay,'tag','outputax'),'ylim')));
-
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
 
@@ -96,14 +92,9 @@ classdef TwoPhotonEPhysRig < TwoPhotonRig
             if ~isempty(outlabels)
                 if strcmp(obj.devices.amplifier.mode,'VClamp')
                     outvec = out.voltage;
-                    % outunits = obj.devices.amplifier.outputUnits{...
-                    %     strcmp(obj.devices.amplifier.outputLabels,'voltage')};
                 elseif sum(strcmp({'IClamp','IClamp_fast','I=0'},obj.devices.amplifier.mode))
                     outvec = obj.outputs.datacolumns(:,strcmp(chnames.out,'current'));
-                    % outunits = obj.devices.amplifier.outputUnits{...
-                    %     strcmp(obj.devices.amplifier.outputLabels,'current')};
                 end
-                %ylabel(findobj(obj.TrialDisplay,'tag','outputax'),outunits);
 
                 l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampoutput');
                 set(l,'ydata',outvec);                

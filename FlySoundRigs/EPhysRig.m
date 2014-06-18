@@ -17,7 +17,7 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
-            setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
+            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
             
             ampDevices = {'MultiClamp700B','MultiClamp700BAux'};
@@ -27,9 +27,13 @@ classdef EPhysRig < Rig
             parse(p,varargin{:});
             
             acqhardware = getpref('AcquisitionHardware');
-            if isfield(acqhardware,'Amplifier') && ~strcmp(acqhardware.Amplifier,'MultiClamp700B');
+            if isfield(acqhardware,'Amplifier') ...
+                    && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
+                    && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');
                 obj.addDevice('amplifier',acqhardware.Amplifier);
-            else
+            elseif strcmp(acqhardware.Amplifier,'AxoPatch200B_2P')
+                obj.addDevice('amplifier',acqhardware.Amplifier,'Session',obj.aiSession);
+            elseif strcmp(acqhardware.Amplifier,'MultiClamp700B')
                 obj.addDevice('amplifier',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
             end
             addlistener(obj.devices.amplifier,'ModeChange',@obj.changeSessionsFromMode);

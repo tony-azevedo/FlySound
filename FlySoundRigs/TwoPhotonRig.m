@@ -48,41 +48,6 @@ classdef TwoPhotonRig < EPhysRig
 
         end
         
-        
-        function setSessions(obj,varargin)
-            % Establish all the output channels and input channels in one
-            % place
-            % The TwoPhotonRigs use a Dev3 device.
-            if nargin>1
-                keys = varargin;
-            else
-                keys = fieldnames(obj.devices);
-            end
-            for k = 1:length(keys);
-                dev = obj.devices.(keys{k});
-                for i = 1:length(dev.outputPorts)
-                    % configure AO
-                    ch = obj.aoSession.addAnalogOutputChannel('Dev3',dev.outputPorts(i), 'Voltage');
-                    ch.Name = dev.outputLabels{i};
-                    obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
-                    obj.outputs.device{dev.outputPorts(i)+1} = dev;
-                    % use the current vals to apply to outputs
-                end
-                % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
-                obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
-                obj.outputs.datacolumns = obj.outputs.datavalues;
-                
-                for i = 1:length(dev.inputPorts)
-                    ch = obj.aiSession.addAnalogInputChannel('Dev3',dev.inputPorts(i), 'Voltage');
-                    ch.InputType = 'SingleEnded';  %%????
-                    ch.Name = dev.inputLabels{i};
-                    obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
-                    obj.inputs.device{dev.inputPorts(i)+1} = dev;
-                    % obj.inputs.data.(dev.inputLabels{i}) = [];
-                end
-            end
-        end
-
         function setDisplay(obj,fig,evnt,varargin)
             % setDisplay@Rig(obj,fig,evnt,varargin{:})
             % if nargin>3
@@ -128,5 +93,39 @@ classdef TwoPhotonRig < EPhysRig
     end
     
     methods (Access = protected)
+        function setSessions(obj,varargin)
+            % Establish all the output channels and input channels in one
+            % place
+            % The TwoPhotonRigs use a Dev3 device.
+            if nargin>1
+                keys = varargin;
+            else
+                keys = fieldnames(obj.devices);
+            end
+            for k = 1:length(keys);
+                dev = obj.devices.(keys{k});
+                for i = 1:length(dev.outputPorts)
+                    % configure AO
+                    ch = obj.aoSession.addAnalogOutputChannel('Dev3',dev.outputPorts(i), 'Voltage');
+                    ch.Name = dev.outputLabels{i};
+                    obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
+                    obj.outputs.device{dev.outputPorts(i)+1} = dev;
+                    % use the current vals to apply to outputs
+                end
+                % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
+                obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
+                obj.outputs.datacolumns = obj.outputs.datavalues;
+                
+                for i = 1:length(dev.inputPorts)
+                    ch = obj.aiSession.addAnalogInputChannel('Dev3',dev.inputPorts(i), 'Voltage');
+                    ch.InputType = 'SingleEnded';  %%????
+                    ch.Name = dev.inputLabels{i};
+                    obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
+                    obj.inputs.device{dev.inputPorts(i)+1} = dev;
+                    % obj.inputs.data.(dev.inputLabels{i}) = [];
+                end
+            end
+        end
+
     end
 end

@@ -18,6 +18,7 @@ classdef AxoPatch200B < Device
     
     events
         BadMode
+        ModeChange
     end
     
     methods

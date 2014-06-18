@@ -47,7 +47,7 @@ classdef Rig < handle
         
         function addDevice(obj,devicekey,deviceclass,varargin)
             
-            eval(['obj.devices.(devicekey) = ' deviceclass ';']);
+            eval(['obj.devices.(devicekey) = ' deviceclass '(varargin{:});']);
             obj.setSessions(devicekey);
         end
         

@@ -1,4 +1,5 @@
 classdef AxoPatch200B_2P < Device
+    % see also AxoPatch200B
     
     properties (Constant)
         
@@ -18,25 +19,34 @@ classdef AxoPatch200B_2P < Device
     
     events
         BadMode
+        ModeChange
     end
     
     methods
         function obj = AxoPatch200B_2P(varargin)
             obj = obj@Device(varargin{:});
             obj.deviceName = 'AxoPatch200B_2P';
-            
+
+            prsr = inputParser;
+            prsr.addParamValue('Session',[]); %,...
+                %@(x) );
+            parse(prsr,varargin{:});
+
+            if isempty(prsr.Results.Session)
+                error('Currently, the 2P nidaq board cannot handle >1 session')
+            end
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};
-            obj.inputPorts = [0,3,4];
+            obj.inputPorts = [0,1,2];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
-            obj.outputPorts = 0;
+            obj.outputPorts = 1;
 
-            obj.setModeSession;
+            obj = obj.setModeSession(prsr.Results.Session);
             obj.mode = 'VClamp';
             obj.getmode;
-            obj.setGainSession;
+            obj = obj.setGainSession(prsr.Results.Session);
             obj.getgain;
             obj.gain = 1;
         end
@@ -100,30 +110,62 @@ classdef AxoPatch200B_2P < Device
                             inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.hardcurrentoffset)*obj.params.hardcurrentscale * 1000;
                         end
                         units{il} = 'pA';
+                    case 'mode'
+                        obj.modeFromTrial = mean(inputstruct.mode);
+                    case 'gain'
+                        obj.gainFromTrial = mean(inputstruct.gain);
+                        
                 end
             end
             varargout = {inputstruct,units};
         end
         
-        function setModeSession(obj)
-            obj.modeSession = daq.createSession('ni');
-            obj.modeSession.addAnalogInputChannel('Dev3',2, 'Voltage');
-            obj.modeSession.Channels(1).TerminalConfig = 'SingleEndedNonReferenced';
-            obj.modeSession.Rate = 10000;  % 10 kHz
-            obj.modeSession.DurationInSeconds = .01; % 2ms
+        function obj = setModeSession(obj,varargin)
+            if ~isempty(varargin)
+                session = varargin{1};
+                for i=1:length(session.Channels)
+                    if strcmp(session.Channels(i).Name,'mode')
+                        return
+                    end
+                end
+                obj.modeSession = varargin{1};
+            else
+                obj.modeSession = daq.createSession('ni');
+            end           
+            obj.modeSession.addAnalogInputChannel('Dev3',3, 'Voltage');
+            obj.modeSession.Channels(obj.modeChannel).TerminalConfig = 'SingleEnded';
+            obj.modeSession.Channels(obj.modeChannel).Name = 'mode';
         end
         
-        function setGainSession(obj)
-            obj.gainSession = daq.createSession('ni');
-            obj.gainSession.addAnalogInputChannel('Dev3',1, 'Voltage');
-            obj.gainSession.Rate = 10000;  % 10 kHz
-            obj.gainSession.DurationInSeconds = .02; % 2ms
+        function obj = setGainSession(obj,varargin)
+            if ~isempty(varargin)
+                session = varargin{1};
+                for i=1:length(session.Channels)
+                    if strcmp(session.Channels(i).Name,'gain')
+                        return
+                    end
+                end
+                obj.gainSession = varargin{1};
+            else
+                obj.gainSession = daq.createSession('ni');
+            end
+            obj.gainSession.addAnalogInputChannel('Dev3',4, 'Voltage');
+            obj.gainSession.Channels(obj.gainChannel).TerminalConfig = 'SingleEnded';
+            obj.gainSession.Channels(obj.gainChannel).Name = 'gain';
         end
         
         function newmode = getmode(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
-            mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
-            mode_voltage = mean(mode_voltage);
+            try x = obj.modeSession.inputSingleScan;
+                for i = 1:5
+                    x = x+obj.modeSession.inputSingleScan;
+                end
+                x = x/6;
+                %mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+                mode_voltage = x(obj.modeChannel);
+            catch e
+                newmode = obj.modeFromTrial;
+            end
             
             if mode_voltage < 1.75
                 newmode = 'IClamp_fast';
@@ -151,11 +193,19 @@ classdef AxoPatch200B_2P < Device
             end
             notify(obj,'ModeChange');
         end
+        
         function newgain = getgain(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
-            
-            gain_voltage = obj.gainSession.startForeground; %plot(x); drawnow
-            gain_voltage = mean(gain_voltage);
+            try x = obj.gainSession.inputSingleScan;
+                for i = 1:5
+                    x = x+obj.gainSession.inputSingleScan;
+                end
+                x = x/6;
+                %mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+                gain_voltage = x(obj.gainChannel);
+            catch e
+                
+            end
             
             if gain_voltage < 2.2
                 newgain = 0.5;
@@ -207,6 +257,24 @@ classdef AxoPatch200B_2P < Device
             obj.params.scaledcurrentoffset = 0; % [mV/V]/gainsetting gives pA
             obj.params.scaledvoltagescale_timesgain = 1000; % mV/gainsetting gives mV
             obj.params.scaledvoltageoffset = 0; % mV/gainsetting gives mV
+        end
+        
+        function indx = modeChannel(obj)
+            for ch = 1:length(obj.modeSession.Channels)
+                if strcmp('ai3',obj.modeSession.Channels(ch).ID)
+                    indx = ch;
+                    break
+                end
+            end
+        end
+        
+        function indx = gainChannel(obj)
+            for ch = 1:length(obj.modeSession.Channels)
+                if strcmp('ai4',obj.modeSession.Channels(ch).ID)
+                    indx = ch;
+                    break
+                end
+            end
         end
     end
 end
