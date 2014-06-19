@@ -8,7 +8,7 @@ classdef TwoPhotonRig < EPhysRig
     methods
         function obj = TwoPhotonRig(varargin)
             obj.addDevice('twophoton','TwoPhotonSystem');
-            obj.aiSession.addTriggerConnection('Dev3/PFI0','External','StartTrigger'); % Note, the 2P has a Dev3 nidaq, not Dev1
+            obj.aiSession.addTriggerConnection('Dev3/PFI6','External','StartTrigger'); % Note, the 2P has a Dev3 nidaq, not Dev1
             obj.aoSession.addTriggerConnection('External','Dev3/PFI2','StartTrigger');
             addlistener(obj,'StartTrial',@obj.readyTwoPhoton);
         end
@@ -29,22 +29,21 @@ classdef TwoPhotonRig < EPhysRig
             pos = get(h,'position');
             %set(h, 'position',[1280 600 pos(3) pos(4)])
             set(h, 'position',[5 658 pos(3) pos(4)])
-            uiwait(h);
-            
+            uiwait(h)
             
             in = run@EPhysRig(obj,protocol,varargin{:});
         end
         
         function readyTwoPhoton(obj,fig,evnt,varargin)
             
-            str = sprintf('Ready the 2P:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
-            h = msgbox(str,'2P');
-            pos = get(h,'position');
-            %set(h, 'position',[1280 700 pos(3) pos(4)])
-            set(h, 'position',[5 480 pos(3) pos(4)])
-            clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
-
-            uiwait(h);
+            % str = sprintf('Ready the 2P:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
+            % h = msgbox(str,'2P');
+            % pos = get(h,'position');
+            % %set(h, 'position',[1280 700 pos(3) pos(4)])
+            % set(h, 'position',[5 480 pos(3) pos(4)])
+            % clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
+            %
+            % uiwait(h);
 
         end
         

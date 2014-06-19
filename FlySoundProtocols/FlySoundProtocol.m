@@ -139,6 +139,7 @@ classdef FlySoundProtocol < handle
             end
             obj.setupStimulus
             obj.queryCameraState;
+            obj.query2PState;
             if ~quiet
                 obj.showParams
             end

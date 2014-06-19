@@ -43,10 +43,10 @@ classdef AxoPatch200B_2P < Device
             obj.outputUnits = {'pA'};
             obj.outputPorts = 1;
 
-            obj = obj.setModeSession(prsr.Results.Session);
+            obj.setModeSession;
             obj.mode = 'VClamp';
             obj.getmode;
-            obj = obj.setGainSession(prsr.Results.Session);
+            obj.setGainSession;
             obj.getgain;
             obj.gain = 1;
         end
@@ -109,63 +109,31 @@ classdef AxoPatch200B_2P < Device
                         else
                             inputstruct.(inlabels{il}) = (inputstruct.(inlabels{il})-obj.params.hardcurrentoffset)*obj.params.hardcurrentscale * 1000;
                         end
-                        units{il} = 'pA';
-                    case 'mode'
-                        obj.modeFromTrial = mean(inputstruct.mode);
-                    case 'gain'
-                        obj.gainFromTrial = mean(inputstruct.gain);
-                        
+                        units{il} = 'pA';                        
                 end
             end
             varargout = {inputstruct,units};
         end
         
-        function obj = setModeSession(obj,varargin)
-            if ~isempty(varargin)
-                session = varargin{1};
-                for i=1:length(session.Channels)
-                    if strcmp(session.Channels(i).Name,'mode')
-                        return
-                    end
-                end
-                obj.modeSession = varargin{1};
-            else
-                obj.modeSession = daq.createSession('ni');
-            end           
-            obj.modeSession.addAnalogInputChannel('Dev3',3, 'Voltage');
-            obj.modeSession.Channels(obj.modeChannel).TerminalConfig = 'SingleEnded';
-            obj.modeSession.Channels(obj.modeChannel).Name = 'mode';
+        function setModeSession(obj)
+            obj.modeSession = daq.createSession('ni');
+            obj.modeSession.addAnalogInputChannel('Dev4',2, 'Voltage');
+            obj.modeSession.Channels(1).TerminalConfig = 'SingleEnded';
         end
         
-        function obj = setGainSession(obj,varargin)
-            if ~isempty(varargin)
-                session = varargin{1};
-                for i=1:length(session.Channels)
-                    if strcmp(session.Channels(i).Name,'gain')
-                        return
-                    end
-                end
-                obj.gainSession = varargin{1};
-            else
-                obj.gainSession = daq.createSession('ni');
-            end
-            obj.gainSession.addAnalogInputChannel('Dev3',4, 'Voltage');
-            obj.gainSession.Channels(obj.gainChannel).TerminalConfig = 'SingleEnded';
-            obj.gainSession.Channels(obj.gainChannel).Name = 'gain';
+        function setGainSession(obj)
+            obj.gainSession = daq.createSession('ni');
+            obj.gainSession.addAnalogInputChannel('Dev4',1, 'Voltage');
+            obj.modeSession.Channels(1).TerminalConfig = 'SingleEnded';
         end
         
         function newmode = getmode(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
-            try x = obj.modeSession.inputSingleScan;
-                for i = 1:5
-                    x = x+obj.modeSession.inputSingleScan;
-                end
-                x = x/6;
-                %mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
-                mode_voltage = x(obj.modeChannel);
-            catch e
-                newmode = obj.modeFromTrial;
+            x = obj.modeSession.inputSingleScan;
+            for i = 1:5
+                x = x+obj.modeSession.inputSingleScan;
             end
+            mode_voltage = x/6;
             
             if mode_voltage < 1.75
                 newmode = 'IClamp_fast';
@@ -193,19 +161,13 @@ classdef AxoPatch200B_2P < Device
             end
             notify(obj,'ModeChange');
         end
-        
         function newgain = getgain(obj)
             % [voltage,current] = readGain(recMode, durSweep, samprate)
-            try x = obj.gainSession.inputSingleScan;
-                for i = 1:5
-                    x = x+obj.gainSession.inputSingleScan;
-                end
-                x = x/6;
-                %mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
-                gain_voltage = x(obj.gainChannel);
-            catch e
-                
+            x = obj.modeSession.inputSingleScan;
+            for i = 1:5
+                x = x+obj.modeSession.inputSingleScan;
             end
+            gain_voltage = x/6;
             
             if gain_voltage < 2.2
                 newgain = 0.5;
@@ -230,7 +192,7 @@ classdef AxoPatch200B_2P < Device
             end
             obj.gain = newgain;
         end
-                
+                  
     end
     
     methods (Access = protected)
