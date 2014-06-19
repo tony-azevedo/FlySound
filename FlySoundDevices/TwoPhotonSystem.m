@@ -25,7 +25,7 @@ classdef TwoPhotonSystem < Device
             obj.inputPorts = [];
             obj.outputLabels = {'trigger'};%,'shutter'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = [0];% 3];
+            obj.outputPorts = [1];% 3];
         end
         
         function varargout = transformInputs(obj,inputstruct)

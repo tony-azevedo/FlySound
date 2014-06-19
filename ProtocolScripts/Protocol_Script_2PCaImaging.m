@@ -1,15 +1,21 @@
-%% Whole cell voltage clamp, trying to patch using the hamamatsu
-% Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit single
-% spikes while hyperpolarized and trying to patch with the Hamamatsu loaner
-% camera.  
+%% Whole cell voltage clamp, imaging Ca in the terminals of B1 cells
+% Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit
+% single spikes while hyperpolarized. Filling the cell with Alexa 594 (10uM
+% or 50uM) and Fluo5F (150uM or 300uM).  Find the terminal under 2P at 925
+% nm illumination, change the wavelength to 800nm, then watch terminals
+% fill in the red channel, start imaging the green channel.
+
+% 1) Beginning of the day: start acquisition here in order to have a file
+% to save images to.
 
 setpref('AcquisitionHardware','twoPToggle','on')
 
 % Start the bitch 
-%clear all, close all
+clear A, close all
 A = Acquisition;
 
-% 64x64 on images on 1x to allow more light in.  This works better.  Procedure is:
+%% 64x64 on images on 1x to allow more light in.  This works better.  
+% Procedure is:
 % Before dropping the electrode in, start the baseline imaging routine.
 % Check the camera properties
 % Set up the directory
@@ -23,44 +29,6 @@ A = Acquisition;
 % move to start trigger
 % hit start on the camera
 % start on the epoch
-
-
-%% Collect images in HCImageLive
-% (2ms exposure time)
-
-A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',1);
-A.tag('baseline fluorescence')
-A.run(1)
-A.untag('baseline fluorescence')
-systemsound('Notify');
-
-%% PiezoChirp - Attempt to stimulate
-A.setProtocol('PiezoChirp');
-A.protocol.setParams('-q',...
-    'freqStart',17,...
-    'freqEnd',800,...
-    'displacements',[0.2],'postDurInSec',1);
-A.run(3)
-systemsound('Notify');
-
-% %% PiezoChirp - Attempt to stimulate
-% A.setProtocol('PiezoChirp');
-% A.protocol.setParams('-q',...
-%     'freqStart',800,...
-%     'freqEnd',17,...
-%     'displacements',[0.2],'postDurInSec',1);
-% A.run(3)
-% systemsound('Notify');
-
-% %% Calibration settings
-% A.setProtocol('PiezoChirp','modusOperandi','Cal');
-% A.protocol.setParams('-q',...
-%     'freqStart',800,...
-%     'freqEnd',17,...
-%     'displacements',[0.8],...
-%     'postDurInSec',1);
-% A.protocol.CalibrateStimulus(A)
 
 %% Seal
 A.setProtocol('SealAndLeak');

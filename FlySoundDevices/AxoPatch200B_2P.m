@@ -41,7 +41,7 @@ classdef AxoPatch200B_2P < Device
             obj.inputPorts = [0,1,2];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
-            obj.outputPorts = 1;
+            obj.outputPorts = 0;
 
             obj.setModeSession;
             obj.mode = 'VClamp';
@@ -119,21 +119,26 @@ classdef AxoPatch200B_2P < Device
             obj.modeSession = daq.createSession('ni');
             obj.modeSession.addAnalogInputChannel('Dev4',2, 'Voltage');
             obj.modeSession.Channels(1).TerminalConfig = 'SingleEnded';
+            obj.modeSession.Rate = 10000;  % 10 kHz
+            obj.modeSession.DurationInSeconds = .01; % 1ms
         end
         
         function setGainSession(obj)
             obj.gainSession = daq.createSession('ni');
-            obj.gainSession.addAnalogInputChannel('Dev4',1, 'Voltage');
-            obj.modeSession.Channels(1).TerminalConfig = 'SingleEnded';
+            obj.gainSession.addAnalogInputChannel('Dev4',21, 'Voltage');
+            obj.gainSession.Channels(1).TerminalConfig = 'SingleEnded';
+            obj.gainSession.Rate = 10000;  % 10 kHz
+            obj.gainSession.DurationInSeconds = .01; % 1ms
         end
         
         function newmode = getmode(obj)
-            % [voltage,current] = readGain(recMode, durSweep, samprate)
             x = obj.modeSession.inputSingleScan;
             for i = 1:5
                 x = x+obj.modeSession.inputSingleScan;
             end
             mode_voltage = x/6;
+            % mode_voltage = obj.modeSession.startForeground; %plot(x); drawnow
+            % mode_voltage = mean(mode_voltage);
             
             if mode_voltage < 1.75
                 newmode = 'IClamp_fast';
@@ -162,13 +167,15 @@ classdef AxoPatch200B_2P < Device
             notify(obj,'ModeChange');
         end
         function newgain = getgain(obj)
-            % [voltage,current] = readGain(recMode, durSweep, samprate)
-            x = obj.modeSession.inputSingleScan;
+            x = obj.gainSession.inputSingleScan;
             for i = 1:5
-                x = x+obj.modeSession.inputSingleScan;
+                x = x+obj.gainSession.inputSingleScan;
             end
             gain_voltage = x/6;
-            
+            % gain_voltage = obj.gainSession.startForeground; %plot(gain_voltage); drawnow
+            % gain_voltage = mean(gain_voltage);
+           
+            newgain = 0;
             if gain_voltage < 2.2
                 newgain = 0.5;
             elseif gain_voltage < 2.7
@@ -206,7 +213,7 @@ classdef AxoPatch200B_2P < Device
             obj.params.daqout_to_current = 2/obj.params.headstagegain; % m, multiply DAQ voltage to get nA injected
             obj.params.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
             
-            obj.params.daqout_to_voltage = .02; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+            obj.params.daqout_to_voltage = .1; % m, multiply DAQ voltage to get mV injected, 1 V should give 200 mV as per manual
             obj.params.daqout_to_voltage_offset = 0;  % b, add to DAQ voltage to get the right offset
             
             obj.params.rearcurrentswitchval = 1; % [V/nA];

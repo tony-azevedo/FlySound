@@ -36,14 +36,12 @@ classdef SealAndLeak < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
-            obj.params.sampratein = 100000;
-            obj.params.samprateout = 100000;
+            % rmpref('defaultsSealAndLeak')
+            obj.params.sampratein = 50000;
+            obj.params.samprateout = 50000;
             obj.params.stepamp = 5; %mV;
             obj.params.stepdur = .0167; %sec;
             obj.params.pulses = 20;
-            %             obj.params.stimDurInSec = 2;
-            %             obj.params.preDurInSec = .5;
-            %             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stepdur*(2*obj.params.pulses+2);
             
             obj.params.Vm_id = 0;
