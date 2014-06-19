@@ -1,4 +1,12 @@
 classdef EPhysRig < Rig
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     
     properties (Constant,Abstract)
         rigName;

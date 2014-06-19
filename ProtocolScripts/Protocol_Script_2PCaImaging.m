@@ -11,7 +11,7 @@
 setpref('AcquisitionHardware','twoPToggle','on')
 
 % Start the bitch 
-clear A, close all
+clear all, close all
 A = Acquisition;
 
 %% 64x64 on images on 1x to allow more light in.  This works better.  
@@ -38,9 +38,10 @@ A.untag('Seal')
 
 %% Try to break in while imaging  Go to -50 mV (or -25 mV)
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',15);
+A.rig.setParams('interTrialInterval',2);
+A.protocol.setParams('-q','durSweep',1);
 A.tag('Voltage Clamp, break in')
-A.run(1)
+A.run(5)
 A.untag('Voltage Clamp, break in')
 systemsound('Notify');
 

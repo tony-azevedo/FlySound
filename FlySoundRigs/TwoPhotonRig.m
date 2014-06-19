@@ -1,5 +1,12 @@
 classdef TwoPhotonRig < EPhysRig
-    
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     properties (Constant,Abstract)
         rigName;
         IsContinuous;
@@ -8,21 +15,31 @@ classdef TwoPhotonRig < EPhysRig
     methods
         function obj = TwoPhotonRig(varargin)
             obj.addDevice('twophoton','TwoPhotonSystem');
-            obj.aiSession.addTriggerConnection('Dev3/PFI6','External','StartTrigger'); % Note, the 2P has a Dev3 nidaq, not Dev1
-            obj.aoSession.addTriggerConnection('External','Dev3/PFI2','StartTrigger');
-            addlistener(obj,'StartTrial',@obj.readyTwoPhoton);
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
+            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            
+            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
+            % addlistener(obj,'StartTrial',@obj.readyTwoPhoton);
         end
 
         function in = run(obj,protocol,varargin)
-            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.4f sec',...
+            if nargin>2
+                repeats = varargin{1};
+            else
+                repeats = 1;
+            end
+
+            str = sprintf('%s\n%s\n%s%s\n\n%s\n\n%s%.4f lines\n%d Repeats',...
                 'Ready the TwoPhoton:',...
                 ' - Set Directory',...
-                ' - Set Prefix: ',...
+                ' - Set Basename: ',...
                 [protocol.protocolName '_Image_'],...
                 'Capture Mode: External Start Trigger',...
-                '{OUT TRIG Source, polarity, Kind} = {Exposure, positive, Exposure}',...
                 ' - Acq for ',...
-                protocol.params.durSweep - 0.002);
+                (protocol.params.durSweep)/.002 - 2,...
+                repeats);
             
             clipboard('copy',[protocol.protocolName '_Image_']);
             h = msgbox(str,'2P SETUP');
@@ -33,11 +50,7 @@ classdef TwoPhotonRig < EPhysRig
             
             in = run@EPhysRig(obj,protocol,varargin{:});
         end
-        
-        function readyTwoPhoton(obj,fig,evnt,varargin)
-            % The loop function on the 2P obviates this function
-        end
-        
+                
         function setDisplay(obj,fig,evnt,varargin)
             error('This routine should never run')
         end

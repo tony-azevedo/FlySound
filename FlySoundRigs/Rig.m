@@ -39,6 +39,15 @@ classdef Rig < handle
     
     methods
         function obj = Rig(varargin)
+            if ~ispref('AcquisitionHardware','rigDev')
+                setpref('AcquisitionHardware','rigDev','Dev3')
+                setpref('AcquisitionHardware','modeDev','Dev4')
+                setpref('AcquisitionHardware','gainDev','Dev4')
+                setpref('AcquisitionHardware','triggerChannelIn','PFI6')
+                setpref('AcquisitionHardware','triggerChannelOut','PFI2')
+                disp(getpref('AcquisitionHardware'));
+                error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')
+            end
             obj.aiSession = daq.createSession('ni');
             obj.aoSession = daq.createSession('ni');            
             obj.defineParameters();
@@ -68,6 +77,14 @@ classdef Rig < handle
             obj.aiSession.Rate = protocol.params.sampratein;
             obj.aiSession.NumberOfScans = length(makeInTime(protocol));
             obj.aoSession.Rate = protocol.params.samprateout;
+            
+            if obj.params.interTrialInterval >0;
+                t = timer;
+                t.StartDelay = obj.params.interTrialInterval;
+                t.TimerFcn = @(tObj, thisEvent) ... 
+                    fprintf('%.1f sec inter trial\n',tObj.StartDelay);
+                set(t,'Name','ITItimer')
+            end
             notify(obj,'StartRun');
             for n = 1:repeats
                 while protocol.hasNext()
@@ -84,6 +101,11 @@ classdef Rig < handle
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);
                     notify(obj,'DataSaved');
+                    if obj.params.interTrialInterval >0;
+                        t = timerfind('Name','ITItimer');
+                        start(t)
+                        wait(t)
+                    end
                 end
                 protocol.reset;
             end
@@ -158,6 +180,7 @@ classdef Rig < handle
                         
         function setParams(obj,varargin)
             p = inputParser;
+            p.PartialMatching = 0;
             names = fieldnames(obj.params);
             for i = 1:length(names)
                 p.addParameter(names{i},obj.params.(names{i}),@(x) strcmp(class(x),class(obj.params.(names{i}))));
@@ -170,6 +193,9 @@ classdef Rig < handle
         end
         
         function defaults = getDefaults(obj)
+            % rmpref('defaultsTwoPhotonEPhysRig')
+            % rmpref('defaultsBasicEPhysRig')
+            
             defaults = getpref(['defaults',obj.rigName]);
             if isempty(defaults)
                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
@@ -224,11 +250,14 @@ classdef Rig < handle
         function defineParameters(obj)
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
+            obj.params.interTrialInterval = 0;
         end
         
         function setSessions(obj,varargin)
             % Establish all the output channels and input channels in one
             % place
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            
             if nargin>1
                 keys = varargin;
             else
@@ -238,7 +267,7 @@ classdef Rig < handle
                 dev = obj.devices.(keys{k});
                 for i = 1:length(dev.outputPorts)
                     % configure AO
-                    ch = obj.aoSession.addAnalogOutputChannel('Dev1',dev.outputPorts(i), 'Voltage');
+                    ch = obj.aoSession.addAnalogOutputChannel(rigDev,dev.outputPorts(i), 'Voltage');
                     ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
                     obj.outputs.device{dev.outputPorts(i)+1} = dev;
@@ -249,7 +278,7 @@ classdef Rig < handle
                 obj.outputs.datacolumns = obj.outputs.datavalues;
 
                 for i = 1:length(dev.inputPorts)
-                    ch = obj.aiSession.addAnalogInputChannel('Dev1',dev.inputPorts(i), 'Voltage'); 
+                    ch = obj.aiSession.addAnalogInputChannel(rigDev,dev.inputPorts(i), 'Voltage'); 
                     ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};

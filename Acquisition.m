@@ -390,6 +390,12 @@ classdef Acquisition < handle
             
             if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName) || changeMainAmp
                 
+                if ~isempty(obj.rig)
+                    obj.rig.aiSession.release;
+                    delete(obj.rig.aiSession);
+                    obj.rig.aoSession.release;
+                    delete(obj.rig.aoSession);
+                end   
                 eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
@@ -597,8 +603,7 @@ classdef Acquisition < handle
             if isa(obj.rig,'TwoPhotonRig')
                 imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
                 mkdir(imagedir);
-                % Scan image puts the images in the archive folder
-                images = dir([obj.D,'\archive\',obj.protocol.protocolName,'_Image_*']);
+                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
                 if isempty(images)
                     h = msgbox('No images. Save, Close Image?');
                     set(h, 'position',[5 280 170 52.5])
