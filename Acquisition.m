@@ -391,10 +391,7 @@ classdef Acquisition < handle
             if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName) || changeMainAmp
                 
                 if ~isempty(obj.rig)
-                    obj.rig.aiSession.release;
-                    delete(obj.rig.aiSession);
-                    obj.rig.aoSession.release;
-                    delete(obj.rig.aoSession);
+                    delete(obj.rig);
                 end   
                 eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
                 

@@ -79,7 +79,10 @@ classdef Rig < handle
             obj.aoSession.Rate = protocol.params.samprateout;
             
             if obj.params.interTrialInterval >0;
-                t = timer;
+                t = timerfind('Name','ITItimer');
+                if isempty(t)
+                    t = timer;
+                end
                 t.StartDelay = obj.params.interTrialInterval;
                 t.TimerFcn = @(tObj, thisEvent) ... 
                     fprintf('%.1f sec inter trial\n',tObj.StartDelay);
@@ -98,14 +101,14 @@ classdef Rig < handle
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
                     %disp(obj.aiSession)
                     obj.transformInputs(in);
-                    notify(obj,'SaveData');
-                    obj.displayTrial(protocol);
-                    notify(obj,'DataSaved');
                     if obj.params.interTrialInterval >0;
                         t = timerfind('Name','ITItimer');
                         start(t)
                         wait(t)
                     end
+                    notify(obj,'SaveData');
+                    obj.displayTrial(protocol);
+                    notify(obj,'DataSaved');
                 end
                 protocol.reset;
             end
@@ -239,8 +242,12 @@ classdef Rig < handle
         
         function delete(obj)
             close(obj.TrialDisplay)
-            obj.aiSession.release;
-            obj.aoSession.release;
+            fprintf('SESSIONS RELEASED\n');
+            fprintf('%s DELETED\n',obj.rigName);
+            release(obj.aiSession);
+            release(obj.aoSession);
+            delete(obj.aiSession);
+            delete(obj.aoSession);
             delete@handle(obj)
         end
     end

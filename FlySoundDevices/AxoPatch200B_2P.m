@@ -206,11 +206,12 @@ classdef AxoPatch200B_2P < Device
                 
         function defineParameters(obj)
             % create an amplifier class that implements these
+            % rmpref
             obj.params.filter = 1e4;
             obj.params.headstagegain = 1;
             
             obj.params.daqCurrentOffset = 0.0000; 
-            obj.params.daqout_to_current = 2/obj.params.headstagegain; % m, multiply DAQ voltage to get nA injected
+            obj.params.daqout_to_current = 2000/obj.params.headstagegain; % m, multiply DAQ voltage to get nA injected (now adjusted to take pA and output volts, it reads 2nA/V on the external command rear switched label)
             obj.params.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
             
             obj.params.daqout_to_voltage = .1; % m, multiply DAQ voltage to get mV injected, 1 V should give 200 mV as per manual
