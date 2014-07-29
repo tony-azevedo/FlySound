@@ -17,31 +17,20 @@ classdef TwoPhotonSystem < Device
     
     methods
         function obj = TwoPhotonSystem(varargin)
-            obj.deviceName = 'Camera';
+            obj.deviceName = 'TwoPhotonSystem';
             % This and the transformInputs function are hard coded
             
-            obj.inputLabels = {'exposure'};
-            obj.inputUnits = {'V'};
-            obj.inputPorts = 18;
-            obj.outputLabels = {'trigger','shutter'};
+            obj.inputLabels = {''};%'exposure'};
+            obj.inputUnits = {''};
+            obj.inputPorts = [];
+            obj.outputLabels = {'trigger'};%,'shutter'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = [1 3];
+            obj.outputPorts = [1];% 3];
         end
         
         function varargout = transformInputs(obj,inputstruct)
-%             inlabels = fieldnames(inputstruct);
-%             units = {};
-%             for il = 1:length(inlabels)
-%                 if strcmp(inlabels{il},'exposure')
-%                     units = {'bit'};
-%                    
-%                     inputstruct.exposure = inputstruct.exposure > 2.5;
-%                     inputstruct.exposure = ...
-%                         [inputstruct.exposure(2:end) - inputstruct.exposure(1:end-1); 0];
-%                     inputstruct.exposure = inputstruct.exposure > 0;
-%                 end
-%             end
-%             varargout = {inputstruct,units};
+            units = {};
+            varargout = {inputstruct,units};
         end
         
         function out = transformOutputs(obj,out)

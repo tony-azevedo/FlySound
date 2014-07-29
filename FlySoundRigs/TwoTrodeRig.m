@@ -1,4 +1,12 @@
 classdef TwoTrodeRig < Rig
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     
     properties (Constant)
         rigName = 'TwoTrodeRig';
@@ -47,9 +55,14 @@ classdef TwoTrodeRig < Rig
             
             addlistener(obj.devices.amplifier_1,'ModeChange',@obj.changeSessionsFromMode);
             addlistener(obj.devices.amplifier_2,'ModeChange',@obj.changeSessionsFromMode);
+
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
+            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
             
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
+
         end
         
         function in = run(obj,protocol,varargin)

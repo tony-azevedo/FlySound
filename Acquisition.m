@@ -390,6 +390,9 @@ classdef Acquisition < handle
             
             if isempty(obj.rig) || ~strcmp(obj.protocol.requiredRig,obj.rig.rigName) || changeMainAmp
                 
+                if ~isempty(obj.rig)
+                    delete(obj.rig);
+                end   
                 eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
@@ -595,40 +598,39 @@ classdef Acquisition < handle
             end
             
             if isa(obj.rig,'TwoPhotonRig')
-                error('Do I need this?');
                 imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
                 mkdir(imagedir);
                 images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                % if isempty(images)
-                %     h = msgbox('No images. Save, Close Image?');
-                %     set(h, 'position',[5 280 170 52.5])
-                %     uiwait(h);
-                %     %warning('There are no images to connect to this trial')
-                %     images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                %     if isempty(images)
-                %         warning('There are no images to connect to this trial.  Data saved')
-                %     end
-                % end
-                % if ~isempty(images)
-                %     for im = 1:length(images)
-                %         [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                %         if ~success
-                %             if strcmp(m,'The process cannot access the file because it is being used by another process.')
-                %                 h = msgbox('Close the file!');
-                %                 set(h, 'position',[1280 700 170 52.5])
-                %                 uiwait(h);
-                %                 [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                %             end
-                %         end
-                %         if ~success
-                %             error('Image File %s not moved: %s\n',images(im).name,m);
-                %
-                %         end
-                %     end
-                %     pattern = [obj.protocol.protocolName,'_Image_'];
-                %     imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
-                %     data.imageNum = str2double(imnumstr{1});
-                % end
+                if isempty(images)
+                    h = msgbox('No images. Save, Close Image?');
+                    set(h, 'position',[5 280 170 52.5])
+                    uiwait(h);
+                    %warning('There are no images to connect to this trial')
+                    images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+                    if isempty(images)
+                        warning('There are no images to connect to this trial.  Data saved')
+                    end
+                end
+                if ~isempty(images)
+                    for im = 1:length(images)
+                        [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                        if ~success
+                            if strcmp(m,'The process cannot access the file because it is being used by another process.')
+                                h = msgbox('Close the file!');
+                                set(h, 'position',[1280 700 170 52.5])
+                                uiwait(h);
+                                [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                            end
+                        end
+                        if ~success
+                            error('Image File %s not moved: %s\n',images(im).name,m);
+                            
+                        end
+                    end
+                    pattern = [obj.protocol.protocolName,'_Image_'];
+                    imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
+                    data.imageNum = str2double(imnumstr{1});
+                end
                 save(data.name, '-struct', 'data');
             end
         end

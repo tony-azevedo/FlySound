@@ -1,4 +1,12 @@
 classdef BasicEPhysRig < EPhysRig
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     
     properties (Constant)
         rigName = 'BasicEPhysRig';
@@ -18,8 +26,12 @@ classdef BasicEPhysRig < EPhysRig
     methods
         function obj = BasicEPhysRig(varargin)
             obj = obj@EPhysRig(varargin{:});
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
+            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            
+            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
         end
         
         function setDisplay(obj,fig,evnt,varargin)

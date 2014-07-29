@@ -67,6 +67,7 @@ classdef FlySoundProtocol < handle
             
             obj.setupStimulus();
             obj.queryCameraState
+            obj.query2PState
 
         end        
         
@@ -138,6 +139,7 @@ classdef FlySoundProtocol < handle
             end
             obj.setupStimulus
             obj.queryCameraState;
+            obj.query2PState;
             if ~quiet
                 obj.showParams
             end
@@ -279,7 +281,7 @@ classdef FlySoundProtocol < handle
                     setpref('AcquisitionHardware','twoPRigMap',twoPRigMap)
                 end
                 obj.requiredRig = twoPRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
-                obj.out.trigger = 10*(obj.x >= obj.x(1)+.0001-eps & obj.x < obj.x(1)+.001+eps);
+                obj.out.trigger = 6*(obj.x >= obj.x(1)-eps & obj.x < obj.x(1)+.001+eps);
                 %obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
             end
         end

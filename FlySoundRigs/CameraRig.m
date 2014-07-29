@@ -1,4 +1,12 @@
 classdef CameraRig < EPhysRig
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> TwoTrodeRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig 
     
     properties (Constant,Abstract)
         rigName;
@@ -8,8 +16,12 @@ classdef CameraRig < EPhysRig
     methods
         function obj = CameraRig(varargin)
             obj.addDevice('camera','Camera');
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
+            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            
+            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
+            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
             addlistener(obj,'StartTrial',@obj.readyCamera);
         end
 
