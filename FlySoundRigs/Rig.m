@@ -40,9 +40,9 @@ classdef Rig < handle
     methods
         function obj = Rig(varargin)
             if ~ispref('AcquisitionHardware','rigDev')
-                setpref('AcquisitionHardware','rigDev','Dev3')
-                setpref('AcquisitionHardware','modeDev','Dev4')
-                setpref('AcquisitionHardware','gainDev','Dev4')
+                setpref('AcquisitionHardware','rigDev','Dev1')
+                setpref('AcquisitionHardware','modeDev','Dev1')
+                setpref('AcquisitionHardware','gainDev','Dev1')
                 setpref('AcquisitionHardware','triggerChannelIn','PFI6')
                 setpref('AcquisitionHardware','triggerChannelOut','PFI2')
                 disp(getpref('AcquisitionHardware'));
