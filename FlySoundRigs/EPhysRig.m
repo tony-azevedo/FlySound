@@ -17,7 +17,7 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
-            setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
+            % setpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
             
             ampDevices = {'MultiClamp700B','MultiClamp700BAux'};
