@@ -28,7 +28,7 @@ classdef MultiClamp700B < Device
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'primary','secondary'};
             obj.inputUnits = {'mV','pA'};
-            obj.inputPorts = [20 21];
+            obj.inputPorts = [0 1];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
             obj.outputPorts = 0;
