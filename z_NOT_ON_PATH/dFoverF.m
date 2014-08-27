@@ -1,7 +1,22 @@
 function varargout = dFoverF(data,params,varargin)
-% powerSpectrum(data,params,time,mode)
+% dFoverF(data,params,montageflag)
 
-fig = findobj('tag',mfilename); 
+p = inputParser;
+p.PartialMatching = 0;
+p.addParameter('NewROI','',@ischar);
+p.addParameter('dFoFfig',[],@isnumeric);
+parse(p,varargin{:});
+
+if ~isfield(data,'exposure')
+    fprintf(1,'No Camera Input: Exiting dFoverF routine\n');
+    varargout = {[]};
+    return
+end
+if isempty(p.Results.dFoFfig)
+    fig = findobj('tag',mfilename);
+else
+    fig = p.Results.dFoFfig;
+end
 if isempty(fig);
     if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
         proplist = {...
@@ -15,113 +30,96 @@ if isempty(fig);
     proplist =  getpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
+figure(fig); 
+ax = findobj('tag',[mfilename 'ax']);
+if isempty(ax)
+    ax = subplot(2,1,1,'parent',fig,'tag',[mfilename 'ax']);
+else
+    cla(ax,'reset');
+end
+absolute_ax = subplot(2,1,2,'parent',fig,'tag',[mfilename 'absolute_ax']);
+cla(absolute_ax,'reset');
 
-%% numdigits calculation
-d = ls('*_Image_*');
-jnk = d(1,:);
-pattern = ['_Image_' '\d+' '_'];
-ind = regexp(jnk,pattern,'end');
-jnk = jnk(ind(1)+1:end);
-pattern = '\.tif';
-ind = regexp(jnk,pattern);
-ndigits = ind-1;
+button = p.Results.NewROI;
+
+imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+
+exp_t = data.exposure_time;
+
+if sum(exp_t<0)
+    bsln = exp_t<0 & exp_t>exp_t(1)+.02;
+else
+    bsln = exp_t<1 & exp_t>exp_t(1)+.02;
+end
+bl_numframes = nansum(bsln);
+
+if strcmp(button,'No') && isfield(data,'dFoverF')
+    line(exp_t,data.dFoverF,'parent',ax,'tag','dFoverF_trace','displayname',imdir)
+    axis(ax,'tight');
+    ylabel(ax,'% \Delta F / F')
+    xlabel(ax,'Time (s)')
+    varargout = {[]};
+    return
+end
 
 %%  Currently, I'm saving images as single files.  Sucks!
 %[filename, pathname] = uigetfile('*.tif', 'Select TIF-file');
-
-filebase = [data.params.protocol '_Image_' num2str(data.imageNum) '_'];
-imagefiles = dir([filebase '*']);
+imagefiles = dir(fullfile(imdir,[params.protocol '_Image_*']));
 num_frame = length(imagefiles);
-im = imread(imagefiles(1));
+im = imread(fullfile(imdir,imagefiles(1).name));
 num_px = size(im);
 
-I = zeros([num_px(:) num_frame], 'double');  %preallocate 3-D array
+I = zeros([num_px(:); 1; num_frame]', 'double');  %preallocate 3-D array
+%read in .tif files
+for frame=1:num_frame
+    [I(:,:,1,frame)] = imread(fullfile(imdir,imagefiles(frame).name));
+end
+
+image_sum = nansum(I(:,:,1,bsln),4);
+I_F0 = imdivide(image_sum, bl_numframes);
 
 %% select ROI (implement at some point)
+roifig = figure;
+imshow(I_F0,[],'initialmagnification','fit');
+title('Draw ROI, close figure when done')
 
-
-
-%read in .tif file
-for frame=1:num_frame
-    [I(:,:,frame)] = imread(filename,frame);
+button = 'Yes';
+if isfield(data,'ROI')
+    line(data.ROI(:,1),data.ROI(:,2));
+    button = questdlg('Make new ROI?','ROI','No');
 end
-
-%Add fourth dimension for compatibility with image functions
-I_gs=zeros([num_px num_px 1 num_frame], 'double');
-for frame=1:num_frame
-    I_gs(:,:,1,frame)=I(:,:,frame);
+if strcmp(button,'Yes');
+    roihand = imfreehand(get(roifig,'children'),'Closed',1);
+    % if isfield(data,'ROI')
+    %     roihand.setPosition(data.ROI)
+    % end
+    data.ROI = wait(roihand);
+    mask = createMask(roihand);
+else
+    mask = poly2mask(data.ROI(:,1),data.ROI(:,2),size(im,1),size(im,2));
 end
-
-%calculates a baseline image from frame bl_start through bl_end 
-
-bl_start=input ('What is the number of the first frame in the baseline? ');
-bl_end=input ('What is the number of the last frame in the baseline? ');
-bl_numframes = (bl_end - bl_start)+1;
-%I_F0=imlincomb((1/bl_numframes), I_gs(:,:,1,12), 0.125, I_gs(:,:,1,13), 0.125, I_gs(:,:,1,14), 0.125, I_gs(:,:,1,15), 0.125, I_gs(:,:,1,16), 0.125, I_gs(:,:,1,17), 0.125, I_gs(:,:,1,18), 0.125, I_gs(:,:,1,19));
-%declare matrix to hold sum of all baseline images
-image_sum=I_gs(:,:,1,bl_start);
-start_count=bl_start + 1;
-for f=start_count:bl_end
-    image_sum = imadd(image_sum,I_gs(:,:,1,f));
-end
-I_F0=imdivide(image_sum, bl_numframes);
-
-%calculate change in fluorescence frame by frame relative to baseline
-I_dFovF = zeros([num_px num_px 1 num_frame], 'double'); 
-for frame=1:num_frame
-I_dFovF(:,:,1,frame) = 100*((I_gs(:,:,1,frame) ./ I_F0)-1);
-end
-
-%Set values above 500 to zero
-I_dFovF_thr=zeros([num_px num_px 1 num_frame], 'double');
-for frame=1:num_frame
-    for row=1:num_px
-        for column=1:num_px
-            if I_dFovF(row,column,1,frame) >= 500
-                I_dFovF_thr(row,column,1,frame)=0;
-            else
-                I_dFovF_thr(row,column,1,frame)=I_dFovF(row,column,1,frame);
-            end
-        end
-    end
-end
-
-%apply Gaussian filter:
-%rotationally symmetric Gaussian lowpass filter of size 5x5 with standard deviation
-%sigma 2 (positive). 
-G = fspecial('gaussian',[5 5],2);
-I_dFovF_thr_filt = imfilter(I_dFovF_thr,G);
-
-%plot montage of dFoverF images
-figure
-montage(I_dFovF_thr_filt)
-colormap(jet)
-caxis([1 150])
-t=[num2str(filebase)];
-title(t)
-
-function fn = constructFilnameFromExposureNum(data,exposureNum)
-
-d = ls('*_Image_*');
-jnk = d(1,:);
-pattern = ['_Image_' '\d+' '_'];
-ind = regexp(jnk,pattern,'end');
-jnk = jnk(ind(1)+1:end);
-pattern = '\.tif';
-ind = regexp(jnk,pattern);
-ndigits = ind-1;
-numstem = repmat('0',ndigits,1)';
-
-imFileStem = [data.params.protocol '_Image_' num2str(data.imageNum) '_'];
-
-ens = num2str(exposureNum);
-numstem(end-length(ens)+1:end) = ens;
-
-d = dir([imFileStem numstem '*']);
-try fn = d(1).name;
-catch
-    error('There is no image at this exposure time: %s',[imFileStem numstem]);
-end
-fn = [imFileStem numstem '.tif'];
+close(roifig);
 
 
+%%
+I_masked = I;
+I_masked(~repmat(mask,[1 1 num_frame]))=nan;
+I_F0_masked = I_F0;
+I_F0_masked(~mask)=nan;
+
+
+I_trace = nanmean(nanmean(I_masked,1),2);
+I_trace = reshape(I_trace,1,numel(I_trace));
+dFoverF_trace = 100 * (I_trace/nanmean(nanmean(I_F0_masked)) - 1);
+
+line(data.exposure_time,dFoverF_trace,'parent',ax,'tag','dFoverF_trace')
+axis(ax,'tight');
+
+ylabel('% \Delta F / F')
+xlabel('Time (s)')
+
+data.dFoverF = dFoverF_trace;
+
+save(regexprep(data.name,'Acquisition','Raw_Data'), '-struct', 'data');
+
+varargout = {I};
