@@ -9,7 +9,7 @@ p.addParameter('MotionCorrection',true,@islogical);
 p.addParameter('ShowMovies',false,@islogical);
 p.addParameter('MovieLocation','',@ischar);
 p.addParameter('BGCorrectImages',true,@islogical);
-p.addParameter('Channels',[2],@isnumeric);
+p.addParameter('Channels',[1 2],@isnumeric);
 parse(p,varargin{:});
 
 varargout = {[]};
@@ -74,15 +74,34 @@ if ~isfield(data,'ROI') || ~strcmp(p.Results.NewROI,'No');
     roifig = figure;
     set(roifig,'position',[680   361   646   646]);
     I_green = squeeze(nanmean(I0(:,:,:,2),3));
-    imshow(I_green,[],'initialmagnification','fit','DisplayRange',[0 1000]);
+    I_red = squeeze(nanmean(I0(:,:,:,1),3));
+    
+    panl = panel(roifig);
+    panl.pack('v',{1/4 3/4})  % response panel, stimulus panel
+    panl(1).pack('h',{1/2 2/2})  % response panel, stimulus panel
+    panl(1).margin = [2 2 2 2];
+
+    imshow(I_red,[],'initialmagnification','fit','parent',panl(1,1).select());%,'DisplayRange',[0 1000]);
+    imshow(I_green,[],'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
+    
+    imshow(cat(3,I_red/max(I_red(:)),I_green/max(I_green(:)),I_red/max(I_red(:))),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
     title('Draw ROI, close figure when done')
-    roidrawax = get(roifig,'children');
+    roidrawax = panl(2).select();
     
     if isfield(data,'ROI')
         for roi_ind = 1:length(data.ROI)
             line(data.ROI{roi_ind}(:,1),data.ROI{roi_ind}(:,2),'parent',roidrawax,'color',[1 0 0]);
         end
         button = questdlg('Make new ROI?','ROI','No');
+    else 
+        temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
+        for roi_ind = 1:length(temp.ROI)
+            line(temp.ROI{roi_ind}(:,1),temp.ROI{roi_ind}(:,2),'parent',roidrawax,'color',[1 0 0]);
+        end
+        button = questdlg('Make new ROI?','ROI','No');   
+        if strcmp(button,'No');
+            data.ROI = temp.ROI;
+        end
     end
     if strcmp(button,'Yes');
         data.ROI = {};
@@ -112,16 +131,19 @@ for roi_ind = 1:length(data.ROI)
     I_trace = squeeze(nanmean(nanmean(I_masked,2),1));
     I_traces(:,:,roi_ind) = I_trace;
 end
-toc
+toc, fprintf('Closing');
 close(roifig);
-
+toc
 %% Save the trace to the trial
 tic; fprintf('Saving: '); 
-data.roiLineScanTrace = I_traces;
+setpref('quickshowPrefs','roiScimStackROI',data.ROI)
+data.roiScimStackTrace = I_traces;
 data.exposureTimes = exp_t;
 
 save(regexprep(data.name,'Acquisition','Raw_Data'), '-struct', 'data');
 toc
+
+varargout = {data};
 
 %% plotting traces
 
@@ -129,38 +151,48 @@ figure(fig);
 set(fig,'color',[1 1 1])
 panl = panel(fig);
 
-panl.pack('v',{1/3 2/3})  % response panel, stimulus panel
+panl.pack('v',{1/2 1/2})  % response panel, stimulus panel
 panl.margin = [18 16 2 2];
 panl.fontname = 'Arial';
 panl(1).marginbottom = 16;
 panl(2).margintop = 16;
 
-panl(1).pack('h',{1/3 2/3})
+panl(1).pack('h',{1/7 3/7 3/7})
 %p(1).de.margin = 2;
 
 [protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
     
 panl.title([protocol '\_' dateID '\_' flynum '\_' cellnum '\_' trialnum])
 
-roi_ax = panl(1,1).select();
-set(roi_ax,'tag',[mfilename '_roi_ax']);
-cla(roi_ax,'reset');
+% control_ax = panl(1,1).select();
+green_roi_ax = panl(1,2).select();
+set(green_roi_ax,'tag',[mfilename '_greenroi_ax']);
+cla(green_roi_ax,'reset');
 
-absolute_ax = panl(1,2).select();
+red_roi_ax = panl(1,3).select();
+set(red_roi_ax,'tag',[mfilename '_redroi_ax']);
+cla(red_roi_ax,'reset');
+
+panl(2).pack('h',{1/2 1/2})
+
+absolute_ax = panl(2,1).select();
 set(absolute_ax,'tag',[mfilename '_absolute_ax']);
 cla(absolute_ax,'reset');
 
-ax = panl(2).select();
+ax = panl(2,2).select();
 set(ax,'tag',[mfilename '_ax']);
 cla(ax,'reset');
 
 % ROI
-imshow(I_green,[],'initialmagnification','fit','parent',roi_ax,'DisplayRange',[0 1000]);
-colors = [1 0 0; 0 1 0];
+imshow(I_green,[],'initialmagnification','fit','parent',green_roi_ax);%,'DisplayRange',[0 1000]);
+imshow(I_red,[],'initialmagnification','fit','parent',red_roi_ax);%,'DisplayRange',[0 1000]);
+colors = [0 0 1; 0 1 0];
 
 for roi_ind = 1:length(data.ROI)
-    line(data.ROI{roi_ind}(:,1),data.ROI{roi_ind}(:,2),'parent',roi_ax,...
-        'color',[0 0 1]*(1-(roi_ind-1)/length(data.ROI)),'tag',['roi_',num2str(roi_ind)]);
+    line(data.ROI{roi_ind}(:,1),data.ROI{roi_ind}(:,2),'parent',green_roi_ax,...
+        'color',[0 1 0]+[1 0 1]*(roi_ind-1)/length(data.ROI),'tag',['roi_',num2str(roi_ind)]);
+    line(data.ROI{roi_ind}(:,1),data.ROI{roi_ind}(:,2),'parent',red_roi_ax,...
+        'color',[1 0 0]+[0 1 1]*(roi_ind-1)/length(data.ROI),'tag',['redroi_',num2str(roi_ind)]);
     for n = p.Results.Channels
         line(exp_t,I_traces(:,n,roi_ind),...
             'parent',absolute_ax,...
@@ -202,28 +234,42 @@ set(fig,'units','pixels');
 pos = get(fig,'position');
 delete(findobj(fig,'type','uicontrol'))
 roi_text = uicontrol('style','text',...
-    'position',[8 pos(4)-30 24 16],...
+    'position',[16 pos(4)-30 30 16],...
     'string','ROI',...
     'parent',fig,...
     'fontsize',8,...
     'BackgroundColor',[1 1 1]);
+set(roi_text,'units','normalized')
 chan_text = uicontrol('style','text',...
-    'position',[32 pos(4)-30 24 16],...
+    'position',[46 pos(4)-30 30 16],...
     'string','Ch',...
     'parent',fig,...
     'fontsize',8,...
     'BackgroundColor',[1 1 1]);
-roinum = length(findobj('-regexp', 'tag', 'roi_'));
+set(chan_text,'units','normalized')
+roinum = length(findobj('-regexp', 'tag', 'redroi_'));
 for roi_ind = 1:roinum
-    ui_checks(roi_ind) = uicontrol('style','checkbox',...
-        'position',[8 pos(4)-30 24 16],...
-        'string','Ch',...
+    ui_roichecks(roi_ind) = uicontrol('style','checkbox',...
+        'position',[16 (pos(4)-30)-24*roi_ind 30 16],...
+        'string',num2str(roi_ind),...
         'parent',fig,...
         'fontsize',8,...
         'BackgroundColor',[1 1 1],...
         'tag',['roi_' num2str(roi_ind)]);
+end
+set(ui_roichecks,'units','normalized')
+
+for n = p.Results.Channels
+    ui_chanchecks(n) = uicontrol('style','checkbox',...
+        'position',[46 (pos(4)-30)-24*n 30 16],...
+        'string',num2str(n),...
+        'parent',fig,...
+        'fontsize',8,...
+        'BackgroundColor',[1 1 1],...
+        'tag',['chan_' num2str(n)]);
     
 end
+set(ui_chanchecks,'units','normalized')
 
 
 function exp_t = makeScimStackTime(i_info,num_frame,params)

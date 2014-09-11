@@ -74,7 +74,7 @@ setpref('AcquisitionHardware','cameraToggle','off')
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
 A.tag('Current Clamp, break in')
-A.run(1)
+A.run(6)
 A.untag('Current Clamp, break in')
 systemsound('Notify');
 
