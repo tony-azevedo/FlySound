@@ -8,7 +8,7 @@
 % 1) Beginning of the day: start acquisition here in order to have a file
 % to save images to.
 
-setpref('AcquisitionHardware','twoPToggle','on')
+setpref('AcquisitionHardware','twoPToggle','off')
 
 % Start the bitch 
 clear all, close all
@@ -65,9 +65,10 @@ systemsound('Notify');
 % switch to current clamp
 
 A.setProtocol('CurrentPlateau');
-A.rig.setParams('interTrialInterval',1);
+% A.rig.setParams('interTrialInterval',1);
+plateaux = [repmat(-35,1,3), -32,repmat(-35,1,6)];
 A.protocol.setParams('-q','preDurInSec',1.5,...
-    'postDurInSec',1.5,'stimDurInSec',0.025,'plateaux',[-90 -90 -90 -100 -90 -90 -80 -90 -90 -70 -90 -90 -60 -90 -90 -50 -90 -90 0],'randomize',0);
+    'postDurInSec',1.5,'stimDurInSec',0.025,'plateaux',plateaux,'randomize',0);
 A.run(3)
 systemsound('Notify');
 
