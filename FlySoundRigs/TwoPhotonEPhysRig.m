@@ -28,7 +28,11 @@ classdef TwoPhotonEPhysRig < TwoPhotonRig
         end
         
         function setDisplay(obj,fig,evnt,varargin)
+            if nargin>3
             setDisplay@Rig(obj,fig,evnt,varargin{:})
+            else
+            setDisplay@Rig(obj,fig,evnt)
+            end
             if nargin>3
                 protocol = varargin{1};   
                 if strcmp(protocol.protocolName,get(obj.TrialDisplay,'Name')) &&...
