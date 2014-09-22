@@ -111,11 +111,11 @@ mask_mask(roi_temp(2):roi_temp(2)-1+roi_temp(4),roi_temp(1):roi_temp(1)-1+roi_te
 I_mask = I_mask.*mask_mask;
 
 %% Calculate across ROIs 
-I_traces = nan([num_px(1),num_chan,size(roi_temp,1)]);
+I_traces = nan([length(exp_t),num_chan,size(roi_temp,1)]);
 I_masked = I;
 I_masked(~repmat(I_mask,[1 1 num_chan]))=nan;
 I_trace = squeeze(nanmean(I_masked,2));
-I_traces(:,:,1) = I_trace;
+I_traces(:,:,1) = I_trace(1:length(exp_t),:);
 
 close(roifig);
 
@@ -181,4 +181,13 @@ delta_t = str2double(dscr(strstart+1))/1000;
 t = makeInTime(params);
 delta_t_ind = find(t==t(1)+delta_t);
 exp_t = t(1:delta_t_ind-1:length(t));
-exp_t = exp_t(1:i_info(1).Height);
+try exp_t = exp_t(1:i_info(1).Height);
+catch
+    warning('Line scan has more lines than time vector');
+    exp_t = exp_t(1:min(i_info(1).Height,length(exp_t)));
+end
+
+
+
+
+
