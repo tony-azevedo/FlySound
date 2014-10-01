@@ -32,6 +32,7 @@ if isempty(ax)
 else
     delete(get(ax,'children'));
 end
+axes(ax)
 
 % df = log10(800)/256;
 % f = df:df:log10(800);
@@ -52,12 +53,20 @@ if isfield(params,'preDurInSec')
     T = T-params.preDurInSec;
 end
 colormap(ax,'Hot') % 'Hot'
-surf(ax,T, F, 10*log10(P),'edgecolor','none');
+
+%pcolor(ax,T,F,10*log10(P));
+h = pcolor(T,F,abs(S));
+set(h,'EdgeColor','none');
+%surf(ax,T, F, 10*log10(P),'edgecolor','none');
 %set(ax, 'YScale', 'log');
-view(ax,0,90);
-axis(ax,'tight');
+% view(ax,0,90);
+% axis(ax,'tight');
 
 xlabel(ax,'Time (Seconds)'); ylabel(ax,'Hz');
 title(ax,sprintf('%s', [prot '.' d '.' fly '.' cell '.' trial]));
+
+%xlim(ax,[-.2 params.stimDurInSec+ min(.2,params.postDurInSec)])
+ylim(ax,[min(F) 500])
+
 
 varargout = {S,F,T,P,fig};
