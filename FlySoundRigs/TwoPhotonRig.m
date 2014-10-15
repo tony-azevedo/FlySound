@@ -30,7 +30,7 @@ classdef TwoPhotonRig < EPhysRig
             else
                 repeats = 1;
             end
-            famsize = max(1,size(protocol.paramIter,1));
+            famsize = max(1,size(protocol.paramIter,2));
             if isempty(famsize),famsize = 1;end
             str = sprintf('%s\n%s\n%s%s\n\n%s\n\n%s\n%.4f lines\n%.4f frames\n%d Repeats',...
                 'Ready the TwoPhoton:',...

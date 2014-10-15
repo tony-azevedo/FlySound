@@ -109,7 +109,6 @@ classdef Acquisition < handle
                 tag = varargin;
             else
                 tag = inputdlg('Enter tag:', 'Tag', [1 50]);
-                tag = strcat(tag{:});
             end
             for t = 1:length(tag);
                 if ~sum(strcmp(obj.tags,tag{t}));
@@ -125,6 +124,9 @@ classdef Acquisition < handle
             else
                 untag = inputdlg('Enter tag:', 'Tag', [1 50]);
                 untag = strcat(untag{:});
+                if isempty(untag)
+                    untag = obj.tags;
+                end
             end
             
             for t = 1:length(untag);
