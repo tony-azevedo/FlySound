@@ -80,4 +80,8 @@ roi_temp = getpref('quickshowPrefs','scimStackChan1Mask');
 rectangle('position',roi_temp,'parent',roidrawax,'edgecolor',[1 0 0]);
 
 %close(roifig)
+[protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
+
+panl.title([protocol '\_' dateID '\_' flynum '\_' cellnum '\_' trialnum '\_' mfilename])
+set(fig,'name',[dateID '_' flynum '_' cellnum '_' protocol '_' trialnum '_' mfilename])
 

@@ -100,6 +100,11 @@ if strcmp(button,'Yes')
     if strcmp(button,'No')
     close(roifig)
     end
+    if strcmp(button,'Cancel')
+    close(roifig)
+    fprintf('Quiting analysis\n');
+    return
+    end
 end
 if strcmp(button,'Yes');
     title('Threshold ROI, double click when done')
@@ -158,7 +163,7 @@ if p.Results.PlotFlag
     [protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
     
     panl.title([protocol '\_' dateID '\_' flynum '\_' cellnum '\_' trialnum '\_' mfilename])
-    set(fig,'name',[protocol '_' dateID '_' flynum '_' cellnum '_' trialnum '_' mfilename])
+    set(fig,'name',[dateID '_' flynum '_' cellnum '_' protocol '_' trialnum '_' mfilename])
     
     % control_ax = panl(1,1).select();
     mask_roi_ax = panl(1,1).select();

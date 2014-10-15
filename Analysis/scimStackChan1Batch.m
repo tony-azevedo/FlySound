@@ -115,12 +115,6 @@ setpref('quickshowPrefs','scimStackChan1Mask',roi_temp)
 prtclData = load(datastructfile);
 prtclData = prtclData.data;
 blocktrials = findLikeTrials('name',data.name,'datastruct',prtclData,'exclude',{'displacement','freq','amp','step'});
-% t = 1;
-% while t <= length(blocktrials)
-%     trials = findLikeTrials('trial',blocktrials(t),'datastruct',prtclData);
-%     blocktrials = setdiff(blocktrials,setdiff(trials,blocktrials(t)));
-%     t = t+1;
-% end
 
 for bt = blocktrials;
     data_block = load(fullfile(D,sprintf(trialStem,bt)));
