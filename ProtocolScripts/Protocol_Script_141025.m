@@ -3,11 +3,18 @@
 % 1) Beginning of the day: start acquisition here in order to have a file
 % to save images to.
 
-toggleImagingPref('on')
+toggleImagingPref('off')
 
 % Start the bitch 
 clear all, close all
 A = Acquisition;
+
+A.setProtocol('PiezoLongCourtshipSong','modusOperandi','Cal');
+A.protocol.setParams('-q',...
+    'preDurInSec',2,...
+    'displacements',[1 3],...
+    'postDurInSec',2);
+A.protocol.CalibrateStimulus(A)
 
 
 %% Take a quick sweep early just to see base line at the ROI 
