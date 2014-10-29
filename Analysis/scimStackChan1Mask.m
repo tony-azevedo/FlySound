@@ -98,12 +98,12 @@ if strcmp(button,'Yes')
     
     button = questdlg('Make new ROI?','ROI','No');
     if strcmp(button,'No')
-    close(roifig)
+        close(roifig)
     end
     if strcmp(button,'Cancel')
-    close(roifig)
-    fprintf('Quiting analysis\n');
-    return
+        close(roifig)
+        fprintf('Quiting analysis\n');
+        return
     end
 end
 if strcmp(button,'Yes');

@@ -1,6 +1,6 @@
 function varargout = scimStackChan1Batch(data,params,varargin)
-% dFoverF(data,params,montageflag)
-
+% scimStackChan1Batch(data,params,montageflag)
+% see also scimStackChan1Mask
 p = inputParser;
 p.PartialMatching = 0;
 p.addParameter('NewROI','Yes',@ischar);
