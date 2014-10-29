@@ -51,6 +51,9 @@ plot(x,songLP,'color',[1 1 1]*.7), hold on;
 
 linkaxes([subplot(2,1,1), subplot(2,1,2)]);
 
+%% Select a snippet
+
+songLP = songLP(x>8 & x<=20);
 
 %% Save the song for use with the Piezo
 cd C:\Users\Anthony' Azevedo'\Code\FlySound\Rig' Calibration'
