@@ -24,7 +24,7 @@ classdef Piezo < Device
             obj.inputPorts = 5;
             obj.outputLabels = {'piezocommand'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = [1];
+            obj.outputPorts = [0];
         end
         
         function in = transformInputs(obj,in)
