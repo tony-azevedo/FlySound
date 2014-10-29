@@ -1,4 +1,4 @@
-%% Whole cell voltage clamp, imaging Ca in the terminals of B1 cells
+%% Imaging Ca in the terminals of B1 cells with 
 % Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit
 % single spikes while hyperpolarized. Filling the cell with Alexa 594 (10uM
 % or 50uM) and Fluo5F (150uM or 300uM).  Find the terminal under 2P at 925

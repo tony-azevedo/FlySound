@@ -21,10 +21,10 @@ classdef Piezo < Device
             
             obj.inputLabels = {'sgsmonitor'};
             obj.inputUnits = {'V'};
-            obj.inputPorts = 2;
+            obj.inputPorts = 5;
             obj.outputLabels = {'piezocommand'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = [2];
+            obj.outputPorts = [0];
         end
         
         function in = transformInputs(obj,in)

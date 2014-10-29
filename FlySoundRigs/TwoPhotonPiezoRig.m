@@ -1,12 +1,14 @@
 classdef TwoPhotonPiezoRig < TwoPhotonRig
     % current hierarchy:
-    %   Rig -> EPhysRig -> BasicEPhysRig
-    %                   -> TwoTrodeRig
-    %                   -> PiezoRig 
-    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
-    %                                   -> TwoPhotonPiezoRig     
-    %                   -> CameraRig    -> CameraEPhysRig 
-    %                                   -> PiezoCameraRig 
+    %   Rig -> EPhysRig         -> BasicEPhysRig
+    %                           -> TwoTrodeRig
+    %                           -> PiezoRig 
+    %                           -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                           -> TwoPhotonPiezoRig     
+    %                           -> CameraRig    -> CameraEPhysRig 
+    %                                           -> PiezoCameraRig 
+    %       -> ImagingRig   -> ImagingPiezoRig
+    %
     properties (Constant)
         rigName = 'TwoPhotonPiezoRig';
         IsContinuous = false;

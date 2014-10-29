@@ -68,6 +68,7 @@ classdef FlySoundProtocol < handle
             obj.setupStimulus();
             obj.queryCameraState
             obj.query2PState
+            obj.queryImagingState;
 
         end        
         
@@ -140,6 +141,7 @@ classdef FlySoundProtocol < handle
             obj.setupStimulus
             obj.queryCameraState;
             obj.query2PState;
+            obj.queryImagingState;
             if ~quiet
                 obj.showParams
             end
@@ -251,6 +253,10 @@ classdef FlySoundProtocol < handle
         end
                            
         function queryCameraState(obj,varargin)
+            %% Rig determination
+            % These functions determine whether the name of the required
+            % rig for the protocol needs to be changed.  They also deals with
+            % the case where no electrophysiology is needed.
             if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','cameraToggle')
                 addpref('AcquisitionHardware','cameraToggle','off')
             end
@@ -274,6 +280,7 @@ classdef FlySoundProtocol < handle
             end
             twoPpref = getpref('AcquisitionHardware','twoPToggle');
             if strcmp('on',twoPpref)
+                setpref('AcquisitionHardware','imagingToggle','off')
                 try twoPRigMap = getpref('AcquisitionHardware','twoPRigMap');
                 catch
                     tpm = load('twoPRigMap');
@@ -285,6 +292,26 @@ classdef FlySoundProtocol < handle
                 %obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
             end
         end
+      
+        function queryImagingState(obj,varargin)
+            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','imagingToggle')
+                addpref('AcquisitionHardware','imagingToggle','off')
+            end
+            imagingpref = getpref('AcquisitionHardware','imagingToggle');
+            if strcmp('on',imagingpref)
+                setpref('AcquisitionHardware','twoPToggle','off')
+                try imageRigMap = getpref('AcquisitionHardware','imageRigMap');
+                catch
+                    imm = load('imageRigMap');
+                    imageRigMap = imm.imageRigMap;
+                    setpref('AcquisitionHardware','imageRigMap',imageRigMap)
+                end
+                obj.requiredRig = imageRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                obj.out.trigger = 6*(obj.x >= obj.x(1)-eps & obj.x < obj.x(1)+.001+eps);
+                %obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
+            end
+        end
+
         
     end % protected methods
     

@@ -1,4 +1,4 @@
-classdef TwoPhotonRig < EPhysRig
+classdef ImagingRig < Rig
     % current hierarchy:
     %   Rig -> EPhysRig         -> BasicEPhysRig
     %                           -> TwoTrodeRig
@@ -8,6 +8,7 @@ classdef TwoPhotonRig < EPhysRig
     %                           -> CameraRig    -> CameraEPhysRig 
     %                                           -> PiezoCameraRig 
     %       -> ImagingRig   -> ImagingPiezoRig
+    %                       -> ImagingBasicRig
     %
     properties (Constant,Abstract)
         rigName;
@@ -15,7 +16,7 @@ classdef TwoPhotonRig < EPhysRig
     end
     
     methods
-        function obj = TwoPhotonRig(varargin)
+        function obj = ImagingRig(varargin)
             obj.addDevice('twophoton','TwoPhotonSystem');
             rigDev = getpref('AcquisitionHardware','rigDev');
             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
@@ -52,7 +53,7 @@ classdef TwoPhotonRig < EPhysRig
             set(h, 'position',[5 658 pos(3) pos(4)])
             uiwait(h)
             
-            in = run@EPhysRig(obj,protocol,varargin{:});
+            in = run@Rig(obj,protocol,varargin{:});
         end
                 
         function setDisplay(obj,fig,evnt,varargin)
@@ -91,7 +92,7 @@ classdef TwoPhotonRig < EPhysRig
                 
                 for i = 1:length(dev.inputPorts)
                     ch = obj.aiSession.addAnalogInputChannel('Dev3',dev.inputPorts(i), 'Voltage');
-                    ch.InputType = 'SingleEnded';  %%????
+                    % ch.InputType = 'SingleEnded';  %%????
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
                     obj.inputs.device{dev.inputPorts(i)+1} = dev;

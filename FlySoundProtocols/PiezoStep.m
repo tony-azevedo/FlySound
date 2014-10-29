@@ -48,9 +48,9 @@ classdef PiezoStep < FlySoundProtocol
             obj.params.displacements = [-1 -.3 -.1 .1 .3 1];
             obj.params.displacement = obj.params.displacements(1);
             obj.params.displacementOffset = 5;
-            obj.params.stimDurInSec = .2;
-            obj.params.preDurInSec = .2;
-            obj.params.postDurInSec = .1;
+            obj.params.stimDurInSec = .5;
+            obj.params.preDurInSec = 1.5;
+            obj.params.postDurInSec = 1;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;

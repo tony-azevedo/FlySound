@@ -17,6 +17,7 @@ switch campref
         fprintf('Two Photon System Disconnected\n')
     case 'off'
         setpref('AcquisitionHardware','twoPToggle','on')
+        setpref('AcquisitionHardware','imagingToggle','off')
         systemsound('Windows Hardware Insert')
         fprintf('Two Photon System Connected\n')
 end

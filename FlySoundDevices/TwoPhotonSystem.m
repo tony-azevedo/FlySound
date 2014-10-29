@@ -20,9 +20,9 @@ classdef TwoPhotonSystem < Device
             obj.deviceName = 'TwoPhotonSystem';
             % This and the transformInputs function are hard coded
             
-            obj.inputLabels = {''};%'exposure'};
-            obj.inputUnits = {''};
-            obj.inputPorts = [];
+            obj.inputLabels = {'mirrorslow','mirrorfast'};%'exposure'};
+            obj.inputUnits = {'V','V'};
+            obj.inputPorts = [8,9];
             obj.outputLabels = {'trigger'};%,'shutter'};
             obj.outputUnits = {'V'};
             obj.outputPorts = [1];% 3];

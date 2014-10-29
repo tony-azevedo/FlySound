@@ -410,6 +410,10 @@ classdef Acquisition < handle
                     %error('Do I need to clean up files?')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                 end
+                if isa(obj.rig,'\ImagingRig')
+                    %error('Do I need to clean up files?')
+                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
+                end
                 
                 devs = fieldnames(obj.rig.devices);
                 
@@ -599,7 +603,7 @@ classdef Acquisition < handle
                 save(data.name, '-struct', 'data');
             end
             
-            if isa(obj.rig,'TwoPhotonRig')
+            if isa(obj.rig,'TwoPhotonRig') || isa(obj.rig,'ImagingRig')
                 imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
                 mkdir(imagedir);
                 images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
