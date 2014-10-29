@@ -3,7 +3,7 @@
 % 1) Beginning of the day: start acquisition here in order to have a file
 % to save images to.
 
-toggleImagingPref('off')
+toggleImagingPref('on')
 
 % Start the bitch 
 clear all, close all
