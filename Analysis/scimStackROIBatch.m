@@ -127,6 +127,7 @@ if strcmp(button,'Yes');
     roihand = imfreehand(roidrawax,'Closed',1);
     roi_temp = wait(roihand);
     data.ROI{1} = roi_temp;
+    Masks{1} = createMask(roihand);
     while ishandle(roifig) && sum(roi_temp(3:end)>2)
         roihand = imfreehand(roidrawax,'Closed',1);
         roi_temp = wait(roihand);
@@ -134,7 +135,7 @@ if strcmp(button,'Yes');
             break
         end
         data.ROI{end+1} = roi_temp;
-        Masks{roihand} = createMask(roihand);
+        Masks{end+1} = createMask(roihand);
 
     end
     close(roifig);
@@ -148,7 +149,7 @@ else
 end
 
 %% Save the ROI preference
-setpref('quickshowPrefs','scimStackChan1Mask',temp.ROI)
+setpref('quickshowPrefs','roiScimStackROI',temp.ROI)
 
 %% Batch process the bunch using the same ROI.
 
@@ -156,6 +157,7 @@ setpref('quickshowPrefs','scimStackChan1Mask',temp.ROI)
 prtclData = load(datastructfile);
 prtclData = prtclData.data;
 blocktrials = findLikeTrials('name',data.name,'datastruct',prtclData,'exclude',{'displacement','freq','amp','step'});
+blocktrials = excludeTrials('trials',blocktrials,'name',data.name);
 
 for bt = blocktrials;
     data_block = load(fullfile(D,sprintf(trialStem,bt)));

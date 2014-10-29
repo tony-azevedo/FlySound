@@ -88,6 +88,7 @@ I_green = squeeze(nanmean(I(:,:,:,2),3));
 I_red = squeeze(nanmean(I(:,:,:,1),3));
 temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
 data.ROI = temp.ROI;
+Masks = {};
 if strcmp(button,'Yes');
     roifig = figure;
     set(roifig,'position',[680   361   646   646]);
@@ -114,7 +115,7 @@ if strcmp(button,'Yes');
     if strcmp(button,'No')
         for roi_ind = 1:length(data.ROI)
             roihand = impoly(roidrawax,data.ROI{roi_ind});
-            Masks{roihand} = createMask(roihand);
+            Masks{roi_ind} = createMask(roihand);
         end
         close(roifig)
     end
@@ -129,6 +130,7 @@ if strcmp(button,'Yes');
     roihand = imfreehand(roidrawax,'Closed',1);
     roi_temp = wait(roihand);
     data.ROI{1} = roi_temp;
+    Masks{1} = createMask(roihand);
     while ishandle(roifig) && sum(roi_temp(3:end)>2)
         roihand = imfreehand(roidrawax,'Closed',1);
         roi_temp = wait(roihand);
@@ -136,14 +138,15 @@ if strcmp(button,'Yes');
             break
         end
         data.ROI{end+1} = roi_temp;
-        Masks{roihand} = createMask(roihand);
+        Masks{end+1} = createMask(roihand);
 
     end
     close(roifig);
     toc, fprintf('Closing');
-else
-    Masks = p.Results.Masks;
-    if isempty(Masks)
+end
+if isempty(Masks)
+    try Masks = p.Results.Masks;
+    catch
         error('There is no mask with which to choose an ROI');
     end
 end
