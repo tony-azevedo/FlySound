@@ -48,7 +48,7 @@ A.protocol.setParams('-q',...
     'stimDurInSec',.5,...
     'postDurInSec',.5);
 A.tag
-A.run(5)
+A.run(1)
 systemsound('Notify');
 A.clearTags
 
