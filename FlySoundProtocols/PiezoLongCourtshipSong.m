@@ -63,7 +63,7 @@ classdef PiezoLongCourtshipSong < PiezoProtocol
             obj.params.sampratein = 40000;
             [stim,obj.params.samprateout] = wavread('CourtshipSong.wav');
             obj.params.sampratein = obj.params.samprateout;
-            obj.params.displacements = .1;
+            obj.params.displacements = 1;
             obj.params.displacement = obj.params.displacements(1);
 
             obj.params.ramptime = 0.04; %sec;
@@ -80,6 +80,7 @@ classdef PiezoLongCourtshipSong < PiezoProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.displacement = obj.params.displacements(1);
 
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)

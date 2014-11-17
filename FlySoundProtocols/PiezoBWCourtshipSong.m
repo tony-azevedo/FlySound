@@ -80,7 +80,7 @@ classdef PiezoBWCourtshipSong < PiezoProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
-
+            obj.params.displacement = obj.params.displacements(1);
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)
                 [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);

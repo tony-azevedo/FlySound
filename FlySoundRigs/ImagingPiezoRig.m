@@ -21,6 +21,9 @@ classdef ImagingPiezoRig < ImagingRig
         end
                 
         function setDisplay(obj,fig,evnt,varargin)
+            if nargin<4
+                varargin = {};
+            end
             setDisplay@Rig(obj,fig,evnt,varargin{:})
             if nargin>3
                 protocol = varargin{1};            
