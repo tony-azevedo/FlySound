@@ -1,5 +1,21 @@
-% Fly song sample construction.
-% Uses the songs from Mala's work.
+%% Construction of Stimuli sample construction.
+[song0,Fs0] = audioread('CourtshipSong.wav');
+x = 0:Fs0-1/Fs0;
+y = zeros(size(x));
+for start = 0:2:8;
+    y(start*Fs0/10+1:(start+1)*Fs0/10) = 1;
+end
+
+plot(x,y);
+
+% cd C:\Users\Anthony' Azevedo'\Code\FlySound\StimulusWaves\
+% 
+% audiowrite(['Basic_Standard','.wav'],...
+%     y,...
+%     Fs0,...
+%     'BitsPerSample',32);
+
+%% Uses the songs from Mala's work.
 
 testsong = load('1mintestsong');
 easy = testsong.easy;
@@ -12,13 +28,19 @@ song = interp(easy,round(Fs0/Fs_easy));
 Fs = Fs0;
 x = (0:length(song)-1)/Fs;
 
+figure
+plot(x,song)
+xlabel('Time (s)'), ylabel('A.U.'), title('''Easy'' song')
+set(gcf,'name','Easy_song_ArthurEtAl')
+
+
 %% spectrogram of easy song
 df = 800/256;
 f = df:df:800;
 
 figure;
 ax = subplot(1, 1,1,'parent',gcf);
-[S,F,T,P] = spectrogram(songLP-mean(songLP),2048,1024,f,Fs);
+[S,F,T,P] = spectrogram(song-mean(song),2048,1024,f,Fs);
 
 P(P< mean(P(end,:))) = mean(P(end,:));
 colormap(ax,'jet') % 'Hot'
@@ -59,16 +81,25 @@ figure
 subplot(2,1,1)
 plot(x_easy,easy), hold on;
 plot(x,song,'color',[1 1 1]*.7), hold on;
+xlabel('Time (s)'), ylabel('A.U.'), title('Easy song, interpolated')
 
 subplot(2,1,2)
 plot(x,song,'color',[0 0 1]), hold on;
 plot(x,songLP,'color',[1 1 1]*.7), hold on;
+xlabel('Time (s)'), ylabel('A.U.'), title('Easy song, filtered')
 
 linkaxes([subplot(2,1,1), subplot(2,1,2)]);
+set(gcf,'name','Interpolation_and_filtering')
+
 
 %% Select a snippet
 
 songLP = songLP(x>8 & x<=20);
+x_LP = x(x>8 & x<=20)-8;
+figure
+plot(x(x>8 & x<=20),songLP,'color',[1 1 1]*.7), hold on;
+xlabel('Time (s)'), ylabel('A.U.'), title('Chosen Song Snippet')
+set(gcf,'name','Chosen_Song_Snippet')
 
 %% spectrogram of LP easy
 df = 800/256;
@@ -85,55 +116,113 @@ colormap(ax,'jet') % 'Hot'
 h = pcolor(T,F,abs(S));
 set(h,'EdgeColor','none');
 
+xlabel('Time (S)'), ylabel('Hz'), title('Chosen Snippet Spectrogram')
+set(gcf,'name','Chosen_Song_Spectrogram')
 
 %% Save the song for use with the Piezo
-cd C:\Users\Anthony' Azevedo'\Code\FlySound\Rig' Calibration'
-
-audiowrite(['LongCourtshipSong_Standard','.wav'],...
-    songLP,...
-    Fs,...
-    'BitsPerSample',32);
+sound(songLP,Fs)
+% cd C:\Users\Anthony' Azevedo'\Code\FlySound\StimulusWaves\
+% 
+% audiowrite(['LongCourtshipSong_Standard','.wav'],...
+%     songLP,...
+%     Fs,...
+%     'BitsPerSample',32);
 
 %%
-sound(songLP,Fs)
 
 %% Isolate some pulses.
 % use those isolated 
-Pulses = songLP(4.28401E5:4.482E5);
+close all;
 
-%% Find the frequency of the envelope 
+Pulses = songLP(4.28381E5:4.48202E5);
+x_Pulses = x_LP(4.28381E5:4.48202E5) - x_LP(4.28380E5);
+
+%% Find the analytic signal (hilbert transform)
 figure
+set(gcf,'name','Hilbert Transform')
 X_Pulses = hilbert(Pulses);
 env_Pulses = abs(X_Pulses);
+phase_Pulses = angle(X_Pulses);
 
-plot(Pulses),hold on
-plot(env_Pulses,'r')
+subplot(3,1,[1 2])
+plot(x_Pulses,Pulses),hold on
+plot(x_Pulses,env_Pulses,'r');
 
-%%
+ylabel('A.U.'), title('Chosen Snippet (blue), Envelope (red)')
+
+subplot(3,1,3)
+plot(x_Pulses,phase_Pulses,'g');
+
+
+xlabel('Time (S)'), ylabel('radians'), title('Rotation in complex space')
+
+linkaxes([subplot(3,1,[1 2]), subplot(3,1,3)],'x');
+
+%% It'd be nice to see the angular velocity of the Hilbert transform
+
+%% Measure the frequency of the envelope
 figure
-% [Pxx,F,pxxc] = pwelch(env_Pulses-mean(env_Pulses),'',[],[],Fs);
-% semilogx(F(2:end),10*log10(Pxx(2:end)),'linewidth',1); hold on;
-% semilogx(F(2:end),10*log10(pxxc(2:end,:)),'r--','linewidth',.5);
-
 f = Fs/length(env_Pulses)*[0:length(env_Pulses)/2]; f = [f, fliplr(f(2:end-1))];
 
 semilogx(f,real(abs(fft(env_Pulses-mean(env_Pulses)))),'linewidth',1); hold on;
 xlim([1 800])
 spectrum_Env = real(abs(fft(env_Pulses-mean(env_Pulses))));
 f_max = f(spectrum_Env == max(spectrum_Env));
-f_max = f_max(1);
+f_max = f_max(1)
+
+xlabel('Frequency (Hz)'), ylabel('A.U.'), title('Envelope Spectrum'), 
+set(gcf,'name','Envelope_Spectrum')
+
+%% Find the snippet of pulses with the right length (integer times env_freq)
+DeltaT = 1/f_max;
+
+N_pulses = x_Pulses(end)/DeltaT
+DeltaT_N = floor(N_pulses) * DeltaT;
+
+x_Pulses_1 = x_Pulses(x_Pulses<=DeltaT_N);
+Pulses_1 = Pulses(x_Pulses<=DeltaT_N);
+Pulses_1(1:50) = (0:49)'/49 .* Pulses_1(1:50);
+Pulses_1(end-50+1:end) = (49:-1:0)'/49 .* Pulses_1(end-50+1:end);
+
+figure
+plot(x_Pulses_1,Pulses_1);
+
+xlabel('Frequency (Hz)'), ylabel('A.U.'), title('Snippet of Pulses (tapered ends)'), 
+set(gcf,'name','Pulse_Snippet')
 
 %% 
 Cycles = 10;
-Pulses = repmat(Pulses,Cycles,1);
-plot(Pulses)
+x_Pulses_N = 0:Cycles*length(Pulses_1)-1;
+x_Pulses_N = x_Pulses_N/length(Pulses_1);
+Pulses_N = repmat(Pulses_1,Cycles,1);
+Pulses_N = Pulses_N/max(abs(Pulses_N));
 
-sound(Pulses,Fs)
+figure
+
+plot(x_Pulses_N,Pulses_N);
+
+xlabel('Frequency (Hz)'), ylabel('A.U.'), title('Repeated Pulse Snippet'), 
+set(gcf,'name','Pulse_Repeat')
+
+%sound(Pulses_N,Fs)
+
+%% Save the song for use with the Piezo
+sound(Pulses_N,Fs)
+
+% cd C:\Users\Anthony' Azevedo'\Code\FlySound\StimulusWaves\
+% 
+% audiowrite(['PulseSongRepeat_Standard','.wav'],...
+%     Pulses_N,...
+%     Fs,...
+%     'BitsPerSample',32);
+
 
 %%
-[Pxx,F,pxxc] =pwelch(Pulses,'',[],[],Fs);
+[Pxx,F,pxxc] =pwelch(Pulses_N,'',[],[],Fs);
 semilogx(F(2:end),10*log10(Pxx(2:end)),'linewidth',1); hold on;
 semilogx(F(2:end),10*log10(pxxc(2:end,:)),'r--','linewidth',.5);
+
+
 
 %% VaughanSong
 % Synthetic song Synthetic pulse song was generated as a series of Gaussianwindowed
@@ -173,12 +262,14 @@ for IPI = IPIs
     
     VaughanSong = repmat(VaughanSong,1,Cycles);
 
-    audiowrite(['VaughanSong_' num2str(IPI) '_Standard','.wav'],...
+    audiowrite(['VaughanSong_' num2str(IPI*1000) '_Standard','.wav'],...
         songLP,...
         Fs,...
         'BitsPerSample',32);
     
-    sound(VaughanSong,Fs)
-    pause
+    %
+    %pause
 end
+
+sound(VaughanSong,Fs)
 

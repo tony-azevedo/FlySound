@@ -7,6 +7,7 @@
 %   develop a cut Antennal Nerve prep, a naked brain without ipsilateral
 %       input
 %   deliver song stimulus and noise stimuli
+setpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
 clear all, close all
@@ -109,6 +110,21 @@ A.tag
 A.run(5)
 systemsound('Notify');
 A.untag
+
+%% PiezoStimulus
+
+A.setProtocol('PiezoStimulus');
+A.protocol.setParams('-q','stimulusName','Basic');
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'stimulusName','Basic',...
+    'postDurInSec',.5,...
+    'displacements',[3 10 30] * .1,'postDurInSec',1);
+%A.tag
+A.run(5)
+systemsound('Notify');
+%A.untag
+
 
 %% PiezoSine
 
