@@ -257,19 +257,25 @@ for IPI = IPIs
     
     VaughanSong = IPF.*env_VS;
     
-    plot(x_VS,env_VS); hold on;
-    plot(x_VS,VaughanSong,'r');
+    %     plot(x_VS,env_VS); hold on;
+    %     plot(x_VS,VaughanSong,'r');
     
-    VaughanSong = repmat(VaughanSong,1,Cycles);
+    VaughanSongLong = repmat(VaughanSong,1,Cycles);
 
     audiowrite(['VaughanSong_' num2str(IPI*1000) '_Standard','.wav'],...
-        songLP,...
+        VaughanSongLong,...
         Fs,...
         'BitsPerSample',32);
     
     %
     %pause
 end
+figure
+plot(x_VS,env_VS,'r'); hold on;
+plot(x_VS,VaughanSong,'b');
+xlabel('Frequency (Hz)'), ylabel('A.U.'), title('Vaughan Song (synthetic pulses)'), 
+set(gcf,'name','Vaughan_Song')
+
 
 sound(VaughanSong,Fs)
 
