@@ -98,7 +98,7 @@ if strcmp(button,'Yes');
     imshow(I_red,[],'initialmagnification','fit','parent',panl(1,1).select());%,'DisplayRange',[0 1000]);
     imshow(I_green,[],'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
     
-    imshow(cat(3,I_red/max(I_red(:)),I_green/max(I_green(:)),I_red/max(I_red(:))),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
+    imshow(cat(3,I_red/max(I_green(:)),I_green/max(I_green(:)),I_red/max(I_green(:))),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
     title('Draw ROI, close figure when done')
     roidrawax = panl(2).select();
     
