@@ -63,7 +63,7 @@ end
 
 plot(t(t>=0 & t< params.stepdur*2),y,'parent',ax,'color',[1 .7 .7],'linewidth',1); hold on
 l = line(t(t>=0 & t< params.stepdur*2),y_bar+base,'parent',ax,'color',[.7 0 0],'linewidth',1,'displayname',str);
-text(t(stimpnts+5),mean(y_bar(stimpnts-100:stimpnts)),...
+text(t(stimpnts+5),mean(y_bar(stimpnts-100:stimpnts))+base + max(y_bar)/2,...
     str,'parent',ax,...
     'fontsize',10);
 box off; set(gca,'TickDir','out');
@@ -71,5 +71,8 @@ box off; set(gca,'TickDir','out');
 ylabel(ax,'pA'); %xlim([0 max(t)]);
 xlabel(ax,'Time (s)'); xlim(ax,[t(1) params.stepdur*2]);
 title(ax,sprintf('%s %s\\}', [prot ' ' d ' ' fly ' ' cell ' ' trial], sprintf('\\{%s;',data.tags{:})));
+
+[protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
+set(fig,'name',[protocol '_' dateID '_' flynum '_' cellnum '_' trialnum '_' mfilename])
 
 varargout = {sealRes_Est1,accessRes_Est1,fig};
