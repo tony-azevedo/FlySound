@@ -87,7 +87,9 @@ end
 I_green = squeeze(nanmean(I(:,:,:,2),3));
 I_red = squeeze(nanmean(I(:,:,:,1),3));
 temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
-data.ROI = temp.ROI;
+if ~isfield(data,'ROI')
+    data.ROI = temp.ROI;
+end
 Masks = {};
 if strcmp(button,'Yes');
     roifig = figure;
@@ -101,13 +103,10 @@ if strcmp(button,'Yes');
     imshow(I_red,[],'initialmagnification','fit','parent',panl(1,1).select());%,'DisplayRange',[0 1000]);
     imshow(I_green,[],'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
     
-    imshow(cat(3,I_red/max(I_red(:)),I_green/max(I_green(:)),I_red/max(I_red(:))),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
+    imshow(cat(3,I_red/max(I_green(:)),I_green/max(I_green(:)),I_red/max(I_green(:))),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
     title('Draw ROI, close figure when done')
     roidrawax = panl(2).select();
     
-    if ~isfield(data,'ROI')
-        data.ROI = temp.ROI;
-    end
     for roi_ind = 1:length(data.ROI)
         line(data.ROI{roi_ind}(:,1),data.ROI{roi_ind}(:,2),'parent',roidrawax,'color',[1 0 0]);
     end 
@@ -271,10 +270,13 @@ if p.Results.MakeMovie
     
     open(vidObj);
     
+    clims = [min(I_norm(:)) max(I_norm(:))];
+    
+    
     % Create an animation.
     % set(gca,'nextplot','replacechildren');
     for frame=1:num_frame        
-        imshow(I_norm(:,:,frame),[],'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
+        imshow(I_norm(:,:,frame),clims,'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
         colormap(panl(1,2).select(),'hot');
         
         plot(exp_t(exp_t<exp_t(frame)),I_traces(exp_t<exp_t(frame),2,1),'parent',absolute_ax,'color',[0 1 0]);
