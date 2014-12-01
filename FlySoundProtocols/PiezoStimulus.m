@@ -74,7 +74,7 @@ classdef PiezoStimulus < PiezoProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            % rmpref('defaultsPiezoCourtshipSong')
+            % rmpref('defaultsPiezoStimulus')
             obj.params.displacementOffset = 5;
             obj.params.stimulusName = 'Basic';
             
@@ -98,6 +98,7 @@ classdef PiezoStimulus < PiezoProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.displacement = obj.params.displacements(1);
 
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)
@@ -118,7 +119,7 @@ classdef PiezoStimulus < PiezoProtocol
             y(:) = 0;
 
             stimpnts = round(obj.params.samprateout*obj.params.preDurInSec+1:...
-                obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec));
+                obj.params.samprateout*(obj.params.preDurInSec)+length(stim));
             
             w = window(@triang,2*obj.params.ramptime*obj.params.samprateout);
             w = [w(1:obj.params.ramptime*obj.params.samprateout);...

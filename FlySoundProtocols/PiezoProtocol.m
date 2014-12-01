@@ -158,8 +158,8 @@ classdef PiezoProtocol < FlySoundProtocol
                 % end of the stimulus can produce transients in diff that
                 % are impossible to get rid of.  Taper instead
                 stimpnts = round(A.protocol.params.samprateout*A.protocol.params.preDurInSec+1:...
-                    A.protocol.params.samprateout*(A.protocol.params.preDurInSec+A.protocol.params.stimDurInSec));
-                
+                    A.protocol.params.samprateout*(A.protocol.params.preDurInSec)+length(stim));
+
                 taper_time = 0.005;
                 w = window(@triang,2*taper_time*A.protocol.params.samprateout);
                 w = [w(1:taper_time*A.protocol.params.samprateout);...
@@ -169,7 +169,7 @@ classdef PiezoProtocol < FlySoundProtocol
                 taper = zeros(size(t));
                 taper(stimpnts) = w;
                 diff = diff .* taper(1:length(diff));
-                diff = diff(t(1:end-i_del)>=0 & t(1:end-i_del)<A.protocol.params.stimDurInSec);
+                diff = diff(t(1:end-i_del)>=0 & t(1:end-i_del) < (A.protocol.params.stimDurInSec-1000*eps));
                 
                 [oldstim,fs] = audioread([A.protocol.getCalibratedStimulusFileName,'.wav']);
                 info = audioinfo([A.protocol.getCalibratedStimulusFileName,'.wav']);
@@ -193,7 +193,8 @@ classdef PiezoProtocol < FlySoundProtocol
                     A.protocol.CalibrateStimulus(A);
                 end
             end
-            
+            systemsound('notify')
+            fprintf('\nCalibration Routine Done\n');
             if ~isempty(paramIter)
                 for p_ind = 1:length(paramsToIter);
                     ps{2*p_ind-1} = paramsToIter{p_ind};

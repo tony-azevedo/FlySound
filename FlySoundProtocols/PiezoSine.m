@@ -6,7 +6,7 @@ classdef PiezoSine < PiezoProtocol
     
     properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
-        analyses = {''};
+        analyses = {};
     end
     
     % The following properties can be set only by class methods
