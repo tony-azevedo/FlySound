@@ -1,4 +1,4 @@
-function varargout = scimStackROI(data,params,varargin)
+function varargout = scimStackROI_AVI(data,params,varargin)
 % scimStackROIBatch(data,params,montageflag)
 
 p = inputParser;
@@ -6,7 +6,7 @@ p.PartialMatching = 0;
 p.addParameter('NewROI','Yes',@ischar);
 p.addParameter('dFoFfig',[],@isnumeric);
 p.addParameter('MotionCorrection',true,@islogical);
-p.addParameter('MakeMovie',false,@islogical);
+p.addParameter('MakeMovie',true,@islogical);
 p.addParameter('MovieLocation','',@ischar);
 p.addParameter('Channels',[1 2],@isnumeric);
 p.addParameter('PlotFlag',true,@islogical);
