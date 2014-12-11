@@ -83,6 +83,54 @@ if p.Results.MotionCorrection
     end
 end
 
+%% Spatial filter frames here
+gauss_filter = fspecial('gaussian', [3 3], 1.5);
+I_processed = I;
+for ch_ind = 1:num_chan
+    for fr_ind = 1:num_frame 
+        I_processed(:,:,fr_ind,ch_ind) = imfilter(I(:,:,fr_ind,ch_ind), gauss_filter, 'replicate');
+    end
+end
+
+% figure
+% subplot(1,2,1)
+% imshow(I(:,:,20,ch_ind),[])
+% subplot(1,2,2)
+% imshow(I_processed(:,:,20,ch_ind),[])
+% pause
+
+% pixel_1_initial = squeeze(I(32,32,:,2));
+% pixel_2_initial = squeeze(I(1,1,:,2));
+% I = I_processed;
+
+%% Filter over frames here
+
+sigma = 1;
+fsize = size(I_processed,3);
+x = linspace(-fsize+1,fsize,2*fsize);
+gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
+gaussFilter = gaussFilter / sum (gaussFilter); 
+
+for i=1:size(I_processed,1)
+  for j=1:size(I_processed,2)
+    I_processed(i,j,:,2) = conv(squeeze(I_processed(i,j,:,2)), gaussFilter, 'same');
+  end
+end
+
+% figure
+% subplot(1,1,1), hold on
+% 
+% plot(pixel_1_initial,'b')
+% plot(squeeze(I(32,32,:,2)),'r')
+% plot(squeeze(I_processed(32,32,:,2)),'k','Linewidth',1)
+% 
+% plot(pixel_2_initial,'color',[.8 .8 1])
+% plot(squeeze(I(1,1,:,2)),'color',[1 .8 .8])
+% plot(squeeze(I_processed(1,1,:,2)),'color',[.8 .8 .8],'Linewidth',1)
+% pause
+
+I = I_processed;
+
 %% select ROI 
 I_green = squeeze(nanmean(I(:,:,:,2),3));
 I_red = squeeze(nanmean(I(:,:,:,1),3));
@@ -149,6 +197,7 @@ if isempty(Masks)
         error('There is no mask with which to choose an ROI');
     end
 end
+
 
 %% Calculate across ROIs 
 tic; fprintf('Calculating: ');
