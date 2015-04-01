@@ -1,9 +1,9 @@
-% Drive piezo with frequency sweep, control displacements, freqStart,
-% freqEnd, stimDurInSec
-classdef PiezoChirp < PiezoProtocol
+% Drive piezo with noise stimuli, control displacements, random
+
+classdef PiezoNoise < PiezoProtocol
     
     properties (Constant)
-        protocolName = 'PiezoChirp';
+        protocolName = 'PiezoNoise';
     end
     
     properties (SetAccess = protected)
@@ -20,7 +20,7 @@ classdef PiezoChirp < PiezoProtocol
     
     methods
         
-        function obj = PiezoChirp(varargin)
+        function obj = PiezoNoise(varargin)
             obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...
@@ -101,8 +101,8 @@ classdef PiezoChirp < PiezoProtocol
             obj.params.besselW0 = 800;
             
             obj.params.stimDurInSec = 30;
-            obj.params.preDurInSec = .5;
-            obj.params.postDurInSec = .5;
+            obj.params.preDurInSec = 2;
+            obj.params.postDurInSec = 2;
             
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
