@@ -69,7 +69,7 @@ A.setProtocol('Sweep');
 A.rig.setParams('interTrialInterval',1);
 A.protocol.setParams('-q','durSweep',5);
 A.tag
-A.run(4)
+A.run(2)
 systemsound('Notify');
 
 
@@ -81,9 +81,9 @@ A.protocol.setParams('-q',...
     'preDurInSec',0.5,...
     'stimDurInSec',0.5,...
     'postDurInSec',0.5,...
-    'steps',[ -20 -10 -5 5 10 ]);          % tune this 
+    'steps',[-40 -30 -20 -10 10 20 30 40]);          % tune this 
 A.tag
-A.run(3)
+A.run(2)
 A.clearTags
 systemsound('Notify');
 
@@ -95,22 +95,18 @@ A.protocol.setParams('-q',...
     'preDurInSec',2,...
     'freqStart',17,...
     'freqEnd',300,...
-    'amps',[3 10]*1,... % [10 40]
+    'amps',[3 10 30]*.8,... % [10 40]
     'postDurInSec',2);
 A.tag
-A.run(10)
+A.run(3)
 systemsound('Notify');
-A.clearTags
+A.untag
 
 
 %% PiezoSteps
 
 A.setProtocol('PiezoStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',.2,...
-    'displacements',[-1 -.3 -.1 .1 .3 1],...
-    'stimDurInSec',0.2000,...
-    'postDurInSec',.2);
+A.protocol.setParams('-q','Vm_id',0);
 A.tag
 A.run(5)
 systemsound('Notify');
@@ -145,7 +141,7 @@ systemsound('Notify');
 
 %% Long Courtship song
 A.setProtocol('PiezoLongCourtshipSong');
-A.protocol.setParams('-q','displacements',[3 10 30]*.0667,'postDurInSec',1);
+A.protocol.setParams('-q','displacements',[-10 3 10 30]*.0667,'postDurInSec',1);
 A.run(3)
 systemsound('Notify');
 

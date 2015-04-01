@@ -85,6 +85,7 @@ imshow(I_red,[],'initialmagnification','fit','parent',panl(1,1).select());%,'Dis
 imshow(I_green,[],'initialmagnification','fit','parent',panl(1,2).select());%,'DisplayRange',[0 1000]);
 
 imshow(cat(3,I_red/max([I_red(:);I_green(:)]),I_green/max(I_green(:)),I_red/max([I_red(:);I_green(:)])),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
+imshow(cat(3,I_green/max([I_green(:);I_green(:)]),I_green/max(I_green(:)),I_green/max([I_green(:);I_green(:)])),[],'initialmagnification','fit','parent',panl(2).select());%,'DisplayRange',[0 1000]);
 title('Merged image, ROI')
 roidrawax = panl(2).select();
 
@@ -97,7 +98,7 @@ end
 
 panl.title([protocol '\_' dateID '\_' flynum '\_' cellnum '\_' trialnum '\_' regexprep(mfilename,'_','\\_')])
 set(roifig,'name',[dateID '_' flynum '_' cellnum '_' protocol '_' trialnum '_' mfilename])
-
+varargout = {roifig};
 
 function exp_t = makeScimStackTime(i_info,num_frame,params)
 dscr = i_info(1).ImageDescription;

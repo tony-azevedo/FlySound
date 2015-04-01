@@ -55,6 +55,9 @@ A = Acquisition;
 % A.protocol.setParams('-q','displacements',[3 10 30]*.05,'postDurInSec',1);
 % A.protocol.CalibrateStimulus(A)
 
+A.setProtocol('PiezoLongCourtshipSong','modusOperandi','Cal');
+A.protocol.setParams('-q','displacements',[3 10 30]*.0667,'preDurInSec',1,'postDurInSec',1);
+A.protocol.CalibrateStimulus(A)
 
 
 %% Seal
@@ -78,10 +81,10 @@ systemsound('Notify');
 A.setProtocol('CurrentStep');
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
-    'preDurInSec',0.5,...
-    'stimDurInSec',0.5,...
-    'postDurInSec',0.5,...
-    'steps',[ -20 -10 -5 5 10 ]);          % tune this 
+    'preDurInSec',0.3,...
+    'stimDurInSec',0.3,...
+    'postDurInSec',0.3,...
+    'steps',[-40 -30 -20 -10  10 20 30 40]);          % tune this 
 A.tag
 A.run(3)
 A.clearTags
@@ -98,7 +101,7 @@ A.protocol.setParams('-q',...
     'amps',[3 10]*1,... % [10 40]
     'postDurInSec',2);
 A.tag
-A.run(10)
+A.run(6)
 systemsound('Notify');
 A.clearTags
 
@@ -125,7 +128,7 @@ A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'freqs',freqs,...
     'postDurInSec',.5,...
-    'displacements',[3 10 30] * .05,'postDurInSec',1);
+    'displacements',[3 10 30]*.0667,'postDurInSec',1);
 A.tag
 A.run(3)
 systemsound('Notify');

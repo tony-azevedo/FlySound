@@ -70,6 +70,16 @@ for frame=1:num_frame
 end
 toc
 
+%% Spatial filter frames here
+% gauss_filter = fspecial('gaussian', [3 3], 1.5);
+% I_processed = I0;
+% for ch_ind = 1:num_chan
+%     for fr_ind = 1:num_frame
+%         I_processed(:,:,fr_ind,ch_ind) = imfilter(I0(:,:,fr_ind,ch_ind), gauss_filter, 'replicate');
+%     end
+% end
+% 
+% I0 = I_processed;
 
 %% Do motion correction here
 
@@ -83,40 +93,95 @@ if p.Results.MotionCorrection
     end
 end
 
-%% Spatial filter frames here
-gauss_filter = fspecial('gaussian', [3 3], 1.5);
-I_processed = I;
-for ch_ind = 1:num_chan
-    for fr_ind = 1:num_frame 
-        I_processed(:,:,fr_ind,ch_ind) = imfilter(I(:,:,fr_ind,ch_ind), gauss_filter, 'replicate');
+if 0
+    I_processed = I;
+    
+    % Gaussian Smoothing across frames
+    %     sigma = 4;
+    %     fsize = size(I_processed,3);
+    %     x = linspace(-fsize+1,fsize,2*fsize);
+    %     gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
+    %     gaussFilter = gaussFilter / sum (gaussFilter);
+    %
+    %     for i=1:size(I_processed,1)
+    %         for j=1:size(I_processed,2)
+    %             I_temp = squeeze(I_processed(i,j,:,2));
+    %             nel = length(I_temp);
+    %             I_temp = [I_temp; flipud(I_temp(end-20:end))];
+    %             I_temp = conv(I_temp, gaussFilter, 'same');
+    %             I_processed(i,j,:,2) = I_temp(1:nel);
+    %         end
+    %     end
+    
+    % simple smoothing across frames
+    for frame=2:2:num_frame
+        I_processed(:,:,frame/2,2) = mean(I(:,:,frame-[1 0],2),3);
     end
+    I_processed = I_processed(:,:,1:frame/2,2);
+
+    curdir = pwd;
+    cd(imdir);
+    
+    outputFileName = ['Scim_movCor_' imagefiles(1).name];
+    if exist(outputFileName,'file')
+        delete(outputFileName);
+    end
+    
+    % make tif stacks of dff and maximum intensity
+    for frame = 1:size(I_processed,3)
+        if frame ==1
+            t = Tiff(outputFileName, 'w');
+            tagstruct.ImageLength = size(I,1);
+            tagstruct.ImageWidth = size(I,2);
+            tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+            tagstruct.BitsPerSample = 16;
+            tagstruct.SamplesPerPixel = 1;
+            tagstruct.RowsPerStrip = 16;
+            tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            tagstruct.Software = 'MATLAB';
+            t.setTag(tagstruct);
+            % t.write(uint16(I_processed(:, :, frame,2)));
+            t.write(uint16(I_processed(:, :, frame)));
+            t.close();
+        else
+            t = Tiff(outputFileName, 'a');
+            tagstruct.ImageLength = size(I,1);
+            tagstruct.ImageWidth = size(I,2);
+            tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+            tagstruct.BitsPerSample = 16;
+            tagstruct.SamplesPerPixel = 1;
+            tagstruct.RowsPerStrip = 16;
+            tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            tagstruct.Software = 'MATLAB';
+            t.setTag(tagstruct);
+            % t.write(uint16(I_processed(:, :, frame,2)));
+            t.write(uint16(I_processed(:, :, frame)));
+            t.close();
+        end    
+    end
+    cd(curdir);
+
 end
 
-% figure
-% subplot(1,2,1)
-% imshow(I(:,:,20,ch_ind),[])
-% subplot(1,2,2)
-% imshow(I_processed(:,:,20,ch_ind),[])
-% pause
-
-% pixel_1_initial = squeeze(I(32,32,:,2));
-% pixel_2_initial = squeeze(I(1,1,:,2));
-% I = I_processed;
-
-%% Filter over frames here
-
-sigma = 1;
-fsize = size(I_processed,3);
-x = linspace(-fsize+1,fsize,2*fsize);
-gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
-gaussFilter = gaussFilter / sum (gaussFilter); 
-
-for i=1:size(I_processed,1)
-  for j=1:size(I_processed,2)
-    I_processed(i,j,:,2) = conv(squeeze(I_processed(i,j,:,2)), gaussFilter, 'same');
-  end
-end
-
+% %% Filter over frames here
+% I_processed = I;
+% 
+% sigma = 1;
+% fsize = size(I_processed,3);
+% x = linspace(-fsize+1,fsize,2*fsize);
+% gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
+% gaussFilter = gaussFilter / sum (gaussFilter); 
+% 
+% for i=1:size(I_processed,1)
+%     for j=1:size(I_processed,2)
+%         I_temp = squeeze(I_processed(i,j,:,2));
+%         nel = length(I_temp);
+%         I_temp = [I_temp flipud(I_temp(end-20:end))];
+%         I_temp = conv(I_temp, gaussFilter, 'same');
+%         I_processed(i,j,:,2) = I_temp(1:nel);
+%     end
+% end
+% 
 % figure
 % subplot(1,1,1), hold on
 % 
@@ -129,7 +194,7 @@ end
 % plot(squeeze(I_processed(1,1,:,2)),'color',[.8 .8 .8],'Linewidth',1)
 % pause
 
-I = I_processed;
+%I = I_processed;
 
 %% select ROI 
 I_green = squeeze(nanmean(I(:,:,:,2),3));
@@ -161,10 +226,12 @@ if strcmp(button,'Yes');
     button = questdlg('Make new ROI?','ROI','No');
     if strcmp(button,'No')
         for roi_ind = 1:length(data.ROI)
+            tic; fprintf('Drawing impoly: ');
             roihand = impoly(roidrawax,data.ROI{roi_ind});
+            toc
             Masks{roi_ind} = createMask(roihand);
         end
-        close(roifig)
+        %close(roifig)
     end
     if strcmp(button,'Cancel')
         close(roifig)
@@ -188,8 +255,10 @@ if strcmp(button,'Yes');
         Masks{end+1} = createMask(roihand);
 
     end
-    close(roifig);
+    %close(roifig);
     toc, fprintf('Closing');
+    temp.ROI = data.ROI;
+    setpref('quickshowPrefs','roiScimStackROI',temp.ROI)
 end
 if isempty(Masks)
     try Masks = p.Results.Masks;
@@ -212,9 +281,29 @@ for roi_ind = 1:length(data.ROI)
 end
 toc
 
+%% temporal Filter over frames here
+I_processed = I_traces;
+
+sigma = 6;
+fsize = size(I_processed,3);
+x = linspace(-fsize+1,fsize,2*fsize);
+gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
+gaussFilter = gaussFilter / sum (gaussFilter); 
+
+for i=1:size(I_processed,2)
+    for j=1:size(I_processed,3)
+        I_temp = squeeze(I_processed(:,i,j));
+        nel = length(I_temp);
+        I_temp = [I_temp; flipud(I_temp(end-20:end))];
+        I_temp = conv(I_temp, gaussFilter, 'same');
+        I_processed(:,i,j) = I_temp(1:nel);
+    end
+end
+
+I_traces = I_processed;
+
 %% Save the trace to the trial
 tic; fprintf('Saving: '); 
-setpref('quickshowPrefs','roiScimStackROI',data.ROI)
 data.roiScimStackTrace = I_traces;
 data.exposureTimes = exp_t;
 

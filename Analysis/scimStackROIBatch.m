@@ -79,7 +79,6 @@ if p.Results.MotionCorrection
     end
 end
 
-%% select ROI 
 
 %% select ROI 
 I_green = squeeze(nanmean(I(:,:,:,2),3));
@@ -141,7 +140,7 @@ if strcmp(button,'Yes');
     close(roifig);
     toc, fprintf('Closing');
     temp.ROI = data.ROI;
-
+    setpref('quickshowPrefs','roiScimStackROI',temp.ROI)
 else
     if isempty(Masks)
         error('There is no mask with which to choose an ROI');
@@ -149,7 +148,9 @@ else
 end
 
 %% Save the ROI preference
-setpref('quickshowPrefs','roiScimStackROI',temp.ROI)
+trial = data;
+save(regexprep(trial.name,'Acquisition','Raw_Data'), '-struct', 'trial');
+
 
 %% Batch process the bunch using the same ROI.
 

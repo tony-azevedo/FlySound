@@ -41,11 +41,11 @@ A.run
 A.untag('Rinput')
 
 %% Take a quick sweep early after break-in just to see base line at the ROI 
-toggleTwoPPref('off')
+% toggleTwoPPref('off')
 A.setProtocol('Sweep');
 A.rig.setParams('interTrialInterval',1);
 A.protocol.setParams('-q','durSweep',5);
-A.run(2)
+A.run(5)
 systemsound('Notify');
 
 %% Start by trying to see changes in calcium levels when the cell is hyperpolarized
@@ -84,9 +84,9 @@ A.rig.setParams('interTrialInterval',1);
 A.protocol.setParams('-q',...
     'freqStart',17,...
     'freqEnd',300,...
-    'amps',[10 20],... % [10 40]
+    'amps',[5],... % [10 40]
     'postDurInSec',5);
-A.run(3)
+A.run(10)
 systemsound('Notify');
 
 %% CurrentChirp - down

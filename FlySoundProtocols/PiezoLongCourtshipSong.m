@@ -47,7 +47,7 @@ classdef PiezoLongCourtshipSong < PiezoProtocol
         end
         
         function fn = getCalibratedStimulusFileName(obj)
-            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\',...
+            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\StimulusWaves\',...
                 sprintf('%s',...
                 obj.protocolName)];
         end
@@ -79,7 +79,9 @@ classdef PiezoLongCourtshipSong < PiezoProtocol
         end
         
         function setupStimulus(obj,varargin)
+            
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.displacement = obj.params.displacements(1);
 
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)

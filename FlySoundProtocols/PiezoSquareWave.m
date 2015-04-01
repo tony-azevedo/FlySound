@@ -98,6 +98,8 @@ classdef PiezoSquareWave < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
+            obj.params.displacement = obj.params.displacements(1);
+
             obj.params.stimDurInSec = obj.params.cycles*obj.params.cycleDurInSec;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);

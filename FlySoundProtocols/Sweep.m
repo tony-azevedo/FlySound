@@ -7,7 +7,7 @@ classdef Sweep < FlySoundProtocol
     
     properties (SetAccess = protected)
         requiredRig = 'BasicEPhysRig';
-        analyses = {'powerSpectrum'};
+        analyses = {};
     end
     
     properties (SetAccess = protected)

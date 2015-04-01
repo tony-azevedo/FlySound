@@ -116,6 +116,9 @@ classdef FlySoundProtocol < handle
                     if isfield(definedpstruct,'trialBlock')
                         definedpstruct = rmfield(definedpstruct,'trialBlock');
                     end
+                    if isfield(definedpstruct,'combinedTrialBlock')
+                        definedpstruct = rmfield(definedpstruct,'combinedTrialBlock');
+                    end
                     
                     varargin = reshape([fieldnames(definedpstruct),struct2cell(definedpstruct)]',1,[]);
                 end

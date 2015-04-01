@@ -52,9 +52,9 @@ set(h,'EdgeColor','none');
 
 %% Filter Design
 rad_per_sample = 2*pi/Fs;
-Fp_Hz = 2000;
+Fp_Hz = 500;
 Fp_rad_per_samp = Fp_Hz * rad_per_sample;
-Fst_Hz = 2500;
+Fst_Hz = 1000;
 Fst_rad_per_samp = Fst_Hz * rad_per_sample;
 Allowable_ripple = .5; %DB
 Attenuation = 60; %DB
@@ -97,7 +97,7 @@ set(gcf,'name','Interpolation_and_filtering')
 songLP = songLP(x>8 & x<=20);
 x_LP = x(x>8 & x<=20)-8;
 figure
-plot(x(x>8 & x<=20),songLP,'color',[1 1 1]*.7), hold on;
+plot(x_LP,songLP,'color',[1 1 1]*.7), hold on;
 xlabel('Time (s)'), ylabel('A.U.'), title('Chosen Song Snippet')
 set(gcf,'name','Chosen_Song_Snippet')
 
@@ -120,6 +120,7 @@ xlabel('Time (S)'), ylabel('Hz'), title('Chosen Snippet Spectrogram')
 set(gcf,'name','Chosen_Song_Spectrogram')
 
 %% Save the song for use with the Piezo
+songLP = songLP/max(abs(songLP));
 sound(songLP,Fs)
 cd C:\Users\Anthony' Azevedo'\Code\FlySound\StimulusWaves\
 

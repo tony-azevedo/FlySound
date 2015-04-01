@@ -98,7 +98,8 @@ classdef PiezoSine < PiezoProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-            
+
+            obj.params.displacement = obj.params.displacements(1);
             obj.params.freq = obj.params.freqs(1);
             stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
             if ~isempty(stimfn)
