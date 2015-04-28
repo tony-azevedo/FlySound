@@ -30,6 +30,13 @@ classdef SealAndLeak < FlySoundProtocol
             varargout = {obj.out,obj.x};
         end
         
+        function status = adjustRig(obj,rig)
+            adjustRig@FlySoundProtocol(obj,rig);
+            status = 1;
+            rig.setParams('testvoltagestepamp',0);
+            rig.setParams('teststep_start',0);
+            rig.setParams('teststep_dur',0);
+        end
 
     end % methods
     
@@ -40,7 +47,7 @@ classdef SealAndLeak < FlySoundProtocol
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.stepamp = 5; %mV;
-            obj.params.stepdur = .0167; %sec;
+            obj.params.stepdur = 0.01; %sec;
             obj.params.pulses = 20;
             obj.params.durSweep = obj.params.stepdur*(2*obj.params.pulses+2);
             

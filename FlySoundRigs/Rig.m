@@ -1,5 +1,5 @@
 classdef Rig < handle
-    % current hierarchy:
+    % current hierarchy: 4/22/15
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
     %                   -> PiezoRig 
@@ -15,6 +15,7 @@ classdef Rig < handle
     
     properties (Hidden, SetAccess = protected)
         TrialDisplay
+        TestDisplay
     end
     
     properties (SetAccess = protected)
@@ -73,6 +74,7 @@ classdef Rig < handle
                 end
             end
             obj.setDisplay([],[],protocol);
+            obj.setTestDisplay();
 
             obj.aiSession.Rate = protocol.params.sampratein;
             obj.aiSession.NumberOfScans = length(makeInTime(protocol));
@@ -155,6 +157,28 @@ classdef Rig < handle
                 end
             end
             
+            % add a little step to the beginning of trials
+            if strcmp(obj.devices.amplifier.mode,'IClamp')
+                testoutname = 'current';
+            elseif strcmp(obj.devices.amplifier.mode,'VClamp')
+                testoutname = 'voltage';
+            else 
+                testoutname = '';
+            end
+            if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
+                teststep_start = obj.params.teststep_start*obj.params.samprateout;
+                teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
+                
+                teststep.(testoutname) = zeros(size(out.(outnames{1})));
+                teststep.(testoutname)(teststep_start+1:teststep_start+teststep_dur) = obj.params.(['test' testoutname 'stepamp']);
+                teststep = obj.devices.amplifier.transformOutputs(teststep);
+                if ismember(testoutname,outnames)
+                    out.(testoutname) = out.(testoutname)+teststep.(testoutname);
+                else
+                    out.(testoutname) = teststep.(testoutname);
+                end
+            end
+            
             for ch = 1:length(obj.aoSession.Channels)
                 if isfield(out,obj.aoSession.Channels(ch).Name)
                     obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(ch).Name);
@@ -179,6 +203,37 @@ classdef Rig < handle
                     obj.inputs.data = dev.transformInputs(obj.inputs.data);
                 end
             end
+            
+            if strcmp(obj.devices.amplifier.mode,'IClamp')
+                testoutname = 'voltage';
+            elseif strcmp(obj.devices.amplifier.mode,'VClamp')
+                testoutname = 'current';
+            else
+                testoutname = '';
+            end
+            if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
+                teststep_start = obj.params.teststep_start*obj.params.samprateout;
+                teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
+                testresp_i = mean(obj.inputs.data.(testoutname)(1:teststep_start));
+                testresp_f = mean(obj.inputs.data.(testoutname)(teststep_start+teststep_dur-teststep_start+1:teststep_start+teststep_dur));
+                
+                if strcmp(obj.devices.amplifier.mode,'IClamp')
+                    R = (testresp_f-testresp_i)/obj.params.testcurrentstepamp;
+                    colr = [1 0 1];
+                elseif strcmp(obj.devices.amplifier.mode,'VClamp')
+                    R = obj.params.testvoltagestepamp/(testresp_f-testresp_i);
+                    colr = [0 1 1];
+                end
+                
+                ax = findobj(obj.TestDisplay,'type','axes');
+                line(now,R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
+
+                bl = findobj(ax,'tag','baseline');
+                x = get(bl,'xdata');
+                x = [x(1) now];
+                set(bl,'xdata',x);                
+            end
+
         end
                         
         function setParams(obj,varargin)
@@ -198,6 +253,7 @@ classdef Rig < handle
         function defaults = getDefaults(obj)
             % rmpref('defaultsTwoPhotonEPhysRig')
             % rmpref('defaultsBasicEPhysRig')
+            % rmpref('defaultsPiezoRig')
             
             defaults = getpref(['defaults',obj.rigName]);
             if isempty(defaults)
@@ -205,6 +261,10 @@ classdef Rig < handle
                 obj.setDefaults(defaultsnew{:});
                 defaults = obj.params;
             end
+        end
+        
+        function applyDefaults(obj)
+            obj.params = obj.getDefaults();
         end
         
         function setDefaults(obj,varargin)
@@ -226,9 +286,29 @@ classdef Rig < handle
             if isempty(obj.TrialDisplay) || ~ishghandle(obj.TrialDisplay) 
                 scrsz = get(0,'ScreenSize');
                 obj.TrialDisplay = figure(...
-                    'Position',[8 scrsz(4)/3 560 420],...
+                    'Position',[8 320 560 420],...
                     'NumberTitle', 'off',...
                     'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
+            end
+        end
+        
+        function setTestDisplay(obj,fig,evnt,varargin)
+            if isempty(obj.TestDisplay) || ~ishghandle(obj.TestDisplay)
+                obj.TestDisplay = findobj('type','figure','Name', 'Test Display');
+                if isempty(obj.TestDisplay);                
+                    obj.TestDisplay = figure(...
+                        'Position',[8 832 560 165],...
+                        'NumberTitle', 'off',...
+                        'Name', 'Test Display',...
+                        'DeleteFcn',@saveDeletedFigure_callback);
+                end
+                ax = subplot(1,1,1,'parent',obj.TestDisplay);
+                bl = findobj(ax,'tag','baseline');
+                if isempty(bl)
+                    line([now,now+5],[0 0],'color',[.8 .8 .8],'parent',ax,'tag','baseline');
+                end
+                set(ax,'XTickLabel',{[]});
+                ylabel('R (m -IC, c - VC)')
             end
         end
         
@@ -257,6 +337,10 @@ classdef Rig < handle
         function defineParameters(obj)
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
+            obj.params.testcurrentstepamp = -5;
+            obj.params.testvoltagestepamp = -2.5;
+            obj.params.teststep_start = 0.010;
+            obj.params.teststep_dur = 0.050;
             obj.params.interTrialInterval = 0;
         end
         

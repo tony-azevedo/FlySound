@@ -76,6 +76,33 @@ eSS.internalSoln.Na3GTP	= 0.5;
 eSS.internalSoln.KCl = 1;
 eSS.internalSoln.biocytinHydrazide = 13;
 
+if ~isempty(varargin);
+%% Voltage Clamp QX314/Cs
+    if sum(strcmp(...
+            {
+            '150421'
+            '150423'
+            '150425'
+            },...
+            varargin{1}))
+        eSS.internalSoln.potassiumAspartate = 0;
+        eSS.internalSoln.cesiumAspartate = 140;
+        eSS.internalSoln.QX314 = 2;
+    end
+%% Voltage Clamp Cs alone
+    if sum(strcmp(...
+            {
+            '150426'
+            '150427'
+            },...
+            varargin{1}))
+        eSS.internalSoln.potassiumAspartate = 0;
+        eSS.internalSoln.cesiumAspartate = 140;
+    end
+    
+    
+end
+        
             % s = equipmentSetupStruct;
             % fnames1 = fieldnames(s);
             % for n1 = 1:length(fnames)

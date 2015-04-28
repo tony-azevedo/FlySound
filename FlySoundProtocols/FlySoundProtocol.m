@@ -201,6 +201,19 @@ classdef FlySoundProtocol < handle
             obj.setupStimulus
         end
 
+        function status = adjustRig(obj,rig)
+            status = 0;
+            if rig.params.samprateout ~= obj.params.samprateout
+                rig.setParams('samprateout',obj.params.samprateout);
+                status = 1;
+            end
+            if rig.params.sampratein ~= obj.params.sampratein
+                rig.setParams('samprateout',obj.params.samprateout);
+                status = 1;
+            end
+        end
+
+        
     end % methods
     
     methods (Abstract, Static, Access = protected)

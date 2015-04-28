@@ -70,7 +70,7 @@ classdef Acquisition < handle
             obj.block_n = obj.block_n+1;
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
-            
+            systemsound('Notify');
         end
         
         function setProtocol(obj,prot,varargin)
@@ -419,7 +419,13 @@ classdef Acquisition < handle
                     addlistener(obj.rig.devices.(devs{d}),'ParamChange',@obj.saveAcquisition);
                 end
                 obj.writePrologueNotes
+                obj.protocol.adjustRig(obj.rig);
                 obj.saveAcquisition();
+            else
+                status = obj.protocol.adjustRig(obj.rig);                
+                if status
+                    obj.saveAcquisition();
+                end
             end
         end
                 
