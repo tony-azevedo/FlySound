@@ -560,6 +560,7 @@ classdef Acquisition < handle
             end
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
+            data.timestamp = now;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             data.tags = obj.tags;
             

@@ -75,4 +75,5 @@ title(ax,sprintf('%s %s\\}', [prot ' ' d ' ' fly ' ' cell ' ' trial], sprintf('\
 [protocol,dateID,flynum,cellnum,trialnum] = extractRawIdentifiers(data.name);
 set(fig,'name',[protocol '_' dateID '_' flynum '_' cellnum '_' trialnum '_' mfilename])
 
+figure(fig);
 varargout = {sealRes_Est1,accessRes_Est1,fig};

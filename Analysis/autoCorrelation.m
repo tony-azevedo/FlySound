@@ -1,4 +1,4 @@
-function varargout = powerSpectrum(data,params,varargin)
+function varargout = autoCorrelation(data,params,varargin)
 % powerSpectrum(data,params,time,mode)
 
 fig = findobj('tag',mfilename); 
@@ -27,11 +27,8 @@ else
     end
 end
 
-f = params.sampratein/length(t)*[0:length(t)/2];
-f = [f, fliplr(f(2:end-1))];
-
-current = data.current(1:length(f))-mean(data.current(1:length(f)));
-voltage = data.voltage(1:length(f))-mean(data.voltage(1:length(f)));
+current = data.current(1:length(t))-mean(data.current(1:length(t)));
+voltage = data.voltage(1:length(t))-mean(data.voltage(1:length(t)));
 
 ax = findobj('tag',[mfilename 'ax']);
 if isempty(ax)
@@ -41,12 +38,6 @@ else
 end
 
 if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
-    current = current-mean(current,1);
-    AveragePower_or_Variance = sum(current.^2)/(length(current));%*diff(t(1:2)));
-    PSD = real(fft(current) .* conj(fft(current)));
-    PSD = PSD/sum(PSD);
-    PSD = PSD/diff(f(2:3));
-    PSD_Ave_Power = sum(PSD)/(length(current));%*diff(f(1:2)));
     
     line(f,PSD,...
         'parent',ax,'linestyle','none','marker','.',...
@@ -55,9 +46,6 @@ if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
     xlabel(ax,'Hz');
     xlim(ax,[.1,3000]);
 
-    [Pxx,f] = pwelch(current,params.sampratein,[],[],params.sampratein);
-    hold(ax,'on')
-    loglog(ax,f,Pxx/diff(f(1:2)),'color',[0 .5 0])
 end
 
 if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
