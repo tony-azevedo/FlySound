@@ -302,7 +302,7 @@ classdef FlySoundProtocol < handle
                 setpref('AcquisitionHardware','twoPToggle','off')
                 try imageRigMap = getpref('AcquisitionHardware','imageRigMap');
                 catch
-                    imm = load('imageRigMap');
+                    imm = load('imageRigMap'); % save 'imageRigMap' imageRigMap
                     imageRigMap = imm.imageRigMap;
                     setpref('AcquisitionHardware','imageRigMap',imageRigMap)
                 end

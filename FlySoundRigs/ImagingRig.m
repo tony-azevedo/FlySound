@@ -51,7 +51,9 @@ classdef ImagingRig < Rig
             pos = get(h,'position');
             %set(h, 'position',[1280 600 pos(3) pos(4)])
             set(h, 'position',[5 658 pos(3) pos(4)])
-            uiwait(h)
+            if ~strcmp(protocol.modusOperandi,'Cal')
+                uiwait(h)
+            end
             
             in = run@Rig(obj,protocol,varargin{:});
         end

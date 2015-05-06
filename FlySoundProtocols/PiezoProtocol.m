@@ -89,7 +89,7 @@ classdef PiezoProtocol < FlySoundProtocol
             ramptime = A.protocol.params.ramptime;
             displacements = A.protocol.params.displacements;
             
-            A.protocol.setParams('ramptime',0);
+            A.protocol.setParams('ramptime',.005);
             A.protocol.setParams('displacements',max(displacements));
             
             t = makeInTime(A.protocol);

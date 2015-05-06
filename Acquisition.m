@@ -189,7 +189,7 @@ classdef Acquisition < handle
             obj.amplifier1Device = '';
             
             numlines = [1 1 1 1];
-            defAns = {'','',''};
+            defAns = {'','','',''};
             inputprompts{1} = 'Fly Genotype: ';
             if isfield(p.Results,'flygenotype') && ~isempty(p.Results.flygenotype)
                 obj.flygenotype = p.Results.flygenotype;
@@ -607,7 +607,7 @@ classdef Acquisition < handle
                 imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
                 mkdir(imagedir);
                 images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                if isempty(images)
+                if isempty(images) && ~strcmp(obj.protocol.modusOperandi,'Cal')
                     h = msgbox('No images. Save, Close Image?');
                     set(h, 'position',[5 280 170 52.5])
                     uiwait(h);

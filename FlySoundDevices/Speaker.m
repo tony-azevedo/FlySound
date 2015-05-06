@@ -19,7 +19,7 @@ classdef Speaker < Device
             obj.deviceName = 'Speaker';
             obj.outputLabels = {'speakercommand'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = 3;
+            obj.outputPorts = [0];
         end
         
         function in = transformInputs(obj,in)

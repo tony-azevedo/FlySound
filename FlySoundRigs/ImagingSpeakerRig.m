@@ -1,4 +1,4 @@
-classdef ImagingPiezoRig < ImagingRig
+classdef ImagingSpeakerRig < ImagingRig
     % current hierarchy:
     %   Rig -> EPhysRig         -> BasicEPhysRig
     %                           -> TwoTrodeRig
@@ -11,14 +11,14 @@ classdef ImagingPiezoRig < ImagingRig
     %                       -> ImagingSpeakerRig
     
      properties (Constant)
-        rigName = 'ImagingPiezoRig';
+        rigName = 'ImagingSpeakerRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = ImagingPiezoRig(varargin)
-            obj.addDevice('piezo','Piezo');
-            %obj.addDevice('speaker','Speaker');
+        function obj = ImagingSpeakerRig(varargin)
+            %obj.addDevice('piezo','Piezo');
+            obj.addDevice('speaker','Speaker');
         end
                 
         function setDisplay(obj,fig,evnt,varargin)
@@ -36,12 +36,12 @@ classdef ImagingPiezoRig < ImagingRig
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 out = protocol.getStimulus;
                 
-                delete(findobj(ax,'tag','sgsmonitor'));               
-                delete(findobj(ax,'tag','piezocommand'));
-                line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
+                % delete(findobj(ax,'tag','sgsmonitor'));               
+                delete(findobj(ax,'tag','speakercommand'));
+                line(makeOutTime(protocol),out.speakercommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','speakercommand','displayname','V');
+                %line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
                 %line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 0],'linewidth',1,'tag','exposure','displayname','io');
-                ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
+                ylabel('Speaker (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
                 linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
@@ -64,14 +64,14 @@ classdef ImagingPiezoRig < ImagingRig
             
             chnames = obj.getChannelNames;
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','piezocommand');
-            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'piezocommand')));
+            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','speakercommand');
+            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'speakercommand')));
 
             % l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             % set(l,'ydata',invec);
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
-            set(l,'ydata',obj.inputs.data.sgsmonitor);
+            % l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
+            % set(l,'ydata',obj.inputs.data.sgsmonitor);
 
             % l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
             % set(l,'ydata',obj.inputs.data.exposure);
