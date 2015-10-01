@@ -33,19 +33,33 @@ A.tag
 A.run(2)
 A.clearTags
 
-% Then hyperpolorize -60, -80, -20 0
+% -60, -80, -20 0
 % Then into voltage clamp -60 -80 -20 0
 
-%% Just to compare to ArcLight Recordings
-% switch to current clamp
-A.setProtocol('VoltagePlateau');
+%% Switch to current clamp
+
+%% Sweep
+
+A.rig.applyDefaults;
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',5);
+A.tag
+A.run(2)
+A.clearTags
+
+%% CurrentChirp - up
+
+A.setProtocol('CurrentChirp');
+A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
-    'preDurInSec',1.5,...
-    'postDurInSec',1.5,...
-    'stimDurInSec',0.02,...
-    'plateaux',[-10 0 -20 0 -30 0 -40 0 -50 0 10 0 20 0 30],...
-    'randomize',0);
-A.run(3)
+    'preDurInSec',2,...
+    'freqStart',0,...
+    'freqEnd',300,...
+    'amps',[3 10]*1,... % [10 40]
+    'postDurInSec',2);
+A.tag
+A.run(4)
+
 
 %% Voltage Steps 
 
@@ -58,18 +72,30 @@ A.protocol.setParams('-q',...
 A.tag
 A.run(2)
 
-% %% Voltage Steps - Hyperpolarize to -80
-% 
-% A.setProtocol('VoltageStep');
-% A.protocol.setParams('-q',...
-%     'preDurInSec',0.5,...
-%     'stimDurInSec',0.2,...
-%     'postDurInSec',0.2,...
-%     'steps',[-20 -10 -5  5 10 20 30 40]);          % tune this 
-% A.tag
-% A.run(3)
+%% Now try to use a protocol similar to the Strichartz protocol
+% switch to current clamp
+A.setProtocol('VoltagePlateau');
+A.protocol.setParams('-q',...
+    'preDurInSec',0.5,...
+    'postDurInSec',.5,...
+    'plateauDurInSec',0.05,...
+    'plateaux',[-65 -65 -65 -65 75],...
+    'randomize',0);
+A.run(10)
 
-%% Sweep - in CurrentClamp
+%% Voltage Steps 
+
+A.setProtocol('VoltageStep');
+A.protocol.setParams('-q',...
+    'preDurInSec',0.5,...
+    'stimDurInSec',0.2,...
+    'postDurInSec',0.2,...
+    'steps',[-80 -60 -40 -20 -10 -5  5 10 20 40]);          % tune this 
+A.tag
+A.run(2)
+
+
+%% Sweep - wait for block to be effective
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
@@ -77,7 +103,7 @@ A.protocol.setParams('-q','durSweep',5);
 A.tag
 A.run(2)
 A.clearTags
-% Then down to -80, -60, up to -20
+
 
 %% Current injection characterization
 
@@ -89,7 +115,7 @@ A.protocol.setParams('-q',...
     'postDurInSec',0.5,...
     'steps',[-180 -160 -140 -120 -100 -80 -60 -40 -20 -10 10 20 30 40]);          % tune this (-10:2:10))%
 A.tag
-A.run(2)
+A.run(3)
 systemsound('Notify');
 
 %% Current injection characterization: looking for spikes
@@ -107,31 +133,7 @@ A.run(3)
 systemsound('Notify');
 
 
-%% Current injection characterization
-
-A.setProtocol('CurrentStep');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',0.5,...
-    'stimDurInSec',0.5,...
-    'postDurInSec',0.5,...
-    'steps',[ -10 2 5 10 20]);          % tune this (-10:2:10))%
-A.tag
-A.run(3)
-systemsound('Notify');
-
-%% CurrentChirp - up
-
-A.setProtocol('CurrentChirp');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',2,...
-    'freqStart',0,...
-    'freqEnd',300,...
-    'amps',[3 10]*1,... % [10 40]
-    'postDurInSec',2);
-A.tag
-A.run(4)
+%% Switch to voltage clamp
 
 %% PiezoSteps
 
@@ -200,17 +202,7 @@ A.run(2)
 A.clearTags
 
 %% PiezoChirp - up
-% A.setProtocol('PiezoChirp');
-% A.protocol.setParams('-q',...
-%     'preDurInSec',2,...
-%     'freqStart',17,...
-%     'freqEnd',800,...
-%     'displacements',[1 10] *.1,...
-%     'postDurInSec',2);
-% A.run(3)
-% systemsound('Notify');
-% 
-% %% PiezoChirp - up
+
 A.setProtocol('PiezoChirp');
 A.protocol.setParams('-q',...
     'preDurInSec',2,...
@@ -222,18 +214,6 @@ A.run(3)
 systemsound('Notify');
 
 %% PiezoChirp - down
-
-% A.setProtocol('PiezoChirp');
-% A.protocol.setParams('-q',...
-%     'preDurInSec',2,...
-%     'freqStart',800,...
-%     'freqEnd',17,...
-%     'displacements',[1 10] *.1,...
-%     'postDurInSec',2);
-% A.run(3)
-% systemsound('Notify');
-% 
-% %% PiezoChirp - down
 
 A.setProtocol('PiezoChirp');
 A.protocol.setParams('-q',...

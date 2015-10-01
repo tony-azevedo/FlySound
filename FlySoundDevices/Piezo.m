@@ -38,6 +38,8 @@ classdef Piezo < Device
     end
     
     methods (Access = protected)
+        function setupDevice(obj)
+        end
                 
         function defineParameters(obj)
             obj.params.voltsPerMicron = 10/30;

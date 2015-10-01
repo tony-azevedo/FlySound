@@ -239,10 +239,20 @@ classdef MultiClamp700B < Device
     
     methods (Access = protected)
                 
+        function setupDevice(obj)
+            cursensitivity = obj.params.headstagegain/obj.params.headstageresistorCC*1e12; % pA/V
+            obj.params.daqout_to_current = 1/cursensitivity; % nA/V, multiply DAQ voltage to get nA injected
+
+            obj.params.daqout_to_voltage = 1/obj.params.cmdsensitivity; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
+
+            obj.params.scaledcurrentscale_over_gainVC = 1e-12*obj.params.headstageresistorVC; % [V/pA] * gainsetting
+            obj.params.scaledcurrentscale_over_gainCC = 1e-12*obj.params.headstageresistorCC; % [V/pA] * gainsetting
+        end
+        
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            try rmpref('defaultsMultiClamp700B'), catch, end
+            % try rmpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
             obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9

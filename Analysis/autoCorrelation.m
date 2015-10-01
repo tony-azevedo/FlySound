@@ -39,6 +39,19 @@ end
 
 if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
     
+    x_cor_mean_volt = [];
+for it_ind = 1:length(Itrials)
+    [xcor, lags] = xcorr(voltage(:,it_ind)-mean(voltage(:,it_ind)),'unbiased');
+    % plot(ax_corr,lags/VClamptrial.params.sampratein,xcor,'color',light_colr);
+    if isempty(x_cor_mean_volt)
+        x_cor_mean_volt=xcor;
+    else
+        x_cor_mean_volt = x_cor_mean_volt+xcor;
+    end
+end
+x_cor_mean_volt = x_cor_mean_volt/length(Itrials);
+
+    
     line(f,PSD,...
         'parent',ax,'linestyle','none','marker','.',...
         'markerfacecolor',[.3 1 .3],'markeredgecolor',[.3 1 .3],'markersize',2);

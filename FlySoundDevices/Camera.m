@@ -51,7 +51,9 @@ classdef Camera < Device
     end
     
     methods (Access = protected)
-                
+        function setupDevice(obj)        
+        end
+
         function defineParameters(obj)
             obj.params.setup = 'x Frames, write in the rest of the information';
         end

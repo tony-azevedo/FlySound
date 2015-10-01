@@ -33,7 +33,9 @@ classdef Speaker < Device
     end
     
     methods (Access = protected)
-                
+        function setupDevice(obj)
+        end
+        
         function defineParameters(obj)
             obj.params.units = '';
         end

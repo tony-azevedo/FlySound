@@ -89,7 +89,7 @@ classdef PiezoProtocol < FlySoundProtocol
             ramptime = A.protocol.params.ramptime;
             displacements = A.protocol.params.displacements;
             
-            A.protocol.setParams('ramptime',0);
+            A.protocol.setParams('ramptime',.01);
             A.protocol.setParams('displacements',max(displacements));
             
             t = makeInTime(A.protocol);
@@ -160,7 +160,7 @@ classdef PiezoProtocol < FlySoundProtocol
                 stimpnts = round(A.protocol.params.samprateout*A.protocol.params.preDurInSec+1:...
                     A.protocol.params.samprateout*(A.protocol.params.preDurInSec+A.protocol.params.stimDurInSec));
                 
-                taper_time = 0.005;
+                taper_time = 0.01;
                 w = window(@triang,2*taper_time*A.protocol.params.samprateout);
                 w = [w(1:taper_time*A.protocol.params.samprateout);...
                     ones(length(stimpnts)-length(w),1);...

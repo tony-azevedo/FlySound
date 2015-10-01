@@ -214,24 +214,32 @@ classdef Rig < handle
             if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
                 teststep_start = obj.params.teststep_start*obj.params.samprateout;
                 teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
+                if teststep_dur>0;
+                    
                 testresp_i = mean(obj.inputs.data.(testoutname)(1:teststep_start));
                 testresp_f = mean(obj.inputs.data.(testoutname)(teststep_start+teststep_dur-teststep_start+1:teststep_start+teststep_dur));
+                testresp_min = min(obj.inputs.data.(testoutname)(teststep_start:teststep_start+teststep_dur/4));
+                testresp_max = max(obj.inputs.data.(testoutname)(teststep_start+teststep_dur:teststep_start+teststep_dur+teststep_dur/4));
                 
                 if strcmp(obj.devices.amplifier.mode,'IClamp')
                     R = (testresp_f-testresp_i)/obj.params.testcurrentstepamp;
                     colr = [1 0 1];
+                    access = nan;
                 elseif strcmp(obj.devices.amplifier.mode,'VClamp')
                     R = obj.params.testvoltagestepamp/(testresp_f-testresp_i);
                     colr = [0 1 1];
+                    access = obj.params.testvoltagestepamp/mean([(testresp_min-testresp_i) -abs(testresp_max-testresp_i)]);
                 end
                 
                 ax = findobj(obj.TestDisplay,'type','axes');
                 line(now,R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
+                if ~isnan(access), line(now,access,'linestyle','none','marker','+','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax); end
 
                 bl = findobj(ax,'tag','baseline');
                 x = get(bl,'xdata');
                 x = [x(1) now];
-                set(bl,'xdata',x);                
+                set(bl,'xdata',x);       
+                end
             end
 
         end
@@ -309,6 +317,7 @@ classdef Rig < handle
                 end
                 set(ax,'XTickLabel',{[]});
                 ylabel('R (m -IC, c - VC)')
+                ylim(ax,[-.5 1])
             end
         end
         

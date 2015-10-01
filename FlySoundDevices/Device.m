@@ -50,6 +50,7 @@ classdef Device < handle
                 obj.params.(results{r}) = p.Results.(results{r});
             end
             obj.showParams
+            obj.setupDevice
             notify(obj,'ParamChange');
         end
         
@@ -92,5 +93,6 @@ classdef Device < handle
     
     methods (Abstract,Access = protected)
         defineParameters(obj)
+        setupDevice(obj)
     end
 end

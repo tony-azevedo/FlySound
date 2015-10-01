@@ -58,9 +58,9 @@ end
 
 if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
     n = get(ax,'userdata');
-    line(t,current,...
-        'parent',ax,'linestyle','-',...
-        'color',[1 .7 .7]);
+%     line(t,current,...
+%         'parent',ax,'linestyle','-',...
+%         'color',[1 .7 .7]);
     ave = findobj(ax,'tag','line_average');
     if isempty(ave)
         line(t,current,...
@@ -70,8 +70,8 @@ if ~isfield(params,'mode') || sum(strcmp({'VClamp'},params.mode));
         set(ax,'userdata',1);
     else
         set(ave,'ydata',(get(ave,'ydata')*n+current')/(n+1));
-        chi = get(ax,'children');
-        set(ax,'children',circshift(chi,-find(chi==ave)+1));
+%         chi = get(ax,'children');
+%         set(ax,'children',circshift(chi,-find(chi==ave)+1));
         set(ax,'userdata',n+1);
     end
     axis(ax,'tight')
@@ -79,9 +79,9 @@ end
 
 if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
     n = get(ax,'userdata');
-    line(t,voltage,...
-        'parent',ax,'linestyle','-',...
-        'color',[1 .7 .7]);
+%     line(t,voltage,...
+%         'parent',ax,'linestyle','-',...
+%         'color',[1 .7 .7]);
     ave = findobj(ax,'tag','line_average');
     if isempty(ave)
         line(t,voltage,...
@@ -91,8 +91,8 @@ if ~isfield(params,'mode') || sum(strcmp({'IClamp_fast','IClamp'},params.mode));
         set(ax,'userdata',1);
     else
         set(ave,'ydata',(get(ave,'ydata')*n+voltage')/(n+1));
-        chi = get(ax,'children');
-        set(ax,'children',circshift(chi,-find(chi==ave)+1));
+%         chi = get(ax,'children');
+%         set(ax,'children',circshift(chi,-find(chi==ave)+1));
         set(ax,'userdata',n+1);
     end
     axis(ax,'tight')

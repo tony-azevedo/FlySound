@@ -39,3 +39,22 @@ audiowrite(['NonInvasiveVmRamp','.wav'],...
     y,...
     Fs,...
     'BitsPerSample',32);
+
+
+%%
+close all
+
+cd 'C:\Users\Anthony Azevedo\Code\FlySound\CommandWaves\'
+
+Fs = 50000;
+x = (0:Fs-1)/Fs;
+y = (20+100)*x - 100;
+
+plot(x,y);
+
+cd C:\Users\Anthony' Azevedo'\Code\FlySound\CommandWaves\
+
+audiowrite(['VoltageRamp_m100_p20_1s','.wav'],...
+    y,...
+    Fs,...
+    'BitsPerSample',32);

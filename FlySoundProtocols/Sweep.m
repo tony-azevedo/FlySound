@@ -32,14 +32,19 @@ classdef Sweep < FlySoundProtocol
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.durSweep = 5;
-            obj.params.Vm_id = 0;
+            obj.params.holdingCurrent = 0;
+            obj.params.holdingPotential = 0;
             obj.params = obj.getDefaults;
         end
        
         function setupStimulus(obj,varargin)
             obj.x = makeOutTime(obj);
-            obj.out.voltage = zeros(size(obj.x));
-            obj.out.current = zeros(size(obj.x));
+            if obj.params.holdingPotential ~= 0 && obj.params.holdingCurrent ~= 0
+                obj.params.holdingPotential = 0;
+                obj.params.holdingCurrent = 0;                
+            end
+            obj.out.voltage = ones(size(obj.x))*obj.params.holdingPotential;
+            obj.out.current = ones(size(obj.x))*obj.params.holdingCurrent;
         end
                 
     end % protected methods
