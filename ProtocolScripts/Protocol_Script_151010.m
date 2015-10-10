@@ -55,6 +55,20 @@ A.protocol.setParams('-q',...
     'postDurInSec',.5);
 A.run(4)
 
+
+%% Current injection characterization
+
+A.setProtocol('CurrentStep');
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',0.5,...
+    'stimDurInSec',0.5,...
+    'postDurInSec',0.5,...
+    'steps',[-80 -70 -60 -40 -20 -10 10 20 40]);          % tune this (-10:2:10))%
+A.run(1)
+systemsound('Notify');
+
+
 %% PiezoSteps
 
 A.setProtocol('PiezoStep');
@@ -86,79 +100,34 @@ A.protocol.setParams('-q',...
     'freqEnd',400,...
     'displacements',[1  10] * .05,...
     'postDurInSec',2);
-A.run(2)
+A.run(4)
 systemsound('Notify');
 
-%% Switch to voltage clamp
 
-%% PiezoSteps
-
-A.setProtocol('PiezoStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',.2,...
-    'displacements',[-1 -.3 -.1 .1 .3 1],...
-    'stimDurInSec',0.2000,...
-    'postDurInSec',.2);
-A.run(8)
-
-%% PiezoSine
-
-A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (0:2:8); 
-%freqs = 25 * sqrt(2) .^ (-1:1:9); 
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'freqs',freqs,...
-    'postDurInSec',.5,...
-    'displacements',[1  10] * .05,'postDurInSec',1);
-A.run(3)
-
-%% PiezoChirp - up
-
-A.setProtocol('PiezoChirp');
-A.protocol.setParams('-q',...
-    'preDurInSec',2,...
-    'freqStart',0,...
-    'freqEnd',400,...
-    'displacements',[1  10] * .05,...
-    'postDurInSec',2);
-A.run(2)
-
-%% Voltage Steps 
-
-A.setProtocol('VoltageStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',0.2,...
-    'stimDurInSec',0.2,...
-    'postDurInSec',0.2,...
-    'steps',[-100 -80 -60 -40 -20 -10 -5  5 10 20 40]);          % tune this 
-A.tag
-A.run(3)
-
-%% Switch to Current Clamp
-
-%% CurrentChirp - up
-
-A.setProtocol('CurrentChirp');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',2,...
-    'freqStart',0.1,...
-    'freqEnd',300,...
-    'amps',[3 10]*1,... % [10 40]
-    'postDurInSec',2);
-A.run(3)
-
-
-%% Current injection characterization
-
-A.setProtocol('CurrentStep');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',0.5,...
-    'stimDurInSec',0.5,...
-    'postDurInSec',0.5,...
-    'steps',[-80 -60 -40 -20 -10 10 20 40]);          % tune this (-10:2:10))%
-A.run(1)
+%% Courtship song
+A.setProtocol('PiezoCourtshipSong');
+A.protocol.setParams('-q','displacements',[-30 -3 3 30]*.0667,'postDurInSec',1);
+A.run(6)
 systemsound('Notify');
 
+%% Courtship song
+A.setProtocol('PiezoBWCourtshipSong');
+A.protocol.setParams('-q','displacements',[-30 -3 3 30]*.0667,'postDurInSec',1);
+A.run(6)
+systemsound('Notify');
+
+%% Long Courtship song
+A.setProtocol('PiezoLongCourtshipSong');
+A.protocol.setParams('-q','displacements',[-30 -3 3 30]*.0667,'postDurInSec',1);
+A.run(3)
+systemsound('Notify');
+
+%% Pulses
+A.setProtocol('PiezoStimulus');
+A.protocol.setParams('-q',...
+    'stimulusName','PulseSongRepeat',...
+    'preDurInSec',2,...
+    'displacements',[-2 -.6325 -.2 .2 .6325 2],...
+    'postDurInSec',2);
+A.run(3)
+systemsound('Notify');
