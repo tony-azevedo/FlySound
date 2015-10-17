@@ -77,15 +77,15 @@ A.protocol.setParams('-q',...
     'displacements',[-1 -.3 -.1 .1 .3 1],...
     'stimDurInSec',0.2000,...
     'postDurInSec',.2);
-A.run(20)
+A.run(8)
 
 %% PiezoSine
 A.rig.setParams('testcurrentstepamp',0)
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:2:8); 
-%freqs = 25 * sqrt(2) .^ (-1:1:9); 
+freqs = 25 * sqrt(2) .^ (-1:1:9); 
 amps = [1  10] * .05;
-%amps = [1 3 10] * .05;
+amps = [.3 1 3 10] * .05;
 
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...

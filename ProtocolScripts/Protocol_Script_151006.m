@@ -141,6 +141,21 @@ A.protocol.setParams('-q',...
 A.run(3)
 systemsound('Notify');
 
+%% Test whether input resistance has changed to Voltage clamp
+% take off Rs and WC
+% measure seal N Leak
+
+%% Access
+A.setProtocol('SealAndLeak');
+A.tag('R_input')
+A.run
+A.untag('R_input')
+A.rig.applyDefaults;
+
+% turn on seal test
+% remeasure WC
+% turn on Rs
+% record Rs
 
 %% Start over with other drugs.
 

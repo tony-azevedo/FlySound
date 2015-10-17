@@ -56,18 +56,24 @@ A.protocol.setParams('-q',...
 A.run(4)
 
 
-%% Current injection characterization
+%% Switch to voltage clamp
 
-A.setProtocol('CurrentStep');
-A.rig.setParams('interTrialInterval',0);
+%% Seal
+A.setProtocol('SealAndLeak');
+A.tag('R_input')
+A.run
+A.untag('R_input')
+
+
+%% Voltage Steps 
+A.rig.devices.amplifier.setDefaults
+A.setProtocol('VoltageStep');
 A.protocol.setParams('-q',...
-    'preDurInSec',0.5,...
-    'stimDurInSec',0.5,...
-    'postDurInSec',0.5,...
-    'steps',[-50 -40 -20 -10 10 20 40]);          % tune this (-10:2:10))%
-A.run(1)
-systemsound('Notify');
-
+    'preDurInSec',0.12,...
+    'stimDurInSec',0.1,...
+    'postDurInSec',0.1,...
+    'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15]);          % tune this 
+A.run(6)
 
 %% PiezoSteps
 
@@ -77,22 +83,28 @@ A.protocol.setParams('-q',...
     'displacements',[-1 -.3 -.1 .1 .3 1],...
     'stimDurInSec',0.2000,...
     'postDurInSec',.2);
-A.run(20)
+A.run(8)
 
-%% PiezoSine
+%% Seal
+A.setProtocol('SealAndLeak');
+A.tag('R_input')
+A.run
+A.untag('R_input')
+
+%% PiezoSine 
 A.rig.setParams('testcurrentstepamp',0)
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:2:8); 
-%freqs = 25 * sqrt(2) .^ (-1:1:9); 
+% freqs = 25 * sqrt(2) .^ (-1:1:9); 
 amps = [1  10] * .05;
-%amps = [1 3 10] * .05;
+% amps = [.3 1 3 10] * .05;
 
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'freqs',freqs,...
     'postDurInSec',.5,...
     'displacements',amps);
-A.run(8)
+A.run(5)
 
 %% PiezoChirp - up
 
@@ -104,7 +116,47 @@ A.protocol.setParams('-q',...
     'displacements',[1  10] * .05,...
     'postDurInSec',2);
 A.run(3)
+
+%% VoltageRamp 
+A.rig.applyDefaults;
+A.setProtocol('VoltageCommand');
+A.protocol.setParams('-q',...
+    'preDurInSec',0.2,...
+    'postDurInSec',0.2,...
+    'stimulusName','VoltageRamp_m50_p12_h_0_5s');
+A.run(3)
 systemsound('Notify');
+
+%% Switch to current clamp
+
+%% PiezoSteps
+
+A.setProtocol('PiezoStep');
+A.protocol.setParams('-q',...
+    'preDurInSec',.2,...
+    'displacements',[-1 -.3 -.1 .1 .3 1],...
+    'stimDurInSec',0.2000,...
+    'postDurInSec',.2);
+A.run(5)
+
+%% PiezoSine 
+A.rig.setParams('testcurrentstepamp',0)
+A.setProtocol('PiezoSine');
+freqs = 25 * sqrt(2) .^ (0:2:8); 
+freqs = 25 * sqrt(2) .^ (-1:1:9); 
+amps = [1  10] * .05;
+amps = [.3 1 3 10] * .05;
+
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'freqs',freqs,...
+    'postDurInSec',.5,...
+    'displacements',amps);
+A.run(4)
+
+
+%%
+A.tag
 
 %% PiezoChirp - down
 
@@ -144,4 +196,16 @@ A.protocol.setParams('-q',...
     'displacements',[-2 -.6325 -.2 .2 .6325 2],...
     'postDurInSec',2);
 A.run(3)
+systemsound('Notify');
+
+%% Current injection characterization
+
+A.setProtocol('CurrentStep');
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',0.5,...
+    'stimDurInSec',0.5,...
+    'postDurInSec',0.5,...
+    'steps',[-50 -40 -20 -10 10 20 40]);          % tune this (-10:2:10))%
+A.run(1)
 systemsound('Notify');
