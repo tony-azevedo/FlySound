@@ -1,13 +1,10 @@
-%% Whole cell voltage clamp, with QX-314 and Cs internal, internal made on 4/18
-% Aiming for Big Spiker in the GH86-Gal4;ArcLight; Line.  Trying to elicit single
-% spikes while hyperpolarized
+%% Whole cell I and V clamp of stimulus evoked current and voltage.
+% Aiming for A2 neuron
 
 setpref('AcquisitionHardware','cameraToggle','off')
-
 % Start the bitch 
 clear all, close all
 A = Acquisition;
-%
 
 %% Sweep - record the break-in
 
@@ -32,7 +29,7 @@ A.untag('R_input')
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.run(5)
+A.run(4)
 
 %% CurrentChirp - up
 
@@ -46,6 +43,40 @@ A.protocol.setParams('-q',...
     'postDurInSec',.5);
 A.run(4)
 
+%% Current Step 
+A.setProtocol('CurrentStep');
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.12,...
+    'stimDurInSec',.1,...
+    'steps',[-10 5 10 20 40],... % [3 10]
+    'postDurInSec',.1);
+A.run(4)
+
+
+%% PiezoSteps
+
+A.setProtocol('PiezoStep');
+A.protocol.setParams('-q',...
+    'preDurInSec',.2,...
+    'displacements',[-1 -.3 -.1 .1 .3 1],...
+    'stimDurInSec',0.2000,...
+    'postDurInSec',.2);
+A.run(7)
+
+%% PiezoSine 
+A.rig.applyDefaults;
+A.setProtocol('PiezoSine');
+freqs = 25 * sqrt(2) .^ (0:2:8); 
+freqs = 25 * sqrt(2) .^ (-1:1:9); 
+amps = [.3 1 3 10] * .05;
+
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'freqs',freqs,...
+    'postDurInSec',.5,...
+    'displacements',amps);
+A.run(4)
 
 %% Switch to voltage clamp
 
@@ -55,13 +86,6 @@ A.tag('R_input')
 A.run
 A.untag('R_input')
 
-%% Sweep
-
-A.rig.applyDefaults;
-A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
-A.run(4)
-
 %% Voltage Steps 
 A.rig.applyDefaults;
 A.setProtocol('VoltageStep');
@@ -69,47 +93,23 @@ A.protocol.setParams('-q',...
     'preDurInSec',0.12,...
     'stimDurInSec',0.1,...
     'postDurInSec',0.1,...
-    'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15]);          % tune this 
-A.run(6)
-
-%% PiezoSteps
-A.setProtocol('PiezoStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',.2,...
-    'displacements',[-1 -.3 -.1 .1 .3 1],...
-    'stimDurInSec',0.2000,...
-    'postDurInSec',.2);
-A.run(8)
-
-%% Seal
-A.setProtocol('SealAndLeak');
-A.tag('R_input')
-A.run
-A.untag('R_input')
-
-%% PiezoSine 
-A.rig.applyDefaults;
-A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ (-1:1:9); 
-amps = [.3 1 3 10] * .05;
-
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'freqs',freqs,...
-    'postDurInSec',.5,...
-    'displacements',amps);
+    'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15 25]);          % tune this 
 A.run(5)
 
-%% PiezoChirp - up
+%% VoltageSines
+amps = [2.5 7.5];
+freqs = [25 100 141 200];
 
-A.setProtocol('PiezoChirp');
+A.setProtocol('VoltageSine');
+A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
-    'preDurInSec',2,...
-    'freqStart',0.1,...
-    'freqEnd',400,...
-    'displacements',[1  10] * .05,...
-    'postDurInSec',2);
-A.run(3)
+    'preDurInSec',.12,...
+    'stimDurInSec',.2,...
+    'amps',amps,... % [10 40]
+    'freqs',freqs,... % [10 40]
+    'postDurInSec',.1)
+A.run(12)
+
 
 %% VoltageRamp 
 A.rig.applyDefaults;
@@ -121,26 +121,19 @@ A.protocol.setParams('-q',...
 A.run(5)
 systemsound('Notify');
 
-%% Switch to current clamp
 
-%% PiezoSteps
 
-A.rig.setParams('testcurrentstepamp',0)
-A.setProtocol('PiezoStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',.2,...
-    'displacements',[-1 -.3 -.1 .1 .3 1],...
-    'stimDurInSec',0.2000,...
-    'postDurInSec',.2);
-A.run(5)
+%% Back to current clamp
 
 %% PiezoSine 
-A.rig.setParams('testcurrentstepamp',0)
+A.tag
+
+A.rig.applyDefaults;
 A.setProtocol('PiezoSine');
 freqs = 25 * sqrt(2) .^ (0:2:8); 
 freqs = 25 * sqrt(2) .^ (-1:1:9); 
-amps = [1  10] * .05;
-amps = [.3 1 3 10] * .05;
+amps = [1] * .05;
+% amps = [.3 1 3 10] * .05;
 
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
@@ -149,6 +142,41 @@ A.protocol.setParams('-q',...
     'displacements',amps);
 A.run(4)
 
+%% PiezoSine 
+A.rig.applyDefaults;
+A.setProtocol('PiezoSine');
+freqs = 25 * sqrt(2) .^ (0:2:8); 
+freqs = 25 * sqrt(2) .^ (-1:1:9); 
+amps = [3] * .05;
+% amps = [.3 1 3 10] * .05;
+
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'freqs',freqs,...
+    'postDurInSec',.5,...
+    'displacements',amps);
+A.run(4)
+
+%% PiezoSteps
+
+A.setProtocol('PiezoStep');
+A.protocol.setParams('-q',...
+    'preDurInSec',.2,...
+    'displacements',[-1 -.3 -.1 .1 .3 1],...
+    'stimDurInSec',0.2000,...
+    'postDurInSec',.2);
+A.run(7)
+
+%% PiezoAM
+% A.setProtocol('PiezoAM','modusOperandi','Cal');
+% A.protocol.CalibrateStimulus(A)
+A.setProtocol('PiezoAM');
+A.run(4)
+
+%% Courtship song
+A.setProtocol('PiezoLongCourtshipSong');
+A.protocol.setParams('-q','displacements',[-1  1],'postDurInSec',1);
+A.run(1)
 
 %% curare
 A.tag
@@ -168,44 +196,41 @@ A.protocol.setParams('-q','durSweep',5);
 A.run(4)
 
 %% Voltage Steps 
+steps = [5 10 15 20];  
+steps = [-60 -40 -20 -10 -5 -2.5 2.5 5 10 15];% tune this 
 A.rig.applyDefaults;
 A.setProtocol('VoltageStep');
 A.protocol.setParams('-q',...
     'preDurInSec',0.12,...
     'stimDurInSec',0.1,...
     'postDurInSec',0.1,...
-    'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15]);          % tune this 
+    'steps',steps);          % tune this 
 A.run(6)
 
-%% Seal
-A.setProtocol('SealAndLeak');
-A.tag('R_input')
-A.run
-A.untag('R_input')
 
-%% PiezoSteps
-
-A.setProtocol('PiezoStep');
-A.protocol.setParams('-q',...
-    'preDurInSec',.2,...
-    'displacements',[-1 -.3 -.1 .1 .3 1],...
-    'stimDurInSec',0.2000,...
-    'postDurInSec',.2);
-A.run(8)
-
-%% PiezoSine 
-A.rig.applyDefaults;
-A.setProtocol('PiezoSine');
-freqs = 25 * sqrt(2) .^ 5; 
-%freqs = 25 * sqrt(2) .^ [4 5 6]; 
-amps = [3] * .05;
-
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'freqs',freqs,...
-    'postDurInSec',.5,...
-    'displacements',amps);
-A.run(6)
+% %% PiezoSteps
+% 
+% A.setProtocol('PiezoStep');
+% A.protocol.setParams('-q',...
+%     'preDurInSec',.2,...
+%     'displacements',[-1 -.3 -.1 .1 .3 1],...
+%     'stimDurInSec',0.2000,...
+%     'postDurInSec',.2);
+% A.run(6)
+% 
+% %% PiezoSine 
+% A.rig.applyDefaults;
+% A.setProtocol('PiezoSine');
+% freqs = 25 * sqrt(2) .^ [0 4 5 6 8]; 
+% %freqs = 25 * sqrt(2) .^ [4 5 6]; 
+% amps = [3] * .05;
+% 
+% A.protocol.setParams('-q',...
+%     'preDurInSec',.5,...
+%     'freqs',freqs,...
+%     'postDurInSec',.5,...
+%     'displacements',amps);
+% A.run(4)
 
 %% VoltageSines
 amps = [2.5 7.5];

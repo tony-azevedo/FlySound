@@ -10,7 +10,7 @@ A = Acquisition;
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',25);
+A.protocol.setParams('-q','durSweep',15);
 A.tag('break-in')
 A.run(1)
 A.clearTags

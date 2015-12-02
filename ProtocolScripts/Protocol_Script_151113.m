@@ -28,7 +28,9 @@ A.rig.applyDefaults;
 %A.rig.applyDefaults;
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
+%A.tag
 A.run(3)
+%A.clearTags
 
 %% Switch to current clamp
 
@@ -37,7 +39,7 @@ A.run(3)
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
-A.run(4)
+A.run(5)
 
 %% CurrentChirp - up
 
@@ -50,6 +52,17 @@ A.protocol.setParams('-q',...
     'amps',[5]*1,... % [3 10]
     'postDurInSec',.5);
 A.run(4)
+
+%% spiking
+% A.setProtocol('CurrentSine');
+% A.rig.setParams('interTrialInterval',0);
+% A.protocol.setParams('-q',...
+%     'preDurInSec',.5,...
+%     'stimDurInSec',5,...
+%     'freqs',[20],...
+%     'amps',[5]*1,... % [10 40]
+%     'postDurInSec',.5);
+% A.run(3)
 
 
 %% Switch to Voltage clamp
@@ -90,9 +103,7 @@ for sd_ind = 1:durations
 end
 
 %% Voltage Steps 
-%A.rig.devices.amplifier.setParams('headstageresistorVC',5E9)
-%A.rig.devices.amplifier.setParams('headstageresistorVC',5E8)
-%A.rig.devices.amplifier.setDefaults
+A.rig.applyDefaults;
 
 A.setProtocol('VoltageStep');
 A.protocol.setParams('-q',...
@@ -100,7 +111,7 @@ A.protocol.setParams('-q',...
     'stimDurInSec',0.1,...
     'postDurInSec',0.1,...
     'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15]);          % tune this 
-A.run(4)
+A.run(6)
 
 %% VoltageSines
 amps = [2.5 7.5];
@@ -133,7 +144,7 @@ systemsound('Notify');
 A.tag
 
 
-%%
+% %%
 % step_up = [20 40];
 % step_down = [40 30 20 10 0 -10 -20];
 % for su_ind = 1:length(step_up)
@@ -153,23 +164,23 @@ A.tag
 %     end
 % end
 % 
-%% V plateau for Na reversal - only control saline and TTX
+% %% V plateau for Na reversal - only control saline and TTX
 % 
-step_down = [-60];
-step_up = [0 20 40 60];
-for sd_ind = 1:length(step_down)
-    for su_ind = 1:length(step_up)
-        plateaux(1) = step_down(sd_ind);
-        plateaux(2) = step_up(su_ind);
-        
-        A.rig.applyDefaults;
-        A.setProtocol('VoltagePlateau');
-        A.protocol.setParams('-q',...
-            'preDurInSec',0.12,...
-            'plateaux',plateaux,...
-            'plateauDurInSec',0.3,...
-            'postDurInSec',0.1);
-        A.run(2)
-        systemsound('Notify');
-    end
-end
+% step_down = [-60];
+% step_up = [0 20 40 60];
+% for sd_ind = 1:length(step_down)
+%     for su_ind = 1:length(step_up)
+%         plateaux(1) = step_down(sd_ind);
+%         plateaux(2) = step_up(su_ind);
+%         
+%         A.rig.applyDefaults;
+%         A.setProtocol('VoltagePlateau');
+%         A.protocol.setParams('-q',...
+%             'preDurInSec',0.12,...
+%             'plateaux',plateaux,...
+%             'plateauDurInSec',0.1,...
+%             'postDurInSec',0.1);
+%         A.run(2)
+%         systemsound('Notify');
+%     end
+% end

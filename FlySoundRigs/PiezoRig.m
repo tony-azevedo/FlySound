@@ -16,7 +16,7 @@ classdef PiezoRig < EPhysRig
     methods
         function obj = PiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
-            %obj.addDevice('speaker','Speaker');
+            obj.addDevice('speaker','Speaker');
             rigDev = getpref('AcquisitionHardware','rigDev');
             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
             triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');

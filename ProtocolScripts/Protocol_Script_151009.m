@@ -54,16 +54,15 @@ A.protocol.setParams('-q',...
 A.run(4)
 
 %% spiking
-
-A.setProtocol('CurrentSine');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'stimDurInSec',5,...
-    'freqs',[20],...
-    'amps',[5]*1,... % [10 40]
-    'postDurInSec',.5);
-A.run(3)
+% A.setProtocol('CurrentSine');
+% A.rig.setParams('interTrialInterval',0);
+% A.protocol.setParams('-q',...
+%     'preDurInSec',.5,...
+%     'stimDurInSec',5,...
+%     'freqs',[20],...
+%     'amps',[5]*1,... % [10 40]
+%     'postDurInSec',.5);
+% A.run(3)
 
 
 %% Switch to Voltage clamp
@@ -104,9 +103,7 @@ for sd_ind = 1:durations
 end
 
 %% Voltage Steps 
-%A.rig.devices.amplifier.setParams('headstageresistorVC',5E9)
-%A.rig.devices.amplifier.setParams('headstageresistorVC',5E8)
-%A.rig.devices.amplifier.setDefaults
+A.rig.devices.amplifier.setDefaults
 
 A.setProtocol('VoltageStep');
 A.protocol.setParams('-q',...

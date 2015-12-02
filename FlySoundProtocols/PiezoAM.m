@@ -8,12 +8,12 @@ classdef PiezoAM < PiezoProtocol
     
     properties (SetAccess = protected)
         requiredRig = 'PiezoRig';
-        analyses = {};
+        analyses = {'average'};
     end
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
-        uncorrectedcommand
+
     end
     
     events
@@ -31,8 +31,29 @@ classdef PiezoAM < PiezoProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
+            
+            envelope = 1-...
+                obj.params.modulationDepth *...
+                cos(2 * pi * obj.params.freqEnvelope * obj.x);
+            standardstim =  envelope.*...
+                sin(2 * pi * obj.params.freqCarrier * obj.x);
+
+            obj.uncorrectedcommand = obj.y .* standardstim;
+            calstim = obj.uncorrectedcommand;
+
+            stimfn = which([obj.getCalibratedStimulusFileName,'.wav']);
+            if ~isempty(stimfn)
+                [stim,obj.params.samprateout] = audioread([obj.getCalibratedStimulusFileName,'.wav']);
+                calstim(obj.x>=0 & obj.x <obj.params.stimDurInSec-eps) = ...
+                    obj.y(obj.x>=0 & obj.x <obj.params.stimDurInSec-eps) .* ...
+                    stim(1:obj.params.stimDurInSec*obj.params.samprateout);
+            else
+                % otherwise, figure out what to do
+                obj.treatUncalibratedStimulus
+            end
+
             commandstim = obj.uncorrectedcommand * obj.params.displacement + obj.params.displacementOffset;
-            calstim = obj.y * obj.params.displacement + obj.params.displacementOffset;
+            calstim = calstim * obj.params.displacement + obj.params.displacementOffset;
             if max(calstim > 10) || min(calstim < 0)
                 notify(obj,'StimulusProblem',StimulusProblemData('StimulusOutsideBounds'))
             end
@@ -46,7 +67,7 @@ classdef PiezoAM < PiezoProtocol
         end
         
         function fn = getCalibratedStimulusFileName(obj)
-            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\Rig Calibration\',...
+            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\StimulusWaves\',...
                 sprintf('%s_freqC%.0f_freqE%.0f_modD%.0f',...
                 obj.protocolName,...
                 obj.params.freqCarrier,...
@@ -65,14 +86,14 @@ classdef PiezoAM < PiezoProtocol
             obj.params.samprateout = 50000;
             
             obj.params.sampratein = obj.params.samprateout;
-            obj.params.displacements = [.1, .2];
+            obj.params.displacements = [1  10] * .05;
             obj.params.displacement = obj.params.displacements(1);
 
             obj.params.ramptime = 0.04; %sec;
                         
-            obj.params.freqCarriers = [50, 141, 400];
+            obj.params.freqCarriers = [50, 100, 141, 200];
             obj.params.freqCarrier = obj.params.freqCarriers(1);
-            obj.params.freqEnvelopes = [10, 20, 40];
+            obj.params.freqEnvelopes = [5, 10, 20, 40];
             obj.params.freqEnvelope = obj.params.freqEnvelopes(1);
             obj.params.modulationDepths = 1;
             obj.params.modulationDepth = obj.params.modulationDepths(1);
@@ -126,8 +147,11 @@ classdef PiezoAM < PiezoProtocol
                 stim = stim(1:length(stimpnts));
             end
             
-            y(stimpnts) = w.*stim;
             obj.y = y;
+            obj.y(stimpnts) = w;
+            
+            y(stimpnts) = w.*stim;
+            
             obj.out.piezocommand = y;
             obj.uncorrectedcommand = y;
             obj.uncorrectedcommand(stimpnts) = w.*standardstim;

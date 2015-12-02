@@ -47,10 +47,9 @@ A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'freqStart',0,...
     'freqEnd',300,...
-    'amps',[5]*1,... % [3 10]
+    'amps',[3 10]*1,... % [10 40]
     'postDurInSec',.5);
-A.run(4)
-
+A.run(3)
 
 %% Switch to Voltage clamp
 % take off Rs and WC
@@ -133,7 +132,7 @@ systemsound('Notify');
 A.tag
 
 
-%%
+% %%
 % step_up = [20 40];
 % step_down = [40 30 20 10 0 -10 -20];
 % for su_ind = 1:length(step_up)
@@ -153,23 +152,23 @@ A.tag
 %     end
 % end
 % 
-%% V plateau for Na reversal - only control saline and TTX
+% %% V plateau for Na reversal - only control saline and TTX
 % 
-step_down = [-60];
-step_up = [0 20 40 60];
-for sd_ind = 1:length(step_down)
-    for su_ind = 1:length(step_up)
-        plateaux(1) = step_down(sd_ind);
-        plateaux(2) = step_up(su_ind);
-        
-        A.rig.applyDefaults;
-        A.setProtocol('VoltagePlateau');
-        A.protocol.setParams('-q',...
-            'preDurInSec',0.12,...
-            'plateaux',plateaux,...
-            'plateauDurInSec',0.3,...
-            'postDurInSec',0.1);
-        A.run(2)
-        systemsound('Notify');
-    end
-end
+% step_down = [-60];
+% step_up = [0 20 40 60];
+% for sd_ind = 1:length(step_down)
+%     for su_ind = 1:length(step_up)
+%         plateaux(1) = step_down(sd_ind);
+%         plateaux(2) = step_up(su_ind);
+%         
+%         A.rig.applyDefaults;
+%         A.setProtocol('VoltagePlateau');
+%         A.protocol.setParams('-q',...
+%             'preDurInSec',0.12,...
+%             'plateaux',plateaux,...
+%             'plateauDurInSec',0.1,...
+%             'postDurInSec',0.1);
+%         A.run(2)
+%         systemsound('Notify');
+%     end
+% end
