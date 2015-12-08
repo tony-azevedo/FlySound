@@ -1,9 +1,9 @@
 % Drive piezo with frequency sweep, control displacements, freqStart,
 % freqEnd, stimDurInSec
-classdef PiezoAM < PiezoProtocol
+classdef PiezoFM < PiezoProtocol
     
     properties (Constant)
-        protocolName = 'PiezoAM';
+        protocolName = 'PiezoFM';
     end
     
     properties (SetAccess = protected)
@@ -21,7 +21,7 @@ classdef PiezoAM < PiezoProtocol
     
     methods
         
-        function obj = PiezoAM(varargin)
+        function obj = PiezoFM(varargin)
             obj = obj@PiezoProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...
@@ -93,12 +93,12 @@ classdef PiezoAM < PiezoProtocol
                         
             obj.params.freqCarriers = [50, 100, 141, 200];
             obj.params.freqCarrier = obj.params.freqCarriers(1);
-            obj.params.freqEnvelopes = [5, 10, 20, 40];
+            obj.params.freqEnvelopes = [.5];
             obj.params.freqEnvelope = obj.params.freqEnvelopes(1);
-            obj.params.modulationDepths = 1;
+            obj.params.modulationDepths = 60;
             obj.params.modulationDepth = obj.params.modulationDepths(1);
             
-            obj.params.stimDurInSec = 2;
+            obj.params.stimDurInSec = 10;
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             
