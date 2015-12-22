@@ -129,31 +129,36 @@ classdef PiezoProtocol < FlySoundProtocol
                 stim = stim - stim(1);
                 targetstim = targetstim - targetstim(1);
                 
-                [C, Lags] = xcorr(sgs,stim,'coeff');
-                figure(102);
-                plot(Lags,C);
-                
-                i_del = Lags(C==max(C));  % assume lag is causal.  If not it's an error.
-                
-                if i_del < 0
-                    disp(i_del)
-                    [~,locs]= findpeaks(C);
-                    lags = Lags(locs);
-                    i_del = lags(find(lags>0,1));
-                    warning('No causal delay between stimulus and response')
-                    disp(i_del)
+                if ~sum((diff(stim).^2))
+                    warning('This stimulus does not change')
+                    i_del = 0;
+                else
+                    [C, Lags] = xcorr(sgs,stim,'coeff');
+                    figure(102);
+                    plot(Lags,C);
+                    
+                    i_del = Lags(C==max(C));  % assume lag is causal.  If not it's an error.
+                    
+                    if i_del < 0
+                        disp(i_del)
+                        [~,locs]= findpeaks(C);
+                        lags = Lags(locs);
+                        i_del = lags(find(lags>0,1));
+                        warning('No causal delay between stimulus and response')
+                        disp(i_del)
+                    end
+                    %     t_del = t(end)-t(end+i_del+1);
+                    % else
+                    %     t_del = t(i_del+1) - t(1);
+                    % end
+                    %
                 end
-                %     t_del = t(end)-t(end+i_del+1);
-                % else
-                %     t_del = t(i_del+1) - t(1);
-                % end
-                %
                 figure(103); %clf
                 plot(t(1:end-i_del),targetstim(1:end-i_del),'color',[.7 .7 .7]), hold on
                 plot(t(1:end-i_del),sgs(i_del+1:end)), hold off
                 
-                diff = targetstim(1:end-i_del)-sgs(i_del+1:end);
-                diff = diff/A.protocol.params.displacement;
+                diff_ = targetstim(1:end-i_del)-sgs(i_del+1:end);
+                diff_ = diff_/A.protocol.params.displacement;
 
                 % end of the stimulus can produce transients in diff that
                 % are impossible to get rid of.  Taper instead
@@ -168,28 +173,28 @@ classdef PiezoProtocol < FlySoundProtocol
                 
                 taper = zeros(size(t));
                 taper(stimpnts) = w;
-                diff = diff .* taper(1:length(diff));
-                diff = diff(t(1:end-i_del)>=0 & t(1:end-i_del)<A.protocol.params.stimDurInSec);
+                diff_ = diff_ .* taper(1:length(diff_));
+                diff_ = diff_(t(1:end-i_del)>=0 & t(1:end-i_del)<A.protocol.params.stimDurInSec);
                 
                 [oldstim,fs] = audioread([A.protocol.getCalibratedStimulusFileName,'.wav']);
                 info = audioinfo([A.protocol.getCalibratedStimulusFileName,'.wav']);
                 NBITS = info.BitsPerSample;
                 
-                newstim = diff+oldstim(1:length(diff));
+                newstim = diff_+oldstim(1:length(diff_));
                 
                 figure(104),clf, hold on
                 plot(oldstim,'color',[.7 .7 .7])
                 plot(newstim,'r')
-                plot(diff),
+                plot(diff_),
                 
                 fn = A.protocol.getCalibratedStimulusFileName;
                 cur_cs_fn = length(dir([fn,'_*.wav']));
                 copyfile([fn,'.wav'],[fn '_' num2str(cur_cs_fn) '.wav'],'f')
                 
                 audiowrite([fn,'.wav'],newstim,fs,'BitsPerSample',NBITS);
-                if mean(sqrt(diff.^2)) > .01 || max(abs(diff)) > 0.05
-                    disp(mean(sqrt(diff.^2)))
-                    disp(max(abs(diff)))
+                if mean(sqrt(diff_.^2)) > .01 || max(abs(diff_)) > 0.05
+                    disp(mean(sqrt(diff_.^2)))
+                    disp(max(abs(diff_)))
                     A.protocol.CalibrateStimulus(A);
                 end
             end
