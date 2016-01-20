@@ -74,7 +74,7 @@ varargout = {h};
 
 function varargout = constructFilnameFromExposureNum(data,exposureNum)
 
-imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+imdir = regexprep(data.name,{'_Raw_','.mat'},{'_Images_',''});
 d = ls(fullfile(imdir,'*_Image_*'));
 jnk = d(1,:);
 pattern = ['_Image_' '\d+' '_'];
@@ -85,7 +85,7 @@ ind = regexp(jnk,pattern);
 ndigits = ind-1;
 numstem = repmat('0',ndigits,1)';
 
-imFileStem = [imdir '\' data.params.protocol '_Image_*_'];
+imFileStem = [imdir filesep data.params.protocol '_Image_*_'];
 
 ens = num2str(exposureNum);
 numstem(end-length(ens)+1:end) = ens;
@@ -163,7 +163,8 @@ l = findobj(c.dFfig,'tag','playImagesLine');
 delete(l)
 ax = findobj(c.dFfig,'tag','dFoverFax');
 l = get(ax,'children');
-imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+imdir = regexprep(data.name,{'_Raw_','.mat'},{'_Images_',''});
+
 if ~strcmp(get(l,'displayname'),imdir)
     dFoverF(data,data.params,'NewROI','No');
     drawnow
