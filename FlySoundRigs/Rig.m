@@ -44,7 +44,7 @@ classdef Rig < handle
                 setpref('AcquisitionHardware','rigDev','Dev1')
                 setpref('AcquisitionHardware','modeDev','Dev1')
                 setpref('AcquisitionHardware','gainDev','Dev1')
-                setpref('AcquisitionHardware','triggerChannelIn','PFI6')
+                setpref('AcquisitionHardware','triggerChannelIn','PFI0')
                 setpref('AcquisitionHardware','triggerChannelOut','PFI2')
                 disp(getpref('AcquisitionHardware'));
                 error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')

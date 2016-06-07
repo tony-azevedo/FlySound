@@ -29,10 +29,10 @@ classdef EPhysRig < Rig
             % setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
             
-            ampDevices = {'MultiClamp700B','MultiClamp700BAux'};
+            ampDevices = {'MultiClamp700A','MultiClamp700AAux'};
             p = inputParser;
             p.PartialMatching = 0;
-            p.addParameter('amplifier1Device','MultiClamp700B',@ischar);            
+            p.addParameter('amplifier1Device','MultiClamp700A',@ischar);            
             parse(p,varargin{:});
             
             acqhardware = getpref('AcquisitionHardware');
@@ -40,6 +40,9 @@ classdef EPhysRig < Rig
                     && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
                     && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');
                 obj.addDevice('amplifier',acqhardware.Amplifier);
+            elseif ~isfield(acqhardware,'Amplifier')
+                ampDevices = {'MultiClamp700A','MultiClamp700AAux'};
+                obj.addDevice('amplifier',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
             elseif strcmp(acqhardware.Amplifier,'AxoPatch200B_2P')
                 obj.addDevice('amplifier',acqhardware.Amplifier,'Session',obj.aiSession);
             elseif strcmp(acqhardware.Amplifier,'MultiClamp700B')

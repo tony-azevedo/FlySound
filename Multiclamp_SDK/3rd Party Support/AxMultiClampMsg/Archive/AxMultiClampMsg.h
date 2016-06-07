@@ -30,8 +30,8 @@ extern "C" {
 DECLARE_HANDLE(HMCCMSG);
 
 // API version number.
-#define MCCMSG_APIVERSION       1,0,0,6
-#define MCCMSG_APIVERSION_STR  "1.0.0.6"
+#define MCCMSG_APIVERSION       1,0,0,7
+#define MCCMSG_APIVERSION_STR  "1.0.0.7"
 
 // Windows Class name for the MultiClamp Commander msg handler hidden window.
 #define MCCMSG_CLASSNAME "MultiClampMessageHandlerClass"
@@ -458,6 +458,9 @@ AXMCCMSG BOOL WINAPI MCCMSG_SetMeterIrmsEnable(HMCCMSG hMCCmsg, BOOL bEnable, in
 // Get Irms meter enable
 AXMCCMSG BOOL WINAPI MCCMSG_GetMeterIrmsEnable(HMCCMSG hMCCmsg, BOOL *pbEnable, int *pnError);
 
+// Get the specified meter value in SI units
+AXMCCMSG BOOL WINAPI MCCMSG_GetMeterValue(HMCCMSG hMCCmsg, double *pdValue, UINT uMeterID, int *pnError);
+
 //==============================================================================================
 // MCC Tool Bar functions
 //==============================================================================================
@@ -551,6 +554,12 @@ const UINT MCCMSG_SEC_SIGNAL_IC_100XACMEMBPOTENTIAL     = 11; // 700B and 700A
 const UINT MCCMSG_SEC_SIGNAL_IC_EXTCMDCURRENT           = 12; // 700B only
 const UINT MCCMSG_SEC_SIGNAL_IC_AUXILIARY1              = 13; // 700B and 700A
 const UINT MCCMSG_SEC_SIGNAL_IC_AUXILIARY2              = 14; // 700B only
+
+// Parameters for MCCMSG_GetMeterValue()
+const UINT MCCMSG_METER1                                = 0;  // 700B 
+const UINT MCCMSG_METER2                                = 1;  // 700B 
+const UINT MCCMSG_METER3                                = 2;  // 700B 
+const UINT MCCMSG_METER4                                = 3;  // 700B 
 
 //==============================================================================================
 // Constants

@@ -23,13 +23,32 @@ A.tag('R_input')
 A.run
 A.untag('R_input')
 
+%% Sweep
+
+A.rig.applyDefaults;
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',1);
+A.run(4)
+
+
+
 %% Switch to current clamp
 
 %% Sweep
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
+A.protocol.setParams('-q','durSweep',1);
+A.run(4)
+
+%% Current Step 
+A.setProtocol('CurrentStep');
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.12,...
+    'stimDurInSec',.1,...
+    'steps',[-10 5 10 20 ],... % [3 10]
+    'postDurInSec',.1);
 A.run(4)
 
 
@@ -187,7 +206,7 @@ A.rig.setParams('testcurrentstepamp',0)
 A.protocol.setParams('-q',...
     'preDurInSec',.12,...
     'stimDurInSec',.1,...
-    'steps',[-10 5 10 20 ],... % [3 10]
+    'steps',[-10 5 10 20 40],... % [3 10]
     'postDurInSec',.1);
 A.run(4)
 

@@ -189,7 +189,7 @@ classdef Acquisition < handle
             obj.amplifier1Device = '';
             
             numlines = [1 1 1 1];
-            defAns = {'','',''};
+            defAns = {'','','','MultiClamp700A'};
             inputprompts{1} = 'Fly Genotype: ';
             if isfield(p.Results,'flygenotype') && ~isempty(p.Results.flygenotype)
                 obj.flygenotype = p.Results.flygenotype;
@@ -265,8 +265,8 @@ classdef Acquisition < handle
             end
             if isempty(obj.amplifier1Device)
                 if datenum([0 0 0 1 0 0]) > (now-acquisitionPrefs.last_timestamp)
-                    if ~sum(strcmp(acquisitionPrefs.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux'}))
-                        error('AcuisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700BAux''}')
+                    if ~sum(strcmp(acquisitionPrefs.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux','MultiClamp700A','MultiClamp700AAux'}))
+                        error('AcuisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700A''}')
                     end
                     obj.amplifier1Device = acquisitionPrefs.amplifier1Device;
                     defAns{4} = acquisitionPrefs.amplifier1Device;
@@ -287,7 +287,7 @@ classdef Acquisition < handle
                     obj.flynumber  = answer{2};
                     obj.cellnumber = answer{3};
                     obj.amplifier1Device = answer{4};
-                    if ~sum(strcmp(obj.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux'}))
+                    if ~sum(strcmp(obj.amplifier1Device,{'MultiClamp700B','MultiClamp700BAux','MultiClamp700A','MultiClamp700AAux'}))
                         error('AcuisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700BAux''}')
                     end
 
@@ -369,7 +369,7 @@ classdef Acquisition < handle
         end
         
         function updateFileNames(obj,metprop,propevnt)
-            obj.D = ['C:\Users\Anthony Azevedo\Acquisition\',datestr(date,'yymmdd'),'\',...
+            obj.D = ['C:\Users\tony\Acquisition\',datestr(date,'yymmdd'),'\',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             if ~isempty(obj.rig)
                 obj.saveAcquisition();

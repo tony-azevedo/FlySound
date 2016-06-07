@@ -3,7 +3,7 @@
 setpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
-clear all, close all
+% clear all, close all
 A = Acquisition;
 %
 
@@ -23,14 +23,58 @@ A.tag('R_input')
 A.run
 A.untag('R_input')
 
-%% Switch to current clamp
-
 %% Sweep
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
+A.protocol.setParams('-q','durSweep',1);
 A.run(4)
+
+
+
+%% Switch to current clamp
+
+%% Sweep
+A.rig.setParams('testcurrentstepamp',0)
+A.rig.applyDefaults;
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',1);
+A.run(4)
+
+%% Current Step 
+A.setProtocol('CurrentStep');
+A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.12,...
+    'stimDurInSec',.1,...
+    'steps',[-5 5 10 15 20],... % [3 10]
+    'postDurInSec',.1);
+A.run(4)
+
+%% Single spike 
+A.setProtocol('CurrentStep');
+A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.12,...
+    'stimDurInSec',.02,...
+    'steps',[12 15 17 20],... % [3 10]
+    'postDurInSec',.1);
+A.run(4)
+
+
+%% tetanus  
+A.setProtocol('CurrentPlateau');
+A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.12,...
+    'plateauDurInSec',.25,...
+    'plateaux',60*[1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1],... % [3 10]
+    'postDurInSec',.1);
+A.run(3)
+
 
 
 %% Switch to voltage clamp
@@ -43,7 +87,7 @@ A.untag('R_input')
 
 %% Sweep
 
-A.rig.applyDefaults;
+A.rig.setParams('testcurrentstepamp',0)
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',5);
 A.run(4)
@@ -55,7 +99,7 @@ A.protocol.setParams('-q',...
     'preDurInSec',0.12,...
     'stimDurInSec',0.1,...
     'postDurInSec',0.1,...
-    'steps',[-60 -40 -20 -10 -5 -2.5 2.5 5 10 15]);          % tune this 
+    'steps',[-10 -5  5 10 20 40]);          % tune this 
 A.run(4)
 
 %% PiezoSteps
@@ -187,7 +231,7 @@ A.rig.setParams('testcurrentstepamp',0)
 A.protocol.setParams('-q',...
     'preDurInSec',.12,...
     'stimDurInSec',.1,...
-    'steps',[-10 5 10 20 ],... % [3 10]
+    'steps',[-10 5 10 20 40],... % [3 10]
     'postDurInSec',.1);
 A.run(4)
 
