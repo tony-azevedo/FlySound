@@ -10,13 +10,16 @@ classdef Speaker < Device
         gaincorrection
     end
     
+    properties
+        deviceName = 'Speaker';
+    end
+
     events
         %InsufficientFunds, notify(BA,'InsufficientFunds')
     end
     
     methods
         function obj = Speaker(varargin)
-            obj.deviceName = 'Speaker';
             obj.outputLabels = {'speakercommand'};
             obj.outputUnits = {'V'};
             obj.outputPorts = 3;

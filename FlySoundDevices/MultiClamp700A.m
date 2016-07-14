@@ -4,6 +4,7 @@ classdef MultiClamp700A < Device
     end
     
     properties 
+        deviceName = 'MultiClamp700A';
     end
 
     properties (Hidden, SetAccess = protected)
@@ -24,7 +25,6 @@ classdef MultiClamp700A < Device
         function obj = MultiClamp700A(varargin)
             obj = obj@Device();
 
-            obj.deviceName = 'MultiClamp700A';
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'primary','secondary'};
             obj.inputUnits = {'mV','pA'};
@@ -273,7 +273,7 @@ classdef MultiClamp700A < Device
             obj.params.scaledcurrentoffset = 0; 
             obj.params.scaledvoltagescale_over_gain = 1/1000; % 10Vm [mV/V] * gainsetting (Look at multiclamp prim output window
             obj.params.scaledvoltageoffset = 0; 
-
+            obj.params = obj.getDefaults;
         end
     end
    

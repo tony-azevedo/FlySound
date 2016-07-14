@@ -11,13 +11,16 @@ classdef Camera < Device
         gaincorrection
     end
     
+    properties
+        deviceName = 'Camera';
+    end
+
     events
         %
     end
     
     methods
         function obj = Camera(varargin)
-            obj.deviceName = 'Camera';
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {'exposure'};

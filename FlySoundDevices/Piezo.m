@@ -6,6 +6,10 @@ classdef Piezo < Device
     properties (Hidden, SetAccess = protected)
     end
     
+    properties 
+        deviceName = 'Piezo';
+    end
+    
     properties (SetAccess = protected)
         gaincorrection
     end
@@ -16,7 +20,6 @@ classdef Piezo < Device
     
     methods
         function obj = Piezo(varargin)
-            obj.deviceName = 'Piezo';
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {'sgsmonitor'};

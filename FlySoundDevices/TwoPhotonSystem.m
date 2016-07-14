@@ -11,6 +11,10 @@ classdef TwoPhotonSystem < Device
         gaincorrection
     end
     
+    properties
+        deviceName = 'TwoPhotonSystem';
+    end
+
     events
         %
     end

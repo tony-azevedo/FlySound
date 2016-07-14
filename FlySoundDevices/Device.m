@@ -3,8 +3,12 @@ classdef Device < handle
     properties (Constant,Abstract)
     end
     
-    properties (SetAccess = protected)
+    properties (Abstract)
         deviceName
+    end
+    
+    properties (SetAccess = protected)
+        %deviceName
         params
         inputLabels % consider from point of view of daq,
         inputUnits %
@@ -23,7 +27,7 @@ classdef Device < handle
     methods
         function obj = Device(varargin)
             % This and the transformInputs function are hard coded
-            obj.deviceName = 'Device';
+            %obj.deviceName = 'Device';
             obj.inputLabels = {};
             obj.inputUnits = {};
             obj.inputPorts = [];
