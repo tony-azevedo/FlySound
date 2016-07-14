@@ -1,5 +1,5 @@
 classdef Rig < handle
-    % current hierarchy: 4/22/15
+    % current hierarchy: 7/14/16
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
     %                   -> PiezoRig 
@@ -7,6 +7,11 @@ classdef Rig < handle
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
+    %                   -> PGRCameraRig -> PGREPhysRig
+    %                                   -> PGRPiezoRig % This setup is for
+    %                                   a digital output that requires same
+    %                                   session, and same input and output
+    %                                   sample rates
     
     properties (Constant, Abstract)
         rigName
