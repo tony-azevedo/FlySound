@@ -38,12 +38,12 @@ classdef VoltageCommand < FlySoundProtocol
         end
         
         function fn = getCommandFileName(obj)
-            fn = ['C:\Users\Anthony Azevedo\Code\FlySound\CommandWaves\',...
+            fn = ['C:\Users\tony\Code\FlySound\CommandWaves\',...
                 obj.params.stimulusName];
         end
 
         function showCommandNames(obj)
-            fns = dir('C:\Users\Anthony Azevedo\Code\FlySound\CommandWaves\');
+            fns = dir('C:\Users\tony\Code\FlySound\CommandWaves\');
             fns = fns(3:end);
             str = '';
             for fn_ind = 1:length(fns)

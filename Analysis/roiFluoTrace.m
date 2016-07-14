@@ -4,7 +4,7 @@ function varargout = roiFluoTrace(data,params,varargin)
 p = inputParser;
 p.PartialMatching = 0;
 p.addParameter('NewROI','Yes',@ischar);
-p.addParameter('dFoFfig',[],@isnumeric);
+p.addParameter('dFoFfig',[],@ishandle);
 p.addParameter('MotionCorrection',true,@islogical);
 p.addParameter('ShowMovies',false,@islogical);
 p.addParameter('MovieLocation','',@ischar);
@@ -38,7 +38,7 @@ end
 
 button = p.Results.NewROI;
 
-imdir = regexprep(regexprep(regexprep(data.name,'Raw','Images'),'.mat',''),'Acquisition','Raw_Data');
+imdir = regexprep(regexprep(regexprep(data.name,'_Raw_','_Images_'),'.mat',''),'Acquisition','Raw_Data');
 
 exp_t = data.exposure_time;
 
