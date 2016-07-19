@@ -50,7 +50,7 @@ classdef MultiClamp700A < Device
             obj.partOfSet = true;
         end
         
-        function varargout = transformOutputs(obj,out)
+        function varargout = transformOutputs(obj,out,varargin)
             outlabels = fieldnames(out);
             for ol = 1:length(outlabels)
                 
@@ -92,7 +92,7 @@ classdef MultiClamp700A < Device
             varargout = {out};
         end
         
-        function varargout = transformInputs(obj,inputstruct)
+        function varargout = transformInputs(obj,inputstruct,varargin)
             inlabels = fieldnames(inputstruct);
             units = {};
             for il = 1:length(inlabels)

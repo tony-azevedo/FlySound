@@ -100,8 +100,11 @@ classdef Acquisition < handle
                 com = inputdlg('Enter comment:', 'Comment', [1 50]);
                 com = strcat(com{:});
             end
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
             fprintf(1,'\n\t****************\n\t%s\n\t%s\n\t****************\n',datestr(clock,31),com);
+            fclose(obj.notesFileID);
+
         end
 
         function tag(obj,varargin)
@@ -406,6 +409,10 @@ classdef Acquisition < handle
                 if isa(obj.rig,'CameraRig')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                 end
+                if isa(obj.rig,'PGRCameraRig')
+                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
+                    addlistener(obj.rig,'StartTrial',@obj.setCameraLogging);
+                end
                 if isa(obj.rig,'TwoPhotonRig')
                     %error('Do I need to clean up files?')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
@@ -452,6 +459,7 @@ classdef Acquisition < handle
         end
                 
         function writePrologueNotes(obj)
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,...
                 '%s - %s - %s; F%s_C%s\nRigName: %s\n',...
                 datestr(date,'yymmdd'),datestr(clock,13),obj.flygenotype,...
@@ -469,7 +477,7 @@ classdef Acquisition < handle
             fprintf(obj.notesFileID,...
                 'For list of equipement run: equipmentSetupStruct(''%s'')\n',...
                 datestr(date,'yymmdd'));
-            
+            fclose(obj.notesFileID);
         end
         
         function writeRunNotes(obj,varargin)
@@ -516,10 +524,12 @@ classdef Acquisition < handle
             end
             fprintf(obj.notesFileID,'\n');
             fprintf(1,'\n');
+            fclose(obj.notesFileID);
         end
         
         function writeTrialNotes(obj,varargin)
             % data has been saved and obj.n increased
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
                 obj.expt_n-1,...
                 obj.protocol.protocolName,...
@@ -533,6 +543,7 @@ classdef Acquisition < handle
             end
             fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
             fprintf(1,', %s\n',datestr(clock,13));
+            fclose(obj.notesFileID);
         end
 
         
@@ -644,6 +655,7 @@ classdef Acquisition < handle
             end
         end
         
+            
         function cleanUpImages(obj,varargin)
             images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
             if ~isempty(images)
@@ -663,7 +675,12 @@ classdef Acquisition < handle
                 end
             end
         end
-            
+        
+        function setCameraLogging(obj,varargin)
+            name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),'_Raw_','_Images_'));            
+            obj.rig.devices.camera.setLogging(name);
+        end
+        
         function saveAcquisition(obj,varargin)
             if ~isdir(obj.D)
                 mkdir(obj.D);

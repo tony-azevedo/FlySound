@@ -1,4 +1,4 @@
-classdef CameraEPhysRig < CameraRig
+classdef BasicEPhysRigSS < EPhysRig
     % current hierarchy: 7/14/16
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
@@ -16,7 +16,7 @@ classdef CameraEPhysRig < CameraRig
     %                   -> BasicEPhysRigSS
     
     properties (Constant)
-        rigName = 'CameraEPhysRig';
+        rigName = 'BasicEPhysRigSS';
         IsContinuous = false;
     end
     
@@ -31,7 +31,11 @@ classdef CameraEPhysRig < CameraRig
     end
     
     methods
-        function obj = CameraEPhysRig(varargin)
+        function obj = BasicEPhysRigSS(varargin)
+            obj = obj@EPhysRig(varargin{:});
+            rigDev = getpref('AcquisitionHardware','rigDev');
+            
+        
         end
         
         function setDisplay(obj,fig,evnt,varargin)
@@ -48,13 +52,11 @@ classdef CameraEPhysRig < CameraRig
                 
                 ax = subplot(3,1,[1 2],'Parent',obj.TrialDisplay,'tag','inputax');
                 delete(findobj(ax,'tag','ampinput'));
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
+                line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 delete(findobj(ax,'tag','ampinput_alt'));
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 .7 1],'linewidth',1,'tag','exposure','displayname','io');
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
                 
                 out = protocol.getStimulus;
                 delete(findobj(ax,'tag','ampoutput'));
@@ -67,6 +69,9 @@ classdef CameraEPhysRig < CameraRig
                     box off; set(gca,'TickDir','out');
                 end
                 xlabel('Time (s)'); %xlim([0 max(t)]);
+
+                line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
+                
                 linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
@@ -82,7 +87,7 @@ classdef CameraEPhysRig < CameraRig
                 invecalt = obj.inputs.data.voltage;
                 ind = find(strcmp(obj.devices.amplifier.inputLabels,'voltage'));
                 inaltunits = obj.devices.amplifier.inputUnits{ind(1)};
-            elseif sum(strcmp({'IClamp','IClamp_fast','I=0'},obj.devices.amplifier.mode))
+            elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
                 invec = obj.inputs.data.voltage;
                 ind = find(strcmp(obj.devices.amplifier.inputLabels,'voltage'));
                 inunits = obj.devices.amplifier.inputUnits{ind(1)};
@@ -94,16 +99,11 @@ classdef CameraEPhysRig < CameraRig
             ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
-            %fprintf('%s: %g exposure lines found\n',mfilename,length(l));
-            set(l,'ydata',obj.inputs.data.exposure*max(get(findobj(obj.TrialDisplay,'tag','outputax'),'ylim')));
-
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
-            set(l,'ydata',invec);
+            set(l,'ydata',invec');
 
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampinput_alt');
-            set(l,'ydata',invecalt);
-            
+            set(l,'ydata',invecalt');
             
             out = protocol.getStimulus;
             outlabels = fieldnames(out);
@@ -113,8 +113,8 @@ classdef CameraEPhysRig < CameraRig
                     outvec = out.voltage;
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'voltage')};
-                elseif sum(strcmp({'IClamp','IClamp_fast','I=0'},obj.devices.amplifier.mode))
-                    outvec = obj.outputs.datacolumns(:,strcmp(chnames.out,'current'));
+                elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
+                    outvec = out.current;
                     % outunits = obj.devices.amplifier.outputUnits{...
                     %     strcmp(obj.devices.amplifier.outputLabels,'current')};
                 end
@@ -123,9 +123,10 @@ classdef CameraEPhysRig < CameraRig
                 l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampoutput');
                 set(l,'ydata',outvec);                
             end
+
         end
     end
-    
     methods (Access = protected)
     end
 end
+

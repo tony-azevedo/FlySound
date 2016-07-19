@@ -32,12 +32,12 @@ classdef TwoPhotonSystem < Device
             obj.outputPorts = [1];% 3];
         end
         
-        function varargout = transformInputs(obj,inputstruct)
+        function varargout = transformInputs(obj,inputstruct,varargin)
             units = {};
             varargout = {inputstruct,units};
         end
         
-        function out = transformOutputs(obj,out)
+        function out = transformOutputs(obj,out,varargin)
             %multiply outputs by volts/micron
         end
     

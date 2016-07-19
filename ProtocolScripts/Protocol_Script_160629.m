@@ -1,6 +1,6 @@
 %% Whole cell voltage clamp, Cs internal, para,
 
-setpref('AcquisitionHardware','cameraToggle','off')
+setpref('AcquisitionHardware','PGRCameraToggle','off')
 
 % Start the bitch 
 % clear all, close all

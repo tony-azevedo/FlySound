@@ -26,7 +26,9 @@ classdef Rig < handle
     properties (SetAccess = protected)
         devices
         aiSession
+        inputchannelidx
         aoSession
+        outputchannelidx
         outputs
         inputs
         params
@@ -54,8 +56,9 @@ classdef Rig < handle
                 disp(getpref('AcquisitionHardware'));
                 error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')
             end
-            obj.aiSession = daq.createSession('ni');
+            % for now ao Session is the master session
             obj.aoSession = daq.createSession('ni');            
+            obj.aiSession = obj.aoSession;
             obj.defineParameters();
             obj.params = obj.getDefaults();
         end
@@ -80,9 +83,8 @@ classdef Rig < handle
             end
             obj.setDisplay([],[],protocol);
             obj.setTestDisplay();
-
-            obj.aiSession.Rate = protocol.params.sampratein;
-            obj.aiSession.NumberOfScans = length(makeInTime(protocol));
+            
+            protocol.setParams('-q','samprateout',protocol.params.sampratein);
             obj.aoSession.Rate = protocol.params.samprateout;
             
             if obj.params.interTrialInterval >0;
@@ -100,11 +102,6 @@ classdef Rig < handle
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
                     notify(obj,'StartTrial',PassProtocolData(protocol));
-                    %disp(obj.aoSession)
-                    obj.aoSession.startBackground; % Start the session that receives start trigger first
-                    
-                    %disp(obj.aiSession)
-                    % Collect input
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
                     %disp(obj.aiSession)
                     obj.transformInputs(in);
@@ -138,7 +135,7 @@ classdef Rig < handle
             for d = 1:length(devs)
                 dev = obj.devices.(devs{d});
                 if ~isempty(dev)
-                    out = dev.transformOutputs(out);
+                    out = dev.transformOutputs(out,obj);
                 end
             end
             
@@ -184,22 +181,20 @@ classdef Rig < handle
                 end
             end
             
-            for ch = 1:length(obj.aoSession.Channels)
-                if isfield(out,obj.aoSession.Channels(ch).Name)
-                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(ch).Name);
+            for ch = 1:length(obj.outputchannelidx)
+                if isfield(out,obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
+                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(obj.outputchannelidx(ch)).Name);
                 end
             end
         end
         
         function transformInputs(obj,in)
-            for ch = 1:length(obj.aiSession.Channels)
-                chids(ch) = str2double(regexprep(obj.aiSession.Channels(ch).ID,'ai',''));
-            end
+            chids = obj.inputchannelidx;
             [~,o] = sort(chids);
             % go from highest channel id to lowest (ai7 -> ai0).  This
             % enters scaled output (always ai0) for either V or I
             for ch = length(o):-1:1
-                obj.inputs.data.(obj.aiSession.Channels(o(ch)).Name) = in(:,o(ch));
+                obj.inputs.data.(obj.aiSession.Channels(chids(ch)).Name) = in(:,o(ch));
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -329,7 +324,19 @@ classdef Rig < handle
         function rigStruct = getRigStruct(obj)
             rigStruct.rigConstructor = str2func(obj.rigName);
             rigStruct.outputs = obj.outputs.portlabels;
+            if isfield(obj.outputs,'digitalPortlabels');
+                if length(rigStruct.outputs)<getpref('AcquisitionHardware','AnalogOutN')
+                    rigStruct.outputs{getpref('AcquisitionHardware','AnalogOutN')} = [];
+                end
+                rigStruct.outputs = [rigStruct.outputs obj.outputs.digitalPortlabels];
+            end
             rigStruct.inputs = obj.inputs.portlabels;
+            if isfield(obj.inputs,'digitalPortlabels');
+                if length(rigStruct.inputs)<getpref('AcquisitionHardware','AnalogInN')
+                    rigStruct.inputs{getpref('AcquisitionHardware','AnalogInN')} = [];
+                end
+                rigStruct.inputs = [rigStruct.inputs obj.inputs.digitalPortlabels];
+            end
             rigStruct.devices = obj.devices;
             rigStruct.timestamp = now;
         end
@@ -379,26 +386,73 @@ classdef Rig < handle
                     % use the current vals to apply to outputs
                 end
                 % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
-                obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
-                obj.outputs.datacolumns = obj.outputs.datavalues;
-
+                
+                for i = 1:length(dev.digitalOutputPorts)
+                    ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
+                    ch.Name = dev.digitalOutputLabels{i};
+                    obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
+                    obj.outputs.device{dev.digitalOutputPorts(i)+getpref('AcquisitionHardware','AnalogOutN')+1} = dev;
+                end
+                
                 for i = 1:length(dev.inputPorts)
-                    ch = obj.aiSession.addAnalogInputChannel(rigDev,dev.inputPorts(i), 'Voltage'); 
+                    ch = obj.aoSession.addAnalogInputChannel(rigDev,dev.inputPorts(i), 'Voltage');
                     ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
                     obj.inputs.device{dev.inputPorts(i)+1} = dev;
                     % obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
+            
+                for i = 1:length(dev.digitalInputPorts)
+                    ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
+                    ch.Name = dev.digitalInputLabels{i};
+                    obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
+                    obj.inputs.device{dev.digitalInputPorts(i)+getpref('AcquisitionHardware','AnalogInN')+1} = dev;
+                    % obj.inputs.data.(dev.inputLabels{i}) = [];
+                end
+                
             end
+            obj.sessionColumnsAndIndices();
+
+        end
+        
+        function sessionColumnsAndIndices(obj)
+            obj.outputs.datavalues = [];
+            obj.outputchannelidx = [];
+            obj.inputchannelidx = [];
+            for ch = 1:length(obj.aoSession.Channels)
+                aord = obj.aoSession.Channels(ch).ID(1);
+                switch aord
+                    case 'p'
+                        switch obj.aoSession.Channels(ch).MeasurementType
+                            case 'OutputOnly'
+                                obj.outputs.datavalues(end+1) = 0;
+                                obj.outputchannelidx(end+1) = ch;
+                            case 'InputOnly'
+                                obj.inputchannelidx(end+1) = ch;
+                            otherwise
+                                error('Not able to deal with Bidiretional Digital channels')
+                        end
+                    case 'a'
+                         switch obj.aoSession.Channels(ch).ID(2)
+                             case 'o'
+                                obj.outputs.datavalues(end+1) = 0;
+                                obj.outputchannelidx(end+1) = ch;
+                             case 'i'
+                                obj.inputchannelidx(end+1) = ch;
+                             otherwise
+                         end
+                end
+            end
+            obj.outputs.datacolumns = obj.outputs.datavalues;
         end
         
         function chNames = getChannelNames(obj)
-            for ch = 1:length(obj.aoSession.Channels)
-                chNames.out{ch} = obj.aoSession.Channels(ch).Name;
+            for ch = 1:length(obj.outputchannelidx)
+                chNames.out{ch} = obj.aoSession.Channels(obj.outputchannelidx(ch)).Name;
             end
-            for ch = 1:length(obj.aiSession.Channels)
-                chNames.in{ch} = obj.aiSession.Channels(ch).Name;
+            for ch = 1:length(obj.inputchannelidx)
+                chNames.in{ch} = obj.aoSession.Channels(obj.inputchannelidx(ch)).Name;
             end
         end
         

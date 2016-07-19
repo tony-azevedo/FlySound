@@ -67,6 +67,7 @@ classdef FlySoundProtocol < handle
             
             obj.setupStimulus();
             obj.queryCameraState
+            obj.queryPGRCameraState
             obj.query2PState
 
         end        
@@ -142,6 +143,7 @@ classdef FlySoundProtocol < handle
             end
             obj.setupStimulus
             obj.queryCameraState;
+            obj.queryPGRCameraState;
             obj.query2PState;
             if ~quiet
                 obj.showParams
@@ -284,6 +286,24 @@ classdef FlySoundProtocol < handle
             end
         end
 
+        function queryPGRCameraState(obj,varargin)
+            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','PGRCameraToggle')
+                addpref('AcquisitionHardware','PGRCameraToggle','off')
+            end
+            campref = getpref('AcquisitionHardware','PGRCameraToggle');
+            if strcmp('on',campref)
+                try cameraRigMap = getpref('AcquisitionHardware','PGRcameraRigMap');
+                catch
+                    % save('C:\Users\tony\Code\FlySound\FlySoundRigs\PGRcameraRigMap','cameraRigMap');
+                    crm = load('PGRCameraRigMap');
+                    cameraRigMap = crm.cameraRigMap;
+                    setpref('AcquisitionHardware','PGRcameraRigMap',cameraRigMap)
+                end
+                obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                obj.out.trigger = 0*obj.x;
+            end
+        end
+        
         function query2PState(obj,varargin)
             if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','twoPToggle')
                 addpref('AcquisitionHardware','twoPToggle','off')

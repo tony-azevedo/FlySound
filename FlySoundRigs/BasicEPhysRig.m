@@ -1,5 +1,5 @@
 classdef BasicEPhysRig < EPhysRig
-    % current hierarchy:
+    % current hierarchy: 7/14/16
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
     %                   -> PiezoRig 
@@ -7,6 +7,12 @@ classdef BasicEPhysRig < EPhysRig
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
+    %                   -> PGRCameraRig -> PGREPhysRig
+    %                                   -> PGRPiezoRig % This setup is for
+    %                                   a digital output that requires same
+    %                                   session, and same input and output
+    %                                   sample rates
+    %       -> SingleSession -> BasicEPhysRigSS
     
     properties (Constant)
         rigName = 'BasicEPhysRig';
@@ -27,11 +33,6 @@ classdef BasicEPhysRig < EPhysRig
         function obj = BasicEPhysRig(varargin)
             obj = obj@EPhysRig(varargin{:});
             rigDev = getpref('AcquisitionHardware','rigDev');
-            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
-            
-            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
         end
         
         function setDisplay(obj,fig,evnt,varargin)

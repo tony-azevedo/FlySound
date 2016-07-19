@@ -7,12 +7,13 @@ classdef PGRCameraRig < EPhysRig
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
+    %       -> SingleSession rig?
     %                   -> PGRCameraRig -> PGREPhysRig
     %                                   -> PGRPiezoRig % This setup is for
     %                                   a digital output that requires same
     %                                   session, and same input and output
     %                                   sample rates
-    %       -> SingleSession rig?
+    %                   -> BasicEPhysRigSS
     
     properties (Constant,Abstract)
         rigName;
@@ -21,88 +22,30 @@ classdef PGRCameraRig < EPhysRig
     
     methods
         function obj = PGRCameraRig(varargin)
-            obj.addDevice('camera','Camera');
+            obj.addDevice('camera','PGRCamera');
             rigDev = getpref('AcquisitionHardware','rigDev');
-            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
-            
-            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
             addlistener(obj,'StartTrial',@obj.readyCamera);
+            addlistener(obj,'DataSaved',@obj.resetCamera);
         end
         
-        function in = run(obj,protocol,varargin)
 
-            if nargin>2
-                repeats = varargin{1};
-            else
-                repeats = 1;
-            end
-            if isprop(obj,'TrialDisplay') && ~isempty(obj.TrialDisplay)
-                if ishandle(obj.TrialDisplay)
-                    delete(obj.TrialDisplay);
-                end
-            end
-            obj.setDisplay([],[],protocol);
-            obj.setTestDisplay();
-
-            obj.aiSession.Rate = protocol.params.sampratein;
-            obj.aiSession.NumberOfScans = length(makeInTime(protocol));
-            obj.aoSession.Rate = protocol.params.samprateout;
-            
-            fprintf('Camera Installed: samprateout = sampratein\n');            
-            
-            if obj.params.interTrialInterval >0;
-                t = timerfind('Name','ITItimer');
-                if isempty(t)
-                    t = timer;
-                end
-                t.StartDelay = obj.params.interTrialInterval;
-                t.TimerFcn = @(tObj, thisEvent) ... 
-                    fprintf('%.1f sec inter trial\n',tObj.StartDelay);
-                set(t,'Name','ITItimer')
-            end
-            notify(obj,'StartRun');
-            for n = 1:repeats
-                while protocol.hasNext()
-                    obj.setAOSession(protocol);
-                    notify(obj,'StartTrial',PassProtocolData(protocol));
-                    %disp(obj.aoSession)
-                    obj.aoSession.startBackground; % Start the session that receives start trigger first
-                    
-                    %disp(obj.aiSession)
-                    % Collect input
-                    in = obj.aiSession.startForeground; % both amp and signal monitor input
-                    %disp(obj.aiSession)
-                    obj.transformInputs(in);
-                    if obj.params.interTrialInterval >0;
-                        t = timerfind('Name','ITItimer');
-                        start(t)
-                        wait(t)
-                    end
-                    notify(obj,'SaveData');
-                    obj.displayTrial(protocol);
-                    notify(obj,'DataSaved');
-                end
-                protocol.reset;
-            end
-        end
         
         function readyCamera(obj,fig,evnt,varargin)
+            obj.devices.camera.start()
             
-            str = sprintf('Ready the camera:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
-            h = msgbox(str,'CAMERA');
-            pos = get(h,'position');
-            %set(h, 'position',[1280 700 pos(3) pos(4)])
-            set(h, 'position',[5 480 pos(3) pos(4)])
-            clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
-
-            uiwait(h);
-
         end
         
+        function resetCamera(obj,fig,evnt,varargin)
+            obj.devices.camera.stop()
+            
+        end
+
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})
+            camfig = figure(1001); clf;
+            set(camfig,'position',[1120 31 560 420],'name','PGR Camera','tag','PGRCamFig')
+            camax = axes('parent',camfig,'units','normalized','position',[0 0 1 1],'tag','PGRCamAx');
+            set(camax,'box','on','xtick',[],'ytick',[]);
             if nargin>3
                 protocol = varargin{1};            
                 ax = subplot(3,1,[1 2],'Parent',obj.TrialDisplay,'tag','inputax');

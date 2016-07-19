@@ -1,4 +1,4 @@
-classdef Speaker < Device
+classdef Epifluorescence < Device
     
     properties (Constant)
     end
@@ -6,23 +6,28 @@ classdef Speaker < Device
     properties (Hidden, SetAccess = protected)
     end
     
+    properties 
+        deviceName = 'Epifluorescence';
+    end
+    
     properties (SetAccess = protected)
         gaincorrection
     end
     
-    properties
-        deviceName = 'Speaker';
-    end
-
     events
         %InsufficientFunds, notify(BA,'InsufficientFunds')
     end
     
     methods
-        function obj = Speaker(varargin)
-            obj.outputLabels = {'speakercommand'};
+        function obj = Epifluorescence(varargin)
+            % This and the transformInputs function are hard coded
+            
+            obj.inputLabels = {};
+            obj.inputUnits = {};
+            obj.inputPorts = [];
+            obj.outputLabels = {'epicommand'};
             obj.outputUnits = {'V'};
-            obj.outputPorts = 3;
+            obj.outputPorts = [3];
         end
         
         function in = transformInputs(obj,in,varargin)
@@ -38,9 +43,9 @@ classdef Speaker < Device
     methods (Access = protected)
         function setupDevice(obj)
         end
-        
+                
         function defineParameters(obj)
-            obj.params.units = '';
+            obj.params.powerPerVolt = 10/30;
         end
     end
 end

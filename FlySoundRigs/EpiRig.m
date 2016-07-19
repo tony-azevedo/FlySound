@@ -1,4 +1,4 @@
-classdef PiezoRig < EPhysRig
+classdef EpiRig < EPhysRig
     % current hierarchy:
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
@@ -9,20 +9,13 @@ classdef PiezoRig < EPhysRig
     %                                   -> PiezoCameraRig 
     
     properties (Constant)
-        rigName = 'PiezoRig';
+        rigName = 'EpiRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PiezoRig(varargin)
-            obj.addDevice('piezo','Piezo');
-            obj.addDevice('speaker','Speaker');
-            % rigDev = getpref('AcquisitionHardware','rigDev');
-            % triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            % triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
-            %
-            % obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-            % obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
+        function obj = EpiRig(varargin)
+            obj.addDevice('epi','Epifluorescence');
         end
         
         function setDisplay(obj,fig,evnt,varargin)
@@ -39,9 +32,8 @@ classdef PiezoRig < EPhysRig
                 
                 delete(findobj(ax,'tag','sgsmonitor'));               
                 delete(findobj(ax,'tag','piezocommand'));
-                line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
-                ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
+                line(makeOutTime(protocol),out.epicommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','epicommand','displayname','V');
+                ylabel('Epi (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
                 linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
@@ -64,15 +56,12 @@ classdef PiezoRig < EPhysRig
             
             chnames = obj.getChannelNames;
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','piezocommand');
-            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'piezocommand')));
+            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','epicommand');
+            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'epicommand')));
 
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
-            set(l,'ydata',obj.inputs.data.sgsmonitor);
-
         end
 
     end

@@ -10,6 +10,14 @@ classdef Device < handle
     properties (SetAccess = protected)
         %deviceName
         params
+        
+        digitalInputLabels
+        digitalInputUnits
+        digitalInputPorts
+        digitalOutputLabels
+        digitalOutputUnits
+        digitalOutputPorts
+
         inputLabels % consider from point of view of daq,
         inputUnits %
         inputPorts % consider from point of view of daq, 
@@ -34,6 +42,14 @@ classdef Device < handle
             obj.outputLabels = {};
             obj.outputUnits = {};
             obj.outputPorts = 0;
+            
+            obj.digitalInputLabels = {};
+            obj.digitalInputUnits = {};
+            obj.digitalInputPorts = [];
+            obj.digitalOutputLabels = {};
+            obj.digitalOutputUnits = {};
+            obj.digitalOutputPorts = [];
+
             obj.defineParameters();
             obj.params = obj.getDefaults();
         end
@@ -91,8 +107,8 @@ classdef Device < handle
     end
     
     methods (Abstract)
-        inputstruct = transformInputs(obj,inputstruct)
-        outputstruct = transformOutputs(obj,outputstruct)
+        inputstruct = transformInputs(obj,inputstruct,varargin)
+        outputstruct = transformOutputs(obj,outputstruct,varargin)
     end
     
     methods (Abstract,Access = protected)

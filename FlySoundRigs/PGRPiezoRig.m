@@ -1,30 +1,15 @@
-classdef PiezoRig < EPhysRig
-    % current hierarchy:
-    %   Rig -> EPhysRig -> BasicEPhysRig
-    %                   -> TwoTrodeRig
-    %                   -> PiezoRig 
-    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
-    %                                   -> TwoPhotonPiezoRig     
-    %                   -> CameraRig    -> CameraEPhysRig 
-    %                                   -> PiezoCameraRig 
+classdef PGRPiezoRig < PGRCameraRig
     
     properties (Constant)
-        rigName = 'PiezoRig';
+        rigName = 'PGRPiezoRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PiezoRig(varargin)
+        function obj = PGRPiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
-            obj.addDevice('speaker','Speaker');
-            % rigDev = getpref('AcquisitionHardware','rigDev');
-            % triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            % triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
-            %
-            % obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-            % obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
         end
-        
+                
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})
             if nargin>3
@@ -33,6 +18,14 @@ classdef PiezoRig < EPhysRig
                 delete(findobj(ax,'tag','ampinput'));
                 line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
+                xlims = get(ax,'xlim');
+                ylims = get(ax,'ylim');
+                x_ = min(xlims)+ 0.025 * diff(xlims);
+                y_ = max(ylims)- 0.025 * diff(ylims);
+                st = obj.devices.camera.status;
+
+                text(x_,y_,sprintf('Camera status: %s',st),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
+
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 out = protocol.getStimulus;
@@ -41,9 +34,10 @@ classdef PiezoRig < EPhysRig
                 delete(findobj(ax,'tag','piezocommand'));
                 line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
+                %line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 0],'linewidth',1,'tag','exposure','displayname','io');
                 ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
-                linkaxes(get(obj.TrialDisplay,'children'),'x');
+                
             end
         end
         
@@ -73,6 +67,15 @@ classdef PiezoRig < EPhysRig
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
             set(l,'ydata',obj.inputs.data.sgsmonitor);
 
+            [st,str,missedFrames] = obj.devices.camera.status;
+            xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
+            ylims = get(findobj(obj.TrialDisplay,'tag','inputax'),'ylim');
+            x_ = min(xlims)+ 0.025 * diff(xlims);
+            y_ = max(ylims)- 0.025 * diff(ylims);
+            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('PGR %s - %s',st,str),'position',[x_, y_, 0]);
+            %l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+            % set(l,'ydata',obj.inputs.data.exposure);
+            
         end
 
     end

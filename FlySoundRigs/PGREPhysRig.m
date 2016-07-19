@@ -1,4 +1,4 @@
-classdef CameraEPhysRig < CameraRig
+classdef PGREPhysRig < PGRCameraRig
     % current hierarchy: 7/14/16
     %   Rig -> EPhysRig -> BasicEPhysRig
     %                   -> TwoTrodeRig
@@ -16,7 +16,7 @@ classdef CameraEPhysRig < CameraRig
     %                   -> BasicEPhysRigSS
     
     properties (Constant)
-        rigName = 'CameraEPhysRig';
+        rigName = 'PGREPhysRig';
         IsContinuous = false;
     end
     
@@ -31,7 +31,7 @@ classdef CameraEPhysRig < CameraRig
     end
     
     methods
-        function obj = CameraEPhysRig(varargin)
+        function obj = PGREPhysRig(varargin)
         end
         
         function setDisplay(obj,fig,evnt,varargin)
@@ -50,10 +50,16 @@ classdef CameraEPhysRig < CameraRig
                 delete(findobj(ax,'tag','ampinput'));
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
+
+                xlims = get(ax,'xlim');
+                ylims = get(ax,'ylim');
+                x_ = min(xlims)+ 0.025 * diff(xlims);
+                y_ = max(ylims)- 0.025 * diff(ylims);
+                st = obj.devices.camera.status;
+                text(x_,y_,sprintf('Camera status: %s',st),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 delete(findobj(ax,'tag','ampinput_alt'));
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 .7 1],'linewidth',1,'tag','exposure','displayname','io');
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput_alt','displayname','altinput');
                 
                 out = protocol.getStimulus;
@@ -94,16 +100,24 @@ classdef CameraEPhysRig < CameraRig
             ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
-            %fprintf('%s: %g exposure lines found\n',mfilename,length(l));
-            set(l,'ydata',obj.inputs.data.exposure*max(get(findobj(obj.TrialDisplay,'tag','outputax'),'ylim')));
-
+            
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
 
+            [st,str,missedFrames] = obj.devices.camera.status;
+            xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
+            ylims = get(findobj(obj.TrialDisplay,'tag','inputax'),'ylim');
+            x_ = min(xlims)+ 0.025 * diff(xlims);
+            y_ = max(ylims)- 0.025 * diff(ylims);
+            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('PGR %s - %s',st,str),'position',[x_, y_, 0]);
+            if missedFrames
+                set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'color',[1 0 0]);
+            else
+                set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'color',[0 0 0]);
+            end
+            
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampinput_alt');
             set(l,'ydata',invecalt);
-            
             
             out = protocol.getStimulus;
             outlabels = fieldnames(out);

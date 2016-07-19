@@ -30,11 +30,11 @@ classdef Piezo < Device
             obj.outputPorts = [1];
         end
         
-        function in = transformInputs(obj,in)
+        function in = transformInputs(obj,in,varargin)
             %multiply Inputs by micron/volts
         end
         
-        function out = transformOutputs(obj,out)
+        function out = transformOutputs(obj,out,varargin)
             %multiply outputs by volts/micron
         end
     

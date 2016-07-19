@@ -73,9 +73,6 @@ classdef EPhysRig < Rig
                 obj.outputs.device{amplifier.outputPorts(i)+1} = amplifier;
                 % use the current vals to apply to outputs
             end
-            % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
-            obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
-            obj.outputs.datacolumns = obj.outputs.datavalues;
             
             for i = 1:length(amplifier.inputPorts)
                 for c = 1:length(obj.aiSession.Channels)
@@ -89,6 +86,7 @@ classdef EPhysRig < Rig
                 obj.inputs.device{amplifier.inputPorts(i)+1} = amplifier;
                 obj.inputs.data.(amplifier.inputLabels{i}) = [];
             end
+            obj.sessionColumnsAndIndices();
         end
     end
 end
