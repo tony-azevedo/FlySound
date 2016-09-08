@@ -1,10 +1,10 @@
 function display_frame(obj,event)
 persistent camfig camax
-if isempty(camfig)
+if isempty(camfig)||~camfig.isvalid
     camfig = findobj('type','figure','tag','PGRCamFig');
     camax = findobj('type','axes','tag','PGRCamAx');
 end
-if isempty(camfig)
+if isempty(camfig)|| isempty(camax)
     camfig = figure(1001); clf;
     set(camfig,'position',[1120 31 560 420],'name','PGR Camera','tag','PGRCamFig')
     camax = axes('parent',camfig,'units','normalized','position',[0 0 1 1]);

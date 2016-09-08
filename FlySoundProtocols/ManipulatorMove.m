@@ -1,12 +1,12 @@
 % Move the Piezo with steps, control displacements
-classdef EpiFlash < FlySoundProtocol
+classdef ManipulatorMove < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'EpiFlash';
+        protocolName = 'ManipulatorMove';
     end
     
     properties (SetAccess = protected)
-        requiredRig = 'EpiRig';
+        requiredRig = 'M285Rig';
         analyses = {};
     end
     
@@ -20,7 +20,7 @@ classdef EpiFlash < FlySoundProtocol
     
     methods
         
-        function obj = EpiFlash(varargin)
+        function obj = ManipulatorMove(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...

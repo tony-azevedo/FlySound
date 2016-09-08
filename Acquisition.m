@@ -173,6 +173,7 @@ classdef Acquisition < handle
             %             p.addParameter('flyage',2,@isnumeric);
             %             p.addParameter('flysex','female',@ischar);
             p.addParameter('cellnumber',[],@isnumeric);
+            p.addParameter('reset',0,@isnumeric);
             
             errorStr = 'Amp 1 Device must be ''MultiClamp700B'' or ''MultiClamp700BAux''';
             validationFcn = @(x) assert(logical(sum(strcmp(x,{'MultiClamp700B','MultiClamp700BAux'}))),errorStr);
@@ -281,7 +282,9 @@ classdef Acquisition < handle
                     undefinedID = 1;
                 end
             end
-
+            if p.Results.reset
+                undefinedID = 1;
+            end                
             if undefinedID
                 while undefinedID
                     answer = inputdlg(inputprompts,dlgtitle,numlines,defAns);
@@ -447,7 +450,9 @@ classdef Acquisition < handle
 
             newnoteslogical = isempty(dir(curnotesfn));
             if newnoteslogical && ~isempty(obj.notesFileID)
-                fclose(obj.notesFileID);
+                try fclose(obj.notesFileID);
+                catch
+                end
             end
 
             obj.notesFileName = curnotesfn;
@@ -455,7 +460,7 @@ classdef Acquisition < handle
                 mkdir(obj.D);
             end
             
-            obj.notesFileID = fopen(obj.notesFileName,'a');
+            % obj.notesFileID = fopen(obj.notesFileName,'a');
         end
                 
         function writePrologueNotes(obj)

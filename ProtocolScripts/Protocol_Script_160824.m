@@ -26,7 +26,7 @@ A.untag('R_input')
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',10);
+A.protocol.setParams('-q','durSweep',15);
 A.run(1)
 
 
@@ -45,11 +45,11 @@ A.setProtocol('CurrentStep');
 A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'stimDurInSec',.5,...
-    'steps',1*[-50 5 10 15 20],... % [3 10]
-    'postDurInSec',.5);
-A.run(4)
+    'preDurInSec',.1,...
+    'stimDurInSec',.1,...
+    'steps',1*[-2 5 10 15 20],... % [3 10]
+    'postDurInSec',.1);
+A.run(3)
 
 %% Single spike 
 
@@ -71,18 +71,18 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.12,...
     'plateauDurInSec',.25,...
-    'plateaux',20*[1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1],... % [3 10]
+    'plateaux',12*(1:20),...
     'postDurInSec',.1);
 A.run(3)
 
 %% EpiFlash
-setpref('AcquisitionHardware','PGRCameraToggle','on')
+setpref('AcquisitionHardware','PGRCameraToggle','on') % This turns on the point grey camera below the foil
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...
     'preDurInSec',1,...
     'displacements',[10],...
-    'stimDurInSec',.1,...
+    'stimDurInSec',.05,...
     'postDurInSec',6);
 A.run(3)
 
