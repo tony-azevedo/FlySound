@@ -7,7 +7,6 @@ classdef PGRCameraRig < EPhysRig
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
-    %       -> SingleSession rig?
     %                   -> PGRCameraRig -> PGREPhysRig
     %                                   -> PGRPiezoRig % This setup is for
     %                                   a digital output that requires same

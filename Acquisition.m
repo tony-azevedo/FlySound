@@ -519,7 +519,13 @@ classdef Acquisition < handle
             paramnames = fieldnames(obj.protocol.params);
             for i = 1:length(paramnames);
                 val = obj.protocol.params.(paramnames{i});
-                if length(val)>1
+                if iscell(val)
+                    str = '{';
+                    for val_idx = 1:length(val)
+                        str = [str '[' num2str(val{val_idx}) ']'];
+                    end
+                    val = [str '}'];
+                elseif length(val)>1
                     val = ['[' num2str(val) ']'];
                 else
                     val = num2str(val);

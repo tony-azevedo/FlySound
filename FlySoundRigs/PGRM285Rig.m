@@ -38,22 +38,43 @@ classdef PGRM285Rig < PGRCameraRig
                     t = timer;
                 end
                 t.StartDelay = obj.params.interTrialInterval;
-                t.TimerFcn = @(tObj, thisEvent) ... 
+                t.TimerFcn = @(tObj, thisEvent) ...
                     fprintf('%.1f sec inter trial\n',tObj.StartDelay);
                 set(t,'Name','ITItimer')
             end
-            M285_setupScript;
+            a = instrfind; delete(a), clear a;
+            sutterM285 = NewsutterMP285('COM4');
+            
+            updatePanel(sutterM285);
+            
+            [stepMult, currentVelocity, vScaleFactor] = getStatus(sutterM285);
+            
+            xyz_um = getPosition(sutterM285);
+            
+            setOrigin(sutterM285);
             
             notify(obj,'StartRun');
             
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.latestData = [];
-                    obj.setAOSession(protocol);
+                    obj.setAOSession(protocol); % gets the next stimulus
+                    
+                    setOrigin(sutterM285);
+                    setVelocity(sutterM285, 5000, 10)
+
                     notify(obj,'StartTrial',PassProtocolData(protocol));
+                    
                     obj.aiSession.startBackground; % both amp and signal monitor input
                     
-                    M285_acquisitionScript;
+                    pause(protocol.params.preDurInSec)
+                    for i = 1:length(protocol.params.coordinate)
+                        moveTime = moveTo(sutterM285,protocol.params.coordinate{i}); % outof (+)/ into (-) board (x) % left(+)/right(-) (y)
+                        pause(protocol.params.pause)
+                    end
+                    if protocol.params.return
+                        moveTime = moveTo(sutterM285,[0;0;0]); 
+                    end
                     
                     wait(obj.aiSession);
                     
