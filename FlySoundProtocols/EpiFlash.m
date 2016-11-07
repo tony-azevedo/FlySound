@@ -43,8 +43,8 @@ classdef EpiFlash < FlySoundProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
             obj.params.displacements = [2.5];
             obj.params.displacement = obj.params.displacements(1);
             obj.params.displacementOffset = 0;

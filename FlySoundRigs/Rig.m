@@ -356,8 +356,8 @@ classdef Rig < handle
     methods (Access = protected)
         
         function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
             obj.params.testcurrentstepamp = -5;
             obj.params.testvoltagestepamp = -2.5;
             obj.params.teststep_start = 0.010;
