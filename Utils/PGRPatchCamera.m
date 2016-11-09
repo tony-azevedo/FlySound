@@ -22,7 +22,7 @@ function varargout = PGRPatchCamera(varargin)
 
 % Edit the above text to modify the response to help PGRPatchCamera
 
-% Last Modified by GUIDE v2.5 04-Nov-2016 15:34:14
+% Last Modified by GUIDE v2.5 07-Nov-2016 17:38:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,29 +63,14 @@ initialize_gui(hObject, handles, false);
 % uiwait(handles.figure1);
 
 
-% --- Outputs from this function are returned to the command line.
 function varargout = PGRPatchCamera_OutputFcn(hObject, eventdata, handles)
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Get default command line output from handles structure
 varargout{1} = handles.output;
 
 
-% --- Executes during object creation, after setting all properties.
 function max_field_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to max_field (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 
 function max_field_Callback(hObject, eventdata, h)
@@ -120,11 +105,11 @@ end
     
 guidata(hObject,h)
 
+
 function min_field_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 
 function min_field_Callback(hObject, eventdata, handles)
@@ -136,27 +121,65 @@ end
 guidata(hObject,h)
 max_field_Callback(hObject, eventdata, h)
 
-% --- Executes on button press in start_button.
+
 function start_button_Callback(hObject, eventdata, handles)
 if hObject.Value
     set(hObject,'String','Stop');
+    if handles.videoInput.FramesAvailable > 0
+        fprintf('Flushing %d Frames\n',handles.videoInput.FramesAvailable)
+        flushdata(handles.videoInput);
+    end
     start(handles.videoInput);
 else
     set(hObject,'String','Start');
+    %flushdata(handles.videoInput);
     stop(handles.videoInput);
 end
 
-% --- Executes on button press in close_button.
-function close_button_Callback(hObject, eventdata, handles)
 
-%initialize_gui(gcbf, handles, true);
+function cal_button_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+
+if strcmp(handles.source.ExposureMode,'Manual')
+    handles.source.ExposureMode = 'Auto';
+    handles.cal_button.String = 'Manual';
+elseif strcmp(handles.source.ExposureMode,'Auto')
+    handles.source.ExposureMode = 'Manual';
+    handles.cal_button.String = 'Auto';
+end
+    
+% if handles.source.Brightness==0
+%     handles.source.Brightness=3;
+%     disp('3')
+% elseif handles.source.Brightness==3
+%     handles.source.Brightness=0;
+%     disp('0')
+% end
+
+%scale = [0 255];
+
+%txt = text(20,40,'Calibrating','FontSize',24,'color',[0 0 1],'parent',handles.iax);
+
+% vid.FramesAcquiredFcnCount = 1;
+% vid.FramesAcquiredFcn = {@calplot,handles.hImage,scale};
+% vid.FramesPerTrigger = 100;
+% start(vid);
+% 
+% % preview(handles.videoInput)
+% % stoppreview(handles.videoInput)
+
+% delete(txt);
+% scale = [handles.min_field.Value handles.max_field.Value];
+% handles.videoInput.TimerFcn = {@imaqplot,handles.hImage,scale};
+% handles.videoInput.TimerPeriod = 0.05;
+% handles.videoInput.FramesPerTrigger = Inf;
+guidata(hObject, handles);
+
 
 % --------------------------------------------------------------------
 function initialize_gui(fig_handle, handles, isreset)
-% If the metricdata field is present and the close_button flag is false, it means
-% we are we are just re-initializing a GUI by calling it from the cmd line
-% while it is up. So, bail out as we dont want to close_button the data.
 
+% imaqreset;
 imqhwnfo = imaqhwinfo('pointgrey');
 for i = 1:length(imqhwnfo.DeviceInfo)
     if strcmp(imqhwnfo.DeviceInfo(i).DeviceName,'Chameleon3 CM3-U3-13Y3M')
@@ -170,11 +193,11 @@ handles.videoInput = videoinput('pointgrey', i, 'F7_Raw8_1280x1024_Mode0');
 handles.source = getselectedsource(handles.videoInput);
 frame = getsnapshot(handles.videoInput);
 
-handles.iw = figure;
-set(handles.iw,'units','normalized','position',[0.0 0.0287 0.8766 0.9426],...
-    'MenuBar','none',...
-    'NumberTitle','off')
-handles.iax = axes('parent',handles.iw,'units','pixels','position',[196 1 1280 1024]);
+% handles.iw = figure;
+% set(handles.iw,'units','normalized','position',[0.0 0.0287 0.8766 0.9426],...
+%     'MenuBar','none',...
+%     'NumberTitle','off')
+% handles.iax = axes('parent',handles.iw,'units','pixels','position',[196 1 1280 1024]);
 colormap(handles.iax,'gray');
 
 handles.hImage = imagesc(frame,'parent',handles.iax);
@@ -192,8 +215,8 @@ handles.videoInput.TimerFcn = {@imaqplot,handles.hImage,scale};
 handles.videoInput.TimerPeriod = 0.05;
 handles.videoInput.FramesPerTrigger = Inf;
 
-
 guidata(handles.figure1, handles);
+
 
 
 % --- Executes on button press in refresh_button.
@@ -204,7 +227,9 @@ if strcmp(h.videoInput.Running,'on')
     wasrunning = 1;
     h.videoInput.stop;
 end
+
 frame = getsnapshot(h.videoInput);
+
 h.max_text.String = num2str(max(frame(:)));
 h.min_text.String = num2str(min(frame(:)));
 h.max_field.Value = max(frame(:));
@@ -217,26 +242,44 @@ max_field_Callback(h.max_field,eventdata,handles);
 
 
 function imaqplot(vid,event,himage,scale)
-
+persistent frame
 try    
     % Get the latest data to plot.
-    set(himage, 'CData', getsnapshot(vid));
-    
-    % Adjust the axis limits in case the image resolution changed.
-%     res = get(vid, 'ROIPosition');
-%     ax = get(himage, 'Parent');
-%     set(ax, 'XLim', [0.5 res(3)+0.5], 'YLim', [0.5 res(4)+0.5], ...
-%         'XTick', [], 'XTickLabel', [], 'YTick', [], 'YTickLabel', []);
+    frame = getdata(vid,1);
+    if isempty(frame)
+        frame = getsnapshot(vid);
+    end
+    set(himage, 'CData', frame(:,:,1,1));
     set(get(himage,'parent'),'clim',scale,'box','off','tickdir','out','xcolor',[0.9400    0.9400    0.9400],'ycolor',[0.9400    0.9400    0.9400]);
-    
+
+    fprintf('Received %d, Flushed %d\n',size(frame,4),vid.FramesAvailable)
+    flushdata(vid);
+
 catch
     % Error gracefully.
+    clear frame
     error('MATLAB:imaqplot:error', ...
         sprintf('IMAQPLOT is unable to plot correctly.\n%s', lasterr))
+
+end
+
+function calplot(vid,event,himage,scale)
+persistent frame
+try    
+    % Get the latest data to plot.
+    frame = getdata(vid,1);
+    set(himage, 'CData', frame(:,:,1,1));
+    set(get(himage,'parent'),'clim',scale,'box','off','tickdir','out','xcolor',[0.9400    0.9400    0.9400],'ycolor',[0.9400    0.9400    0.9400]);
+
+catch
+    % Error gracefully.
+    clear frame
+    error('MATLAB:imaqplot:error', ...
+        sprintf('CALPLOT is unable to plot correctly.\n%s', lasterr))
 end
 
 
 function figure1_DeleteFcn(hObject, eventdata, handles)
 h = guidata(hObject);
 delete(h.videoInput)
-delete(h.iw)
+delete(handles.figure1)
