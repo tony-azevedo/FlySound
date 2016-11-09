@@ -337,7 +337,10 @@ classdef Rig < handle
                 end
                 rigStruct.inputs = [rigStruct.inputs obj.inputs.digitalPortlabels];
             end
-            rigStruct.devices = obj.devices;
+            dnames = fieldnames(obj.devices);
+            for i = 1:length(dnames);                
+                rigStruct.devices.(dnames{i}) = obj.devices.(dnames{i}).deviceName;
+            end
             rigStruct.timestamp = now;
         end
         

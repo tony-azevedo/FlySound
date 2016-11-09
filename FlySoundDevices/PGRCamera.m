@@ -44,8 +44,16 @@ classdef PGRCamera < Device
             obj.fileDestination = 'C:\Users\tony\Acquisition\fly_movement_videos';
             obj.fileName = 'default_name';
             
+            
+            imqhwnfo = imaqhwinfo('pointgrey');
+            for i = 1:length(imqhwnfo.DeviceInfo)
+                if strcmp(imqhwnfo.DeviceInfo(i).DeviceName,'Firefly MV FMVU-03MTM')
+                    break
+                end
+            end
+
             % configure and start imaq
-            obj.videoInput = videoinput('pointgrey', 2, 'Mono8_640x480');
+            obj.videoInput = videoinput('pointgrey', i, 'Mono8_640x480');
             obj.source = getselectedsource(obj.videoInput);
             
             % Setup source and pulses etc
@@ -95,14 +103,14 @@ classdef PGRCamera < Device
             Nframes = floor(dur/frametime);
             idxs = round(((1:Nframes)-1)*(frametime*rig.aoSession.Rate) + 1);
             out.trigger(idxs) = 1;
-            out.trigger(idxs+1) = 1;
+            out.trigger(idxs+1) = 0;
             out.trigger(idxs(2)) = 0;
             out.trigger(idxs(2)+1) = 0;
             out.trigger(idxs(3)) = 0;
             out.trigger(idxs(3)+1) = 0;
             out.trigger(end) = 0;
             
-            obj.params.Nframes = sum(out.trigger)/2;
+            obj.params.Nframes = sum(out.trigger)/1;%/2;
             obj.videoInput.TriggerRepeat = obj.params.Nframes-1;
             obj.videoInput.TriggerFcn = {'display_frame'};
         end

@@ -8,8 +8,7 @@ classdef MultiClamp700A < Device
     end
 
     properties (Hidden, SetAccess = protected)
-        modeSession
-        gainSession
+        modeGainGUI
         secondary_gain
         amplifierDevNumber = '_1';
         partOfSet = false;
@@ -136,7 +135,10 @@ classdef MultiClamp700A < Device
         end
         
         function setModeSession(obj)            
-            % add listener to the MC telegraphs...
+            st = getpref('MC700AGUIstatus','status');
+            if ~st
+                MultiClamp700AGUI;
+            end
         end
         
         function setGainSession(obj)
@@ -144,16 +146,23 @@ classdef MultiClamp700A < Device
         end
                     
         function newmode = getmode(obj)
-            mccmode = obj.subclassModeFunction();
-            % see AxMultiClampMsg.h mode constants
-            if mccmode == 0
-                obj.mode = 'VClamp';
-            elseif mccmode == 1
-                obj.mode = 'IClamp';
-            elseif mccmode == 2
-                obj.mode = 'I=0';
+            st = getpref('MC700AGUIstatus','status');
+            if ~st
+                error('Open MultiClamp700AGUI')
             end
-            newmode = obj.mode;
+            
+            newmode = getpref('MC700AGUIstatus','mode');
+            % mccmode = obj.subclassModeFunction();
+            % % see AxMultiClampMsg.h mode constants
+            % if mccmode == 0
+            %     obj.mode = 'VClamp';
+            % elseif mccmode == 1
+            %     obj.mode = 'IClamp';
+            % elseif mccmode == 2
+            %     obj.mode = 'I=0';
+            % end
+            % newmode = obj.mode;
+            obj.mode = newmode;
             if sum(strcmp('VClamp',newmode))
                     obj.outputLabels{1} = 'voltage';
                     obj.outputUnits{1} = 'mV';
@@ -182,17 +191,25 @@ classdef MultiClamp700A < Device
         end
         
         function newgain = getgain(obj)
-            [gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
+            %[gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
             % see AxMultiClampMsg.h constants prim and secondary signal IDs
-
-            obj.gain = gain1;
+            st = getpref('MC700AGUIstatus','status');
+            if ~st
+                error('Open MultiClamp700AGUI')
+            end
+           
+            obj.gain = str2double(getpref('MC700AGUIstatus','gain'));
+            primarySignal = 0;
+            secondarySignal =  1;
             newgain = obj.gain;
             obj.secondary_gain = 1;
             
             % check that signal IDs are correct for this mode
             if sum(strcmp('VClamp',obj.mode))
                 % have to record current and membrane potential
-                
+                primarySignal = 0;
+                secondarySignal =  1;
+
                 if primarySignal ~= 0
                     errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_VC_MEMBCURRENT',obj.mode);
                     errordlg(errorstr,'Incorrect Signals','modal');
@@ -206,6 +223,9 @@ classdef MultiClamp700A < Device
                     
                     
             elseif sum(strcmp({'IClamp','I=0'},obj.mode)) 
+                primarySignal = 2;
+                secondarySignal = 8;
+                
                 if primarySignal ~= 2
                     errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_IC_MEMBPOTENTIAL',obj.mode);
                     errordlg(errorstr,'Incorrect Signals','modal');
