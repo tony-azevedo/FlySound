@@ -37,32 +37,40 @@ classdef PGRCamera < Device
 
             obj.outputPorts = [];
 
-            fprintf('RESET IMAQ');
-            imaqreset
-            fprintf('\n')
+            %fprintf('RESET IMAQ');
+            %imaqreset
+            %fprintf('\n')
 
             obj.fileDestination = 'C:\Users\tony\Acquisition\fly_movement_videos';
             obj.fileName = 'default_name';
             
             % configure and start imaq
-            obj.videoInput = videoinput('pointgrey', 2, 'Mono8_640x480');
-            obj.source = getselectedsource(obj.videoInput);
+            obj.videoInput = imaqfind('Tag','SubStage');
+            if ~isempty(obj.videoInput)
+                obj.videoInput = obj.videoInput{1};
+                obj.source = getselectedsource(obj.videoInput);
+            else
             
-            % Setup source and pulses etc
-            triggerconfig(obj.videoInput, 'hardware', 'risingEdge', 'externalTriggerMode0-Source0');
-            obj.videoInput.TriggerRepeat = 0;
-            obj.videoInput.FramesPerTrigger = 1;
-            obj.videoInput.LoggingMode = 'disk&memory';
-            
-            % Strobe stuff
-            obj.source.Strobe1 = 'On'; %% turn this on at the last minute
-            obj.source.Strobe1Polarity = 'High';
-            set(obj.source,'FrameRate','60')
-
+                obj.videoInput = videoinput('pointgrey', 2, 'Mono8_640x480','Tag','SubStage');
+                %obj.videoInput = videoinput('pointgrey',1, 'F7_Raw8_1280x1024_Mode0');
+                obj.source = getselectedsource(obj.videoInput);
+                
+                % Setup source and pulses etc
+                triggerconfig(obj.videoInput, 'hardware', 'risingEdge', 'externalTriggerMode0-Source0');
+                obj.videoInput.TriggerRepeat = 0;
+                obj.videoInput.FramesPerTrigger = 1;
+                obj.videoInput.LoggingMode = 'disk&memory';
+                
+                % Strobe stuff
+                obj.source.Strobe1 = 'On'; %% turn this on at the last minute
+                obj.source.Strobe1Polarity = 'High';
+                set(obj.source,'FrameRate','60')
+            end
             obj.living = 0;
             obj.live()
             pause
             obj.dead()
+            
         end
         
         function varargout = transformInputs(obj,inputstruct,varargin)

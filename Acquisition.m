@@ -23,8 +23,8 @@ classdef Acquisition < handle
         flynumber
         cellnumber 
         amplifier1Device
-
         tags
+        userData
     end
     
     properties (SetObservable, AbortSet)
@@ -37,6 +37,19 @@ classdef Acquisition < handle
     
     methods
         function obj = Acquisition(varargin)
+
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+            
             obj.tags = {};
             obj.setIdentifiers(varargin{:})
             obj.updateFileNames()
@@ -47,8 +60,16 @@ classdef Acquisition < handle
                 'PostSet',@obj.setAnalysisFlag);
 
             % set a simple protocol
-            obj.setProtocol('SealAndLeak');
+            obj.setProtocol('Sweep');
             obj.analyze = 1;
+
+            
+            if obj.userData.PGRPCState
+                set(obj.userData.PGRCameraControl,'Value',1)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
 
         end
         
@@ -57,6 +78,18 @@ classdef Acquisition < handle
                 repeats = varargin{1};
             else
                 repeats = 1;
+            end
+            
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
             end
             
             if isa(obj.rig,'EPhysRig')
@@ -71,12 +104,34 @@ classdef Acquisition < handle
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
             systemsound('Notify');
+            
+            if obj.userData.PGRPCState
+                set(obj.userData.PGRCameraControl,'Value',1)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
         end
         
         function setProtocol(obj,prot,varargin)
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
+            
             if ~isempty(obj.rig) && obj.rig.IsContinuous
                 obj.rig.stop
             end
+            
+            
             
             protstr = ['obj.protocol = ' prot '('];
             if nargin>2
@@ -90,7 +145,14 @@ classdef Acquisition < handle
             obj.setRig();
             addlistener(obj.protocol,'StimulusProblem',@obj.handleStimulusProblem);
             fprintf(1,'Protocol Set to: \n');
-            obj.protocol.showParams            
+            obj.protocol.showParams          
+            
+%             if obj.userData.PGRPCState
+%                 set(obj.userData.PGRCameraControl,'Value',1)
+%                 PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+%                 obj.userData.PGRPCState = 1;
+%             end
+
         end
         
         function comment(obj,varargin)
