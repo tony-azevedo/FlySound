@@ -1,4 +1,4 @@
-setpref('AcquisitionHardware','PGRCameraToggle','on')
+setpref('AcquisitionHardware','PGRCameraToggle','off')
 
 % Start the bitch 
 % clear all, close all
@@ -47,7 +47,7 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.2,...
     'stimDurInSec',.1,...
-    'steps', 150* [-.25 .25 .5 .75 1],... % [3 10]
+    'steps', 50* [-.25 .25 .5 .75 1],... % [3 10]
     'postDurInSec',.2);
 A.run(3)
 
@@ -66,15 +66,15 @@ A.run(3)
 
 
 %% EpiFlash
-setpref('AcquisitionHardware','PGRCameraToggle','on') % This turns on the point grey camera below the foil
+setpref('AcquisitionHardware','PGRCameraToggle','off') % This turns on the point grey camera below the foil
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...
-    'preDurInSec',1,...
+    'preDurInSec',5,...
     'displacements',[10],...
-    'stimDurInSec',.5,...
+    'stimDurInSec',1,...
     'postDurInSec',6);
-A.run(6)
+A.run(4)
 
 %% M285 motor program
 
