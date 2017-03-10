@@ -1,12 +1,12 @@
-classdef PGREpiRig < PGRCameraRig
+classdef CameraEpiRig < CameraRig
     
     properties (Constant)
-        rigName = 'PGREpiRig';
+        rigName = 'CameraEpiRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PGREpiRig(varargin)
+        function obj = CameraEpiRig(varargin)
             lightstim = getpref('AcquisitionHardware','LightStimulus');
             switch lightstim
                 case 'LED_Red'
@@ -29,8 +29,8 @@ classdef PGREpiRig < PGRCameraRig
                 ylims = get(ax,'ylim');
                 x_ = min(xlims)+ 0.025 * diff(xlims);
                 y_ = max(ylims)- 0.025 * diff(ylims);
-                st = obj.devices.camera.status;
-                text(x_,y_,sprintf('Camera status: %s',st),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
+                
+                text(x_,y_,sprintf('Camera status:'),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
                 
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 out = protocol.getStimulus;
@@ -67,17 +67,12 @@ classdef PGREpiRig < PGRCameraRig
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
             
-            [st,str,missedFrames] = obj.devices.camera.status;
             xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
             ylims = get(findobj(obj.TrialDisplay,'tag','inputax'),'ylim');
             x_ = min(xlims)+ 0.025 * diff(xlims);
             y_ = max(ylims)- 0.025 * diff(ylims);
-            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('PGR %s - %s',st,str),'position',[x_, y_, 0]);
-            if missedFrames
-                set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'color',[1 0 0]);
-            else
-                set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'color',[0 0 0]);
-            end
+            fps = sum(obj.inputs.data.exposure)/protocol.params.durSweep;
+            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('Frames: %d of %d at %.1f fps',sum(obj.inputs.data.exposure),obj.devices.camera.params.Nframes,fps),'position',[x_, y_, 0]);
             %l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
             % set(l,'ydata',obj.inputs.data.exposure);
             

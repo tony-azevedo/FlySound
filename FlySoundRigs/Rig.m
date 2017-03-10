@@ -41,6 +41,7 @@ classdef Rig < handle
         StimulusOutsideBounds
         StartRun
         StartTrial
+        EndTrial
         SaveData
         DataSaved
     end
@@ -103,6 +104,9 @@ classdef Rig < handle
                     obj.setAOSession(protocol);
                     notify(obj,'StartTrial',PassProtocolData(protocol));
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
+                    
+                    notify(obj,'EndTrial');
+                    
                     %disp(obj.aiSession)
                     obj.transformInputs(in);
                     if obj.params.interTrialInterval >0;

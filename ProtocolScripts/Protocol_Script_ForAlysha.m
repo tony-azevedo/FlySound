@@ -74,7 +74,7 @@ A.run(3)
 %% EpiFlash - This protocol just flashes the epi fluorescent light.
 % The TLED from sutter has to be in TTL mode
 
-setpref('AcquisitionHardware','PGRCameraToggle','on') % This turns on the point grey camera below the foil
+setpref('AcquisitionHardware','PGRCameraToggle','off') % This turns on the point grey camera below the foil
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...

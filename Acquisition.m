@@ -462,10 +462,16 @@ classdef Acquisition < handle
                 
                 if ~isempty(obj.rig)
                     delete(obj.rig);
-                end   
-                eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
+                end
+                if ~isempty(regexp(obj.protocol.requiredRig,'Continuous','once'))
+                    % the ContinousRig's need different inputs.
+                    eval(['obj.rig = ' obj.protocol.requiredRig ...
+                            '(''amplifier1Device'',obj.amplifier1Device,''directory'',obj.D,''flynumber'',obj.flynumber,''cellnumber'',obj.cellnumber,''protocol'',obj.protocol);']);
+                else
+                    eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
+                end
                 
-                addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
+                addlistener(obj.rig,'StartRun',@obj.writeRunNotes); % gets destroyed when rig is destroyed
                 addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
                 if obj.analyze
@@ -669,6 +675,7 @@ classdef Acquisition < handle
                 end
                 if ~isempty(images)
                     for im = 1:length(images)
+                        
                         [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
                         if ~success
                             if strcmp(m,'The process cannot access the file because it is being used by another process.')

@@ -16,49 +16,72 @@ classdef CameraRig < EPhysRig
     methods
         function obj = CameraRig(varargin)
             obj.addDevice('camera','Camera');
-            rigDev = getpref('AcquisitionHardware','rigDev');
-            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            obj.aiSession.addTriggerConnection('External','Dev1/PFI0','StartTrigger') % start trigger from the camera
+            obj.aiSession.ExternalTriggerTimeout = 60; % start trigger from the camera
             
-            obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
+%             rigDev = getpref('AcquisitionHardware','rigDev');
+%             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
+%             triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            
             addlistener(obj,'StartTrial',@obj.readyCamera);
+            addlistener(obj,'EndTrial',@obj.stopCameraTriggering);
         end
 
         function in = run(obj,protocol,varargin)
-            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.4f sec',...
+            dur = protocol.params.durSweep;
+            frametime = 1/obj.devices.camera.params.framerate;
+            Nframes = floor((dur-.25)/frametime);
+            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.1f sec, %d frames',...
                 'Ready the camera:',...
                 ' - Set Directory',...
                 ' - Set Prefix: ',...
-                [protocol.protocolName '_Image_'],...
-                'Capture Mode: External Start Trigger',...
-                '{OUT TRIG Source, polarity, Kind} = {Exposure, positive, Exposure}',...
+                [protocol.protocolName '_Image'],...
+                'Mode: 0, Trigger polarity high, raw 8, high EV',...
+                'Video, streaming, m-jpeg',...
                 ' - Acq for ',...
-                protocol.params.durSweep - 0.002);
+                protocol.params.durSweep,...
+                Nframes);
             
-            clipboard('copy',[protocol.protocolName '_Image_']);
+
+            clipboard('copy',[protocol.protocolName '_Image']);
             h = msgbox(str,'CAMERA SETUP');
-            pos = get(h,'position');
-            %set(h, 'position',[1280 600 pos(3) pos(4)])
-            set(h, 'position',[5 658 pos(3) pos(4)])
             uiwait(h);
-            
             
             in = run@EPhysRig(obj,protocol,varargin{:});
         end
         
         function readyCamera(obj,fig,evnt,varargin)
             
-            str = sprintf('Ready the camera:\n%.5f sec',evnt.protocol.params.durSweep - 0.002);
-            h = msgbox(str,'CAMERA');
+            dur = evnt.protocol.params.durSweep;
+            frametime = 1/obj.devices.camera.params.framerate;
+            Nframes = floor((dur-.25)/frametime);
+
+            str = sprintf('Rig ready for trigger:\n%.5f frames',Nframes);
+            h = msgbox(str,'CAMERA','replace');
             pos = get(h,'position');
             %set(h, 'position',[1280 700 pos(3) pos(4)])
-            set(h, 'position',[5 480 pos(3) pos(4)])
-            clipboard('copy',sprintf('%.5f',evnt.protocol.params.durSweep - 0.002));
+            set(h, 'position',[600 178 pos(3) pos(4)])
+            
+            %clipboard('copy',sprintf('%d',Nframes));
 
             uiwait(h);
 
         end
+        
+        function stopCameraTriggering(obj,fig,evnt,varargin)
+            
+            str = sprintf('Stop the triggering;\nThen wait for saving');
+            h = msgbox(str,'CAMERA','replace');
+            pos = get(h,'position');
+            %set(h, 'position',[1280 700 pos(3) pos(4)])
+            set(h, 'position',[600 178 pos(3) pos(4)])
+            
+            %clipboard('copy',sprintf('%d',Nframes));
+
+            uiwait(h);
+
+        end
+
         
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})

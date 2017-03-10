@@ -51,6 +51,15 @@ classdef CameraEPhysRig < CameraRig
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
+                xlims = get(ax,'xlim');
+                ylims = get(ax,'ylim');
+                x_ = min(xlims)+ 0.025 * diff(xlims);
+                y_ = max(ylims)- 0.025 * diff(ylims);
+                
+                text(x_,y_,sprintf('Camera status:'),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
+
+
+                
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 delete(findobj(ax,'tag','ampinput_alt'));
                 line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[1 .7 1],'linewidth',1,'tag','exposure','displayname','io');
@@ -68,6 +77,7 @@ classdef CameraEPhysRig < CameraRig
                 end
                 xlabel('Time (s)'); %xlim([0 max(t)]);
                 linkaxes(get(obj.TrialDisplay,'children'),'x');
+                                
             end
         end
         
@@ -104,10 +114,18 @@ classdef CameraEPhysRig < CameraRig
             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampinput_alt');
             set(l,'ydata',invecalt);
             
+            xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
+            ylims = get(findobj(obj.TrialDisplay,'tag','inputax'),'ylim');
+            x_ = min(xlims)+ 0.025 * diff(xlims);
+            y_ = max(ylims)- 0.025 * diff(ylims);
+            fps = sum(obj.inputs.data.exposure)/protocol.params.durSweep;
+            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('Frames: %d of %d at %.1f fps',sum(obj.inputs.data.exposure),obj.devices.camera.params.Nframes,fps),'position',[x_, y_, 0]);
+
             
             out = protocol.getStimulus;
             outlabels = fieldnames(out);
             chnames = obj.getChannelNames;
+            
             if ~isempty(outlabels)
                 if strcmp(obj.devices.amplifier.mode,'VClamp')
                     outvec = out.voltage;
@@ -121,7 +139,8 @@ classdef CameraEPhysRig < CameraRig
                 %ylabel(findobj(obj.TrialDisplay,'tag','outputax'),outunits);
 
                 l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampoutput');
-                set(l,'ydata',outvec);                
+                set(l,'ydata',outvec);     
+                
             end
         end
     end

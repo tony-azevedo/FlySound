@@ -1,10 +1,19 @@
-setpref('AcquisitionHardware','PGRCameraToggle','off')
+setpref('AcquisitionHardware','PGRCameraToggle','on')
 
 % Start the bitch 
 % clear all, close all
-clear A
+clear A, 
 A = Acquisition;
 %
+
+%% Sweep
+
+A.rig.applyDefaults;
+A.setProtocol('Sweep');
+A.protocol.setParams('-q','durSweep',1);
+A.run(3)
+
+
 
 %% Sweep - record the break-in
 
@@ -24,6 +33,8 @@ A.untag('R_input')
 % 19951 - 16068
 
 %% Acquire
+A.rig.setParams('testvoltagestepamp',0)
+A.rig.setParams('testcurrentstepamp',0)
 setpref('AcquisitionHardware','PGRCameraToggle','off')
 
 A.setProtocol('Acquire');
@@ -31,16 +42,15 @@ A.run
 
 %% Acquire
 
-A.setProtocol('Acquire');
 A.rig.stop
-
+A.comment
 
 %% Sweep
 
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
 A.protocol.setParams('-q','durSweep',1);
-A.run(1)
+A.run(3)
 
 
 
@@ -60,7 +70,7 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.2,...
     'stimDurInSec',.1,...
-    'steps', 100* [-1 -.25 .25 .5 .75 1],... % [3 10]
+    'steps', 50* [-1 -.25 .25 .5 .75 1],... % [3 10]
     'postDurInSec',.2);
 A.run(3)
 
@@ -73,17 +83,17 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.12,...
     'plateauDurInSec',.06,...
-    'plateaux',50 * [0 2.5 0 2.5 0 1 0 1 0 1 0],...
+    'plateaux',25 * [0 2.5 0 2.5 0 1 0 1 0 1 0],...
     'postDurInSec',.1);
 A.run(3)
 
 
 %% EpiFlash
-setpref('AcquisitionHardware','PGRCameraToggle','on') % This turns on the point grey camera below the foil
+setpref('AcquisitionHardware','PGRCameraToggle','off') % This turns on the point grey camera below the foil
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...
-    'preDurInSec',5,...
+    'preDurInSec',1,...
     'displacements',[10],...
     'stimDurInSec',1,...
     'postDurInSec',6);
@@ -113,6 +123,7 @@ A.protocol.setParams('-q','durSweep',10);
 % A.tag('check video')
 A.run(4)
 % A.untag('check video')
+
 
 
 %% Voltage steps, see if there is any way to affect the 
