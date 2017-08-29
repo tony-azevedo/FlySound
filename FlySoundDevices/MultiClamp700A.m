@@ -151,8 +151,7 @@ classdef MultiClamp700A < Device
                 error('Open MultiClamp700AGUI')
             end
             
-            newmode = getpref('MC700AGUIstatus','mode');
-            % mccmode = obj.subclassModeFunction();
+            modeorder = obj.subclassModeFunction();
             % % see AxMultiClampMsg.h mode constants
             % if mccmode == 0
             %     obj.mode = 'VClamp';
@@ -162,6 +161,8 @@ classdef MultiClamp700A < Device
             %     obj.mode = 'I=0';
             % end
             % newmode = obj.mode;
+            newmode = getpref('MC700AGUIstatus',modeorder);
+
             obj.mode = newmode;
             if sum(strcmp('VClamp',newmode))
                     obj.outputLabels{1} = 'voltage';
@@ -197,8 +198,9 @@ classdef MultiClamp700A < Device
             if ~st
                 error('Open MultiClamp700AGUI')
             end
-           
-            obj.gain = str2double(getpref('MC700AGUIstatus','gain'));
+            
+            gainorder = obj.subclassGainFunction;
+            obj.gain = str2double(getpref('MC700AGUIstatus',gainorder));
             primarySignal = 0;
             secondarySignal =  1;
             newgain = obj.gain;
@@ -242,18 +244,20 @@ classdef MultiClamp700A < Device
     
     methods (Static)
         function mccmode = subclassModeFunction
-            tic
-            fprintf(1,'\nGetting %s mode:\n',mfilename);
-            mccmode = MCCGetMode;
-            toc
+%             tic
+%             fprintf(1,'\nGetting %s mode:\n',mfilename);
+%             mccmode = MCCGetMode;
+%             toc
+            mccmode = 'mode';
         end
         
         function varargout = subclassGainFunction
-            tic
-            fprintf(1,'\nGetting %s gain:\n',mfilename);
-            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
-            varargout = {gain1,primarySignal,gain2,secondarySignal};
-            toc
+%             tic
+%             fprintf(1,'\nGetting %s gain:\n',mfilename);
+%             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+%             varargout = {gain1,primarySignal,gain2,secondarySignal};
+%             toc
+            varargout = {'gain'};
         end
     end
     

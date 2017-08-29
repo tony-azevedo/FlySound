@@ -28,8 +28,8 @@ A.untag('R_input')
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',5);
-A.run(4)
+A.protocol.setParams('-q','durSweep',1);
+A.run(1)
 
 
 %% Sweep2T
@@ -67,7 +67,7 @@ A.protocol.setParams('-q',...
     'stimDurInSec',1,...
     'postDurInSec',2);
 % A.tag
-A.run(5)
+A.run(1)
 % A.clearTags
 
 %% Piezo2T

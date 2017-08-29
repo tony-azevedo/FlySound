@@ -28,25 +28,35 @@ classdef MultiClamp700AAux < MultiClamp700A
             obj.setGainSession;
             obj.getgain;
 
-        end            
+        end
         
     end
 
+    
     methods (Static)
+        %         function mccmode = subclassModeFunction
+        %             tic
+        %             fprintf(1,'\nGetting %s mode:\n',mfilename);
+        %             mccmode = MCCGetModeAux;
+        %             toc
+        %         end
+        %
+        %         function varargout = subclassGainFunction
+        %             tic
+        %             fprintf(1,'\nGetting %s gain:\n',mfilename);
+        %             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGainAux;
+        %             varargout = {gain1,primarySignal,gain2,secondarySignal};
+        %             toc
+        %         end
+        
         function mccmode = subclassModeFunction
-            tic
-            fprintf(1,'\nGetting %s mode:\n',mfilename);
-            mccmode = MCCGetModeAux;
-            toc
+            mccmode = 'mode2';
         end
         
         function varargout = subclassGainFunction
-            tic
-            fprintf(1,'\nGetting %s gain:\n',mfilename);
-            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGainAux;
-            varargout = {gain1,primarySignal,gain2,secondarySignal};
-            toc
+            varargout = {'gain2'};
         end
+
     end
 
 end
