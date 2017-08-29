@@ -23,8 +23,8 @@ classdef Acquisition < handle
         flynumber
         cellnumber 
         amplifier1Device
-
         tags
+        userData
     end
     
     properties (SetObservable, AbortSet)
@@ -37,6 +37,19 @@ classdef Acquisition < handle
     
     methods
         function obj = Acquisition(varargin)
+
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+            
             obj.tags = {};
             obj.setIdentifiers(varargin{:})
             obj.updateFileNames()
@@ -47,8 +60,16 @@ classdef Acquisition < handle
                 'PostSet',@obj.setAnalysisFlag);
 
             % set a simple protocol
-            obj.setProtocol('SealAndLeak');
+            obj.setProtocol('Sweep');
             obj.analyze = 1;
+
+            
+            if obj.userData.PGRPCState
+                set(obj.userData.PGRCameraControl,'Value',1)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
 
         end
         
@@ -57,6 +78,18 @@ classdef Acquisition < handle
                 repeats = varargin{1};
             else
                 repeats = 1;
+            end
+            
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
             end
             
             if isa(obj.rig,'EPhysRig')
@@ -71,12 +104,34 @@ classdef Acquisition < handle
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
             systemsound('Notify');
+            
+            if obj.userData.PGRPCState
+                set(obj.userData.PGRCameraControl,'Value',1)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
         end
         
         function setProtocol(obj,prot,varargin)
+            if ~isfield(obj.userData,'PGRPCState')
+                obj.userData.PGRPCState = 0;
+                h = findall(0,'type','uicontrol','tag','start_button');
+                obj.userData.PGRCameraControl = h;
+            end
+            
+            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
+                set(obj.userData.PGRCameraControl,'Value',0)
+                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+                obj.userData.PGRPCState = 1;
+            end
+
+            
             if ~isempty(obj.rig) && obj.rig.IsContinuous
                 obj.rig.stop
             end
+            
+            
             
             protstr = ['obj.protocol = ' prot '('];
             if nargin>2
@@ -90,7 +145,14 @@ classdef Acquisition < handle
             obj.setRig();
             addlistener(obj.protocol,'StimulusProblem',@obj.handleStimulusProblem);
             fprintf(1,'Protocol Set to: \n');
-            obj.protocol.showParams            
+            obj.protocol.showParams          
+            
+%             if obj.userData.PGRPCState
+%                 set(obj.userData.PGRCameraControl,'Value',1)
+%                 PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
+%                 obj.userData.PGRPCState = 1;
+%             end
+
         end
         
         function comment(obj,varargin)
@@ -304,11 +366,6 @@ classdef Acquisition < handle
                 disp('****')
             else
                 if usingAcqPrefs
-                    %                     msgbox(...
-                    %                         sprintf('Identifiers are current: \nfly genotype - %s\nfly number - %s\ncell number - %s',...
-                    %                         obj.flygenotype,...
-                    %                         obj.flynumber,...
-                    %                         obj.cellnumber));
                     fprintf('Identifiers are current: \nfly genotype - %s\nfly number - %s\ncell number - %s\namplifier 1 - %s\n',...
                         obj.flygenotype,...
                         obj.flynumber,...
@@ -400,17 +457,25 @@ classdef Acquisition < handle
                 
                 if ~isempty(obj.rig)
                     delete(obj.rig);
-                end   
-                eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
+                end
+                if ~isempty(regexp(obj.protocol.requiredRig,'Continuous','once'))
+                    % the ContinousRig's need different inputs.
+                    eval(['obj.rig = ' obj.protocol.requiredRig ...
+                            '(''amplifier1Device'',obj.amplifier1Device,''directory'',obj.D,''flynumber'',obj.flynumber,''cellnumber'',obj.cellnumber,''protocol'',obj.protocol);']);
+                else
+                    eval(['obj.rig = ' obj.protocol.requiredRig '(''amplifier1Device'',obj.amplifier1Device);']);
+                end
                 
-                addlistener(obj.rig,'StartRun',@obj.writeRunNotes);
+                addlistener(obj.rig,'StartRun',@obj.writeRunNotes); % gets destroyed when rig is destroyed
                 addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
                 if obj.analyze
                     obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
                 end
                 if isa(obj.rig,'CameraRig')
-                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
+                    addlistener(obj.rig,'StartRun',@obj.cleanUpImagesBeforeRun);
+                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImagesBeforeTrial);
+                    addlistener(obj.rig,'EndRun',@obj.cleanUpImagesAfterRun);
                 end
                 if isa(obj.rig,'PGRCameraRig')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
@@ -507,7 +572,7 @@ classdef Acquisition < handle
                 fprintf(obj.notesFileID,'\t%s',obj.rig.devices.amplifier.mode);
                 fprintf(1,'\t%s',obj.rig.devices.amplifier.mode);
             end
-            if isa(obj.rig,'TwoTrodeRig')
+            if isa(obj.rig,'TwoAmpRig')
                 fprintf(obj.notesFileID,'\t{%s,%s}',...
                             obj.rig.devices.amplifier_1.mode,...
                             obj.rig.devices.amplifier_2.mode);
@@ -554,6 +619,12 @@ classdef Acquisition < handle
             end
             fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
             fprintf(1,', %s\n',datestr(clock,13));
+            if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig')
+                rawname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
+                aviname = load(rawname);%,'imageFile');
+                fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
+                fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
+            end
             fclose(obj.notesFileID);
         end
 
@@ -568,7 +639,7 @@ classdef Acquisition < handle
                     data.params.secondary_gain = obj.rig.devices.amplifier.secondary_gain;
                 end
             end
-            if isa(obj.rig,'TwoTrodeRig')
+            if isa(obj.rig,'TwoAmpRig')
                 data.params.mode_1 = obj.rig.devices.amplifier_1.mode;
                 data.params.mode_2 = obj.rig.devices.amplifier_2.mode;
                 data.params.gain_1 = obj.rig.devices.amplifier_1.gain;
@@ -585,107 +656,162 @@ classdef Acquisition < handle
             data.timestamp = now;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             data.tags = obj.tags;
-            
+
             save(data.name, '-struct', 'data');
-            % save(obj.rig.inputs.data.name,'current','voltage','name','params');
             obj.n = obj.n + 1;
             obj.expt_n = obj.expt_n+1;
 
-            if isa(obj.rig,'CameraRig')
-                imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
-                mkdir(imagedir);
-                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                if isempty(images)
-                    h = msgbox('No images. Save, Close Image?');
-                    set(h, 'position',[5 280 170 52.5])
-                    uiwait(h);
-                    %warning('There are no images to connect to this trial')
-                    images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                    if isempty(images)
-                        warning('There are no images to connect to this trial.  Data saved')
-                    end
-                end
-                if ~isempty(images)
-                    for im = 1:length(images)
-                        [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                        if ~success
-                            if strcmp(m,'The process cannot access the file because it is being used by another process.')
-                                h = msgbox('Close the file!');
-                                set(h, 'position',[1280 700 170 52.5])
-                                uiwait(h);
-                                [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                            end
-                        end
-                        if ~success
-                            error('Image File %s not moved: %s\n',images(im).name,m);
-                            
-                        end
-                    end
-                    pattern = [obj.protocol.protocolName,'_Image_'];
-                    imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
-                    data.imageNum = str2double(imnumstr{1});
-                end
-                save(data.name, '-struct', 'data');
+            if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig');
+                obj.matchAviFiles(data);
             end
             
             if isa(obj.rig,'TwoPhotonRig')
-                imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
-                mkdir(imagedir);
-                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                if isempty(images)
-                    h = msgbox('No images. Save, Close Image?');
-                    set(h, 'position',[5 280 170 52.5])
-                    uiwait(h);
-                    %warning('There are no images to connect to this trial')
-                    images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-                    if isempty(images)
-                        warning('There are no images to connect to this trial.  Data saved')
-                    end
-                end
-                if ~isempty(images)
-                    for im = 1:length(images)
-                        [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                        if ~success
-                            if strcmp(m,'The process cannot access the file because it is being used by another process.')
-                                h = msgbox('Close the file!');
-                                set(h, 'position',[1280 700 170 52.5])
-                                uiwait(h);
-                                [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
-                            end
-                        end
-                        if ~success
-                            error('Image File %s not moved: %s\n',images(im).name,m);
-                            
-                        end
-                    end
-                    pattern = [obj.protocol.protocolName,'_Image_'];
-                    imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
-                    data.imageNum = str2double(imnumstr{1});
-                end
-                save(data.name, '-struct', 'data');
+                obj.match2PImages(data);
             end
         end
         
+        
+        function matchAviFiles(obj,data,varargin)
+            % global MATCHEDAVIFILES
+            pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
             
-        function cleanUpImages(obj,varargin)
-            images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-            if ~isempty(images)
-                dirname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
-                imagedir = regexprep(regexprep(dirname,'Raw','Images'),'.mat','');
-                if ~isdir(fullfile(obj.D,imagedir))
-                    imagedir = fullfile(obj.D,'archive');
-                    if ~isdir(imagedir);
-                        mkdir(imagedir);
-                    end
+            savedirmat = ls(obj.D)';
+            savedirconts = savedirmat(:)';
+            avifiles = regexp(savedirconts,pattern,'match');
+            
+            if isempty(avifiles)
+                h = msgbox('No images. Saving in the wrong directory?');
+                set(h, 'position',[5 280 170 52.5])
+                uiwait(h);
+                %warning('There are no images to connect to this trial')
+                return
+            end
+            
+            avitimestamp = zeros(size(avifiles));
+            for im = 1:length(avifiles)
+                timestr = regexp(avifiles{im},pattern,'tokens');
+                avitimestamp(im) = datenum([datestr(data.timestamp,'yyyymmdd') 'T' timestr{1}{1}],'yyyymmddTHHMMSS');
+            end
+            % get the most recent movie
+            [~,curravi] = min(data.timestamp-avitimestamp);
+            oldname = avifiles{curravi};
+            
+            % Changed 170829 - the renaming of large files is slower than
+            % going through files and finding the timestamp, so I'm saving
+            % the file name of the timestamped video in the trial
+            % structure. If the video software were ever to use a different
+            % timestamp, I'd have to change that.
+            
+            ext = regexp(oldname,'-(\d+)-\d+.avi','match');
+            newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
+            newname = fullfile(obj.D,newname);
+            
+            [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
+            
+            if ~success
+                if strcmp(m,'The process cannot access the file because it is being used by another process.')
+                    h = msgbox('Close the file!');
+                    set(h, 'position',[1280 700 170 52.5])
+                    uiwait(h);
+                    [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
                 end
+            end
+
+            
+            data.imageFile = newname;
+            data.imageMatch = 'after trial';
+            save(data.name, '-struct', 'data');
+            % MATCHEDAVIFILES = [MATCHEDAVIFILES,avifiles(curravi)];
+
+        end
+ 
+        
+        function match2PImages(obj,data,varargin)
+            imagedir = regexprep(regexprep(data.name,'Raw','Images'),'.mat','');
+            mkdir(imagedir);
+            images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+            if isempty(images)
+                h = msgbox('No images. Save, Close Image?');
+                set(h, 'position',[5 280 170 52.5])
+                uiwait(h);
+                %warning('There are no images to connect to this trial')
+                images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+                if isempty(images)
+                    warning('There are no images to connect to this trial.  Data saved')
+                end
+            end
+            if ~isempty(images)
                 for im = 1:length(images)
                     [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
                     if ~success
-                        error('Image File %s not moved: %s\n',images(im).name,m);
+                        if strcmp(m,'The process cannot access the file because it is being used by another process.')
+                            h = msgbox('Close the file!');
+                            set(h, 'position',[1280 700 170 52.5])
+                            uiwait(h);
+                            [success,m,~] = movefile(fullfile(obj.D,images(im).name),imagedir);
+                        end
                     end
+                    if ~success
+                        error('Image File %s not moved: %s\n',images(im).name,m);
+                        
+                    end
+                end
+                pattern = [obj.protocol.protocolName,'_Image_'];
+                imnumstr = regexprep(regexp(images(im).name,[pattern '\d+'],'match'),pattern,'');
+                data.imageNum = str2double(imnumstr{1});
+            end
+            save(data.name, '-struct', 'data');
+        end
+        
+        function cleanUpImagesBeforeRun(obj,varargin)
+%             images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
+%             
+%             pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
+%             savedirmat = ls(obj.D)';
+%             savedirconts = savedirmat(:)';
+%             avifiles = regexp(savedirconts,pattern,'match');
+%             
+%             for im = 1:length(avifiles)
+%                 
+%             end
+        end
+    
+        function cleanUpImagesBeforeTrial(obj,varargin)
+            pattern = [obj.protocol.protocolName,'_Image_' datestr(date,29) '-(\d+)-\d+.avi'];
+            savedirmat = ls(obj.D)';
+            savedirconts = savedirmat(:)';
+            avifiles = regexp(savedirconts,pattern,'match');
+            
+            for im = 1:length(avifiles)
+                imagedir = fullfile(obj.D,'archive');
+                if ~isdir(imagedir);
+                    mkdir(imagedir);
+                end
+                [success,m,~] = movefile(fullfile(obj.D,avifiles{im}),imagedir);
+                if ~success
+                    error('Image File %s not moved: %s\n',images(im).name,m);
                 end
             end
         end
+        
+        function cleanUpImagesAfterRun(obj,varargin)
+            pattern = [obj.protocol.protocolName,'_Image_' datestr(date,29) '-(\d+)-\d+.avi'];
+            savedirmat = ls(obj.D)';
+            savedirconts = savedirmat(:)';
+            avifiles = regexp(savedirconts,pattern,'match');
+            
+            for im = 1:length(avifiles)
+                imagedir = fullfile(obj.D,'archive');
+                if ~isdir(imagedir);
+                    mkdir(imagedir);
+                end
+                [success,m,~] = movefile(fullfile(obj.D,avifiles{im}),imagedir);
+                if ~success
+                    error('Image File %s not moved: %s\n',images(im).name,m);
+                end
+            end
+        end
+
         
         function setCameraLogging(obj,varargin)
             name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),'_Raw_','_Images_'));            

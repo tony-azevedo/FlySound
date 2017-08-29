@@ -1,19 +1,21 @@
-classdef VideoPiezoRig < EPhysRig
+classdef CameraEpiRig < CameraRig
     
     properties (Constant)
-        rigName = 'VideoPiezoRig';
+        rigName = 'CameraEpiRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = VideoPiezoRig(varargin)
-            obj.addDevice('piezo','Piezo');
-            obj.addDevice('speaker','Speaker');
-            obj.addDevice('camera','Camera');
-            obj.aiSession.addTriggerConnection('Dev1/PFI0','External','StartTrigger');
-            obj.aoSession.addTriggerConnection('External','Dev1/PFI2','StartTrigger');
+        function obj = CameraEpiRig(varargin)
+            lightstim = getpref('AcquisitionHardware','LightStimulus');
+            switch lightstim
+                case 'LED_Red'
+                    obj.addDevice('epi','LED_Red');
+                case 'Epifluorescence'
+                    obj.addDevice('epi','Epifluorescence');
+            end
         end
-        
+                
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@Rig(obj,fig,evnt,varargin{:})
             if nargin>3
@@ -23,15 +25,22 @@ classdef VideoPiezoRig < EPhysRig
                 line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
+                xlims = get(ax,'xlim');
+                ylims = get(ax,'ylim');
+                x_ = min(xlims)+ 0.025 * diff(xlims);
+                y_ = max(ylims)- 0.025 * diff(ylims);
+                
+                text(x_,y_,sprintf('Camera status:'),'parent',ax,'horizontalAlignment','left','verticalAlignment','top','tag','CameraStatus','fontsize',7);
+                
                 ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
                 out = protocol.getStimulus;
                 
                 delete(findobj(ax,'tag','sgsmonitor'));               
                 delete(findobj(ax,'tag','piezocommand'));
-                line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
-                ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
+                line(makeOutTime(protocol),out.epicommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','epicommand','displayname','V');
+                ylabel('Epi (V)'); box off; set(gca,'TickDir','out');
                 xlabel('Time (s)'); %xlim([0 max(t)]);
+                
             end
         end
         
@@ -52,15 +61,21 @@ classdef VideoPiezoRig < EPhysRig
             
             chnames = obj.getChannelNames;
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','piezocommand');
-            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'piezocommand')));
+            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','epicommand');
+            set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'epicommand')));
 
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);
             
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','sgsmonitor');
-            set(l,'ydata',obj.inputs.data.sgsmonitor);
-
+            xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
+            ylims = get(findobj(obj.TrialDisplay,'tag','inputax'),'ylim');
+            x_ = min(xlims)+ 0.025 * diff(xlims);
+            y_ = max(ylims)- 0.025 * diff(ylims);
+            fps = sum(obj.inputs.data.exposure)/protocol.params.durSweep;
+            set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('Frames: %d of %d at %.1f fps',sum(obj.inputs.data.exposure),obj.devices.camera.params.Nframes,fps),'position',[x_, y_, 0]);
+            %l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+            % set(l,'ydata',obj.inputs.data.exposure);
+            
         end
 
     end

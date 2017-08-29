@@ -2,7 +2,6 @@
 
 setpref('AcquisitionHardware','PGRCameraToggle','off')
 
-% Start the bitch 
 % clear all, close all
 clear A
 A = Acquisition; % Creates an Acquisition Object that handles saving data

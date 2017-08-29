@@ -123,6 +123,7 @@ max_field_Callback(hObject, eventdata, h)
 
 
 function start_button_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
 if hObject.Value
     set(hObject,'String','Stop');
     if handles.videoInput.FramesAvailable > 0
@@ -181,12 +182,16 @@ function initialize_gui(fig_handle, handles, isreset)
 
 % imaqreset;
 imqhwnfo = imaqhwinfo('pointgrey');
+h = imaqfind('Tag','PatchCamera');
+if ~isempty(h)
+    delete(h);
+end
 for i = 1:length(imqhwnfo.DeviceInfo)
     if strcmp(imqhwnfo.DeviceInfo(i).DeviceName,'Chameleon3 CM3-U3-13Y3M')
         break
     end
 end
-handles.videoInput = videoinput('pointgrey', i, 'F7_Raw8_1280x1024_Mode0');
+handles.videoInput = videoinput('pointgrey', i, 'F7_Raw8_1280x1024_Mode0','Tag','PatchCamera');
 % preview(handles.videoInput)
 % stoppreview(handles.videoInput)
 

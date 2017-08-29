@@ -25,9 +25,13 @@ classdef Epifluorescence < Device
             obj.inputLabels = {};
             obj.inputUnits = {};
             obj.inputPorts = [];
-            obj.outputLabels = {'epicommand'};
-            obj.outputUnits = {'V'};
-            obj.outputPorts = [3];
+%             obj.outputLabels = {'epicommand'};
+%             obj.outputUnits = {'V'};
+%             obj.outputPorts = [3];
+            obj.digitalOutputLabels = {'epittl'};
+            obj.digitalOutputUnits = {'Bit'};
+            obj.digitalOutputPorts = [24];
+
         end
         
         function in = transformInputs(obj,in,varargin)

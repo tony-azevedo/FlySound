@@ -41,7 +41,7 @@ classdef Device < handle
             obj.inputPorts = [];
             obj.outputLabels = {};
             obj.outputUnits = {};
-            obj.outputPorts = 0;
+            obj.outputPorts = [];
             
             obj.digitalInputLabels = {};
             obj.digitalInputUnits = {};

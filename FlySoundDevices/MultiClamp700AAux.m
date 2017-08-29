@@ -17,10 +17,10 @@ classdef MultiClamp700AAux < MultiClamp700A
             % This and the transformInputs function are hard coded
             obj.inputLabels = {'primary','secondary'};
             obj.inputUnits = {'mV','pA'};
-            obj.inputPorts = [2 5];
+            obj.inputPorts = [2 4];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
-            obj.outputPorts = 2;
+            obj.outputPorts = 1;
 
             obj.setModeSession;
             obj.mode = 'VClamp';
