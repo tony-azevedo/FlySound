@@ -621,9 +621,13 @@ classdef Acquisition < handle
             fprintf(1,', %s\n',datestr(clock,13));
             if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig')
                 rawname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
-                aviname = load(rawname);%,'imageFile');
-                fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
-                fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
+                try aviname = load(rawname,'imageFile');
+                    fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
+                    fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
+                catch
+                    fprintf(obj.notesFileID,'\t\tImageFile missing - %s\n',rawname);
+                    fprintf(1,'\t\tImageFile - %s\n',rawname);
+                end
             end
             fclose(obj.notesFileID);
         end
@@ -684,6 +688,7 @@ classdef Acquisition < handle
                 set(h, 'position',[5 280 170 52.5])
                 uiwait(h);
                 %warning('There are no images to connect to this trial')
+                data.imageFile = []; % newname;
                 return
             end
             
@@ -702,23 +707,23 @@ classdef Acquisition < handle
             % structure. If the video software were ever to use a different
             % timestamp, I'd have to change that.
             
-            ext = regexp(oldname,'-(\d+)-\d+.avi','match');
-            newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
-            newname = fullfile(obj.D,newname);
+%             ext = regexp(oldname,'-(\d+)-\d+.avi','match');
+%             newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
+%             newname = fullfile(obj.D,newname);
             
-            [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
+%             [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
             
-            if ~success
-                if strcmp(m,'The process cannot access the file because it is being used by another process.')
-                    h = msgbox('Close the file!');
-                    set(h, 'position',[1280 700 170 52.5])
-                    uiwait(h);
-                    [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
-                end
-            end
+%             if ~success
+%                 if strcmp(m,'The process cannot access the file because it is being used by another process.')
+%                     h = msgbox('Close the file!');
+%                     set(h, 'position',[1280 700 170 52.5])
+%                     uiwait(h);
+%                     [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
+%                 end
+%             end
 
             
-            data.imageFile = newname;
+            data.imageFile = oldname; % newname;
             data.imageMatch = 'after trial';
             save(data.name, '-struct', 'data');
             % MATCHEDAVIFILES = [MATCHEDAVIFILES,avifiles(curravi)];

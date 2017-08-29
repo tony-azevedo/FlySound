@@ -67,7 +67,7 @@ A.protocol.setParams('-q',...
     'stimDurInSec',1,...
     'postDurInSec',2);
 % A.tag
-A.run(5)
+A.run(1)
 % A.clearTags
 
 %% Piezo2T
