@@ -1,4 +1,4 @@
-classdef Epifluorescence < Device
+classdef LED_Blue < Device
     
     properties (Constant)
     end
@@ -7,7 +7,7 @@ classdef Epifluorescence < Device
     end
     
     properties 
-        deviceName = 'Epifluorescence';
+        deviceName = 'LED_Blue';
     end
     
     properties (SetAccess = protected)
@@ -19,7 +19,7 @@ classdef Epifluorescence < Device
     end
     
     methods
-        function obj = Epifluorescence(varargin)
+        function obj = LED_Blue(varargin)
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {};

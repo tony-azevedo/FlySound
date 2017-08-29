@@ -30,7 +30,7 @@ if isempty(fig);
         'tag','playbackspeed','backgroundcolor',[1 1 1],'string',1,'callback',@playbackspeed);
     c.dEfield = uicontrol('parent',fig,'style','edit','units','pixels','position',[96,1,40,18],...
         'tag','playbackspeed','backgroundcolor',[1 1 1],'string',1,'callback',@changeDE);
-%     set(fig,'windowScrollWheelFcn',@gotomovietime)
+    % set(fig,'windowScrollWheelFcn',@gotomovietime)
     
     guidata(fig,c);
 else
@@ -49,7 +49,7 @@ switch data.params.mode; case 'VClamp', invec = 'current'; case 'IClamp', invec 
 t = makeInTime(data.params);
 
 % frame_times is when the exposures happen in time
-if data.exposure(1) == 0
+if find(data.exposure,1) > 90;
     data.exposure(1) = 1;
     data.exposure(find(data.exposure,1,'last')) = 0;
 end
@@ -57,7 +57,7 @@ c.exptimes = find(data.exposure);
 
 global mov3 mov x y v dE dT
 dE = 20;
-dT = abs(x(c.exptimes(dE))-x(c.exptimes(1)));
+dT = abs(t(c.exptimes(dE))-t(c.exptimes(1)));
 
 % voltage trace vs time
 x = t(1:c.exptimes(end));
@@ -111,6 +111,9 @@ function gotomovietime(hObject,evnt)
 global mov3 mov x y v dE dT
 
 c = guidata(hObject);
+if round(c.slider.Value)>=c.slider.Max
+    c.slider.Value = c.slider.Max-1;
+end
 c.slider.Value = round(c.slider.Value);
 
 if ~isempty(evnt) && isfield(evnt,'VerticalScrollCount')

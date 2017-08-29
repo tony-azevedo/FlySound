@@ -1,17 +1,19 @@
 classdef Rig < handle
-    % current hierarchy: 7/14/16
+    % current hierarchy:
     %   Rig -> EPhysRig -> BasicEPhysRig
-    %                   -> TwoTrodeRig
     %                   -> PiezoRig 
     %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
-    %                                   -> PiezoCameraRig 
-    %                   -> PGRCameraRig -> PGREPhysRig
-    %                                   -> PGRPiezoRig % This setup is for
-    %                                   a digital output that requires same
-    %                                   session, and same input and output
-    %                                   sample rates
+    %                                   -> PiezoCameraRig
+    %       -> TwoAmpRig -> TwoTrodeRig
+    %                   -> Epi2TRig
+    %                   -> Piezo2TRig
+    %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
+    %                                         -> Camera2TRig
+    %                                         -> CameraPiezo2TRig
+    
+    
     
     properties (Constant, Abstract)
         rigName
@@ -44,6 +46,7 @@ classdef Rig < handle
         EndTrial
         SaveData
         DataSaved
+        EndRun
     end
     
     methods
@@ -120,6 +123,7 @@ classdef Rig < handle
                 end
                 protocol.reset;
             end
+            notify(obj,'EndRun');
         end
                         
         function setAOSession(obj,protocol)
@@ -435,7 +439,7 @@ classdef Rig < handle
                             case 'InputOnly'
                                 obj.inputchannelidx(end+1) = ch;
                             otherwise
-                                error('Not able to deal with Bidiretional Digital channels')
+                                error('Not able to deal with Bidirectional Digital channels')
                         end
                     case 'a'
                          switch obj.aoSession.Channels(ch).ID(2)

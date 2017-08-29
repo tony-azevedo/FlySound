@@ -1,5 +1,15 @@
-classdef CameraRig < EPhysRig
+classdef CameraTwoAmpRig < TwoAmpRig
     % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> PiezoRig 
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
+    %                                   -> TwoPhotonPiezoRig     
+    %                   -> CameraRig    -> CameraEPhysRig 
+    %                                   -> PiezoCameraRig
+    %       -> TwoAmpRig -> TwoTrodeRig
+    %                   -> Epi2TRig
+    %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
+    %                                         -> Camera2TRig
     
     properties (Constant,Abstract)
         rigName;
@@ -7,7 +17,7 @@ classdef CameraRig < EPhysRig
     end
     
     methods
-        function obj = CameraRig(varargin)
+        function obj = CameraTwoAmpRig(varargin)
             obj.addDevice('camera','Camera');
             obj.aiSession.addTriggerConnection('External','Dev1/PFI0','StartTrigger') % start trigger from the camera
             obj.aiSession.ExternalTriggerTimeout = 60; % start trigger from the camera
@@ -42,7 +52,7 @@ classdef CameraRig < EPhysRig
             set(h, 'position',[696 125 pos(3) pos(4)])
             uiwait(h);
             
-            in = run@EPhysRig(obj,protocol,varargin{:});
+            in = run@TwoAmpRig(obj,protocol,varargin{:});
         end
         
         function readyCamera(obj,fig,evnt,varargin)
@@ -64,7 +74,7 @@ classdef CameraRig < EPhysRig
         
         function stopCameraTriggering(obj,fig,evnt,varargin)
             
-            str = sprintf('Stop the triggering;\nThen wait for saving');
+            str = sprintf('Stop the triggering;\nThen wait for frame acquisition to finish');
             h = msgbox(str,'CAMERA','replace');
             pos = get(h,'position');
             %set(h, 'position',[1280 700 pos(3) pos(4)])
@@ -76,47 +86,7 @@ classdef CameraRig < EPhysRig
 
         end
 
-        
-        function setDisplay(obj,fig,evnt,varargin)
-            setDisplay@Rig(obj,fig,evnt,varargin{:})
-            if nargin>3
-                protocol = varargin{1};            
-                ax = subplot(3,1,[1 2],'Parent',obj.TrialDisplay,'tag','inputax');
-                delete(findobj(ax,'tag','ampinput'));
-                line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
-                ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
-                ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
-                
-                line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','exposure','displayname','V');
-                ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
-                xlabel('Time (s)'); %xlim([0 max(t)]);
-                linkaxes(get(obj.TrialDisplay,'children'),'x');
-            end
-        end
-        
-        function displayTrial(obj,protocol)
-            if ~ishghandle(obj.TrialDisplay), obj.setDisplay(protocol), end
-
-            if strcmp(obj.devices.amplifier.mode,'VClamp')
-                invec = obj.inputs.data.current;
-                ind = find(strcmp(obj.devices.amplifier.inputLabels,'current'));
-                inunits = obj.devices.amplifier.inputUnits{ind(1)};
-                ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
-            elseif sum(strcmp({'IClamp','IClamp_fast'},obj.devices.amplifier.mode))
-                invec = obj.inputs.data.voltage;
-                ind = find(strcmp(obj.devices.amplifier.inputLabels,'voltage'));
-                inunits = obj.devices.amplifier.inputUnits{ind(1)};
-                ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
-            end
-                        
-            l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
-            set(l,'ydata',invec);
-            
-            l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
-            set(l,'ydata',obj.inputs.data.exposure);
-
-        end
 
     end
     

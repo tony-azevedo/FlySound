@@ -1,12 +1,12 @@
 % Control the Epifluorescence, control displacements
-classdef EpiFlash < FlySoundProtocol
+classdef EpiFlash2T < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'EpiFlash';
+        protocolName = 'EpiFlash2T';
     end
     
     properties (SetAccess = protected)
-        requiredRig = 'EpiRig';
+        requiredRig = 'Epi2TRig';
         analyses = {};
     end
     
@@ -20,7 +20,7 @@ classdef EpiFlash < FlySoundProtocol
     
     methods
         
-        function obj = EpiFlash(varargin)
+        function obj = EpiFlash2T(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...

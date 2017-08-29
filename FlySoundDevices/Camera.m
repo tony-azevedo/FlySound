@@ -39,11 +39,12 @@ classdef Camera < Device
             for il = 1:length(inlabels)
                 if strcmp(inlabels{il},'exposure')
                     units = {'bit'};
-                    
-                    inputstruct.exposure = inputstruct.exposure > 0.5;
-                    inputstruct.exposure = ...
-                        [inputstruct.exposure(2:end) - inputstruct.exposure(1:end-1); 0];
-                    inputstruct.exposure = inputstruct.exposure > 0;
+                    % Try for now to record the whole thing, not just when
+                    % it starts.
+%                     inputstruct.exposure = inputstruct.exposure > 0.5;
+%                     inputstruct.exposure = ...
+%                         [inputstruct.exposure(2:end) - inputstruct.exposure(1:end-1); 0];
+%                     inputstruct.exposure = inputstruct.exposure > 0;
                 end
             end
             varargout = {inputstruct,units};
@@ -88,8 +89,9 @@ classdef Camera < Device
         end
 
         function defineParameters(obj)
+            % try rmpref('defaultsCamera'), catch, end
             obj.params.setup = 'x Frames, write in the rest of the information';
-            obj.params.framerate = 60;
+            obj.params.framerate = 150;
             obj.params.Nframes = 30;
         end
     end

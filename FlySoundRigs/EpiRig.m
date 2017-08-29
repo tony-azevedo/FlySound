@@ -21,8 +21,8 @@ classdef EpiRig < EPhysRig
             switch lightstim
                 case 'LED_Red'
                     obj.addDevice('epi','LED_Red');
-                case 'Epifluorescence'
-                    obj.addDevice('epi','Epifluorescence');
+                case 'LED_Blue'
+                    obj.addDevice('epi','LED_Blue');
             end
         end
         

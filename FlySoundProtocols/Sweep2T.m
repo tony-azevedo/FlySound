@@ -1,10 +1,13 @@
 % Collect data
-classdef Sweep2T < Sweep
+classdef Sweep2T < FlySoundProtocol
     
     properties (Constant)
+        protocolName = 'Sweep2T';
     end
     
     properties (SetAccess = protected)
+        requiredRig = 'TwoTrodeRig';
+        analyses = {};
     end
     
     properties (SetAccess = protected)
@@ -14,8 +17,6 @@ classdef Sweep2T < Sweep
     methods
         
         function obj = Sweep2T(varargin)
-            obj.requiredRig = 'TwoTrodeRig';
-            obj.analyses = {};
         end
         
         function varargout = getStimulus(obj,varargin)
@@ -27,16 +28,22 @@ classdef Sweep2T < Sweep
     methods (Access = protected)
                         
         function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
             obj.params.durSweep = 5;
-            obj.params.Vm_id = 0;
+            obj.params.holdingCurrent = 0;
+            obj.params.holdingPotential = 0;
             obj.params = obj.getDefaults;
         end
        
         function setupStimulus(obj,varargin)
             obj.x = makeOutTime(obj);
-            obj.out.zeros = obj.x;
+            if obj.params.holdingPotential ~= 0 && obj.params.holdingCurrent ~= 0
+                obj.params.holdingPotential = 0;
+                obj.params.holdingCurrent = 0;                
+            end
+            obj.out.voltage_1 = ones(size(obj.x))*obj.params.holdingPotential;
+            obj.out.current_1 = ones(size(obj.x))*obj.params.holdingCurrent;
         end
                 
     end % protected methods

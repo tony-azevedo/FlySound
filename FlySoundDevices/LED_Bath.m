@@ -1,4 +1,4 @@
-classdef Epifluorescence < Device
+classdef LED_Bath < Device
     
     properties (Constant)
     end
@@ -7,7 +7,7 @@ classdef Epifluorescence < Device
     end
     
     properties 
-        deviceName = 'Epifluorescence';
+        deviceName = 'LED_Bath';
     end
     
     properties (SetAccess = protected)
@@ -19,7 +19,7 @@ classdef Epifluorescence < Device
     end
     
     methods
-        function obj = Epifluorescence(varargin)
+        function obj = LED_Bath(varargin)
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {};
@@ -30,7 +30,7 @@ classdef Epifluorescence < Device
 %             obj.outputPorts = [3];
             obj.digitalOutputLabels = {'epittl'};
             obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [24];
+            obj.digitalOutputPorts = [28];
 
         end
         
