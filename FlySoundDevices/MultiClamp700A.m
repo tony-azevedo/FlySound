@@ -171,7 +171,7 @@ classdef MultiClamp700A < Device
                     obj.inputUnits{1} = 'pA';
                     obj.inputLabels{2} = 'voltage';
                     obj.inputUnits{2} = 'mV';
-            elseif sum(strcmp({'IClamp'},newmode)) 
+            elseif sum(strcmp({'IClamp','IClamp2'},newmode)) 
                     obj.outputLabels{1} = 'current';
                     obj.outputUnits{1} = 'pA';
                     obj.inputLabels{1} = 'voltage';
@@ -239,26 +239,30 @@ classdef MultiClamp700A < Device
                     error(errorstr); %#ok<SPERR>
                 end
             end                
-        end        
-    end
-    
-    methods (Static)
-        function mccmode = subclassModeFunction
-%             tic
-%             fprintf(1,'\nGetting %s mode:\n',mfilename);
-%             mccmode = MCCGetMode;
-%             toc
+        end
+        
+        % 170830 Moved these functions to normal methods rather than
+        % static
+        function mccmode = subclassModeFunction(obj)
+            %             tic
+            %             fprintf(1,'\nGetting %s mode:\n',mfilename);
+            %             mccmode = MCCGetMode;
+            %             toc
             mccmode = 'mode';
         end
         
-        function varargout = subclassGainFunction
-%             tic
-%             fprintf(1,'\nGetting %s gain:\n',mfilename);
-%             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
-%             varargout = {gain1,primarySignal,gain2,secondarySignal};
-%             toc
-            varargout = {'gain'};
+        function varargout = subclassGainFunction(obj)
+            %             tic
+            %             fprintf(1,'\nGetting %s gain:\n',mfilename);
+            %             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            %             varargout = {gain1,primarySignal,gain2,secondarySignal};
+            %             toc
+            varargout = {[obj.mode '_gain']};
         end
+
+    end
+    
+    methods (Static)
     end
     
     methods (Access = protected)

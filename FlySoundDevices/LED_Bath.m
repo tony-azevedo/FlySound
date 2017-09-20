@@ -25,12 +25,12 @@ classdef LED_Bath < Device
             obj.inputLabels = {};
             obj.inputUnits = {};
             obj.inputPorts = [];
-%             obj.outputLabels = {'epicommand'};
-%             obj.outputUnits = {'V'};
-%             obj.outputPorts = [3];
-            obj.digitalOutputLabels = {'epittl'};
-            obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [28];
+            obj.outputLabels = {'epicommand'};
+            obj.outputUnits = {'V'};
+            obj.outputPorts = [2];
+%             obj.digitalOutputLabels = {'epittl'};
+%             obj.digitalOutputUnits = {'Bit'};
+%             obj.digitalOutputPorts = [28];
 
         end
         

@@ -9,7 +9,7 @@ classdef CameraRig < EPhysRig
     methods
         function obj = CameraRig(varargin)
             obj.addDevice('camera','Camera');
-            obj.aiSession.addTriggerConnection('External','Dev1/PFI0','StartTrigger') % start trigger from the camera
+            obj.aiSession.addTriggerConnection('External','Dev1/PFI0','StartTrigger'); % start trigger from the camera
             obj.aiSession.ExternalTriggerTimeout = 60; % start trigger from the camera
             
 %             rigDev = getpref('AcquisitionHardware','rigDev');

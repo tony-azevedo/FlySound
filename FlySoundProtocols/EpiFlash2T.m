@@ -35,15 +35,25 @@ classdef EpiFlash2T < FlySoundProtocol
         function varargout = getStimulus(obj,varargin)
             commandstim = obj.y* obj.params.ndf + obj.params.background;
             totalstimpnts = obj.params.stimDurInSec*obj.params.sampratein;
-            [N,D] = rat(obj.params.ndf);
-            T = totalstimpnts/D;
-            substim = [ones(N,1); zeros(D-N,1)];
-            substim = repmat(substim,T,1);
-            
-%             obj.out.epicommand = commandstim;
-            obj.out.epittl = obj.y;
-            obj.out.epittl(obj.y==1) = substim;
-            varargout = {obj.out,obj.out.epittl,commandstim};
+            lightstim = getpref('AcquisitionHardware','LightStimulus');
+            switch lightstim
+                case 'LED_Bath'
+                    obj.out.epicommand = commandstim;
+%                     obj.out.epittl = obj.y;
+%                     obj.out.epittl(obj.y==1) = substim;
+                    varargout = {obj.out,obj.out.epicommand,commandstim};
+                otherwise
+                    [N,D] = rat(obj.params.ndf);
+                    T = totalstimpnts/D;
+                    substim = [ones(N,1); zeros(D-N,1)];
+                    substim = repmat(substim,T,1);
+                    
+                    %             obj.out.epicommand = commandstim;
+                    obj.out.epittl = obj.y;
+                    obj.out.epittl(obj.y==1) = substim;
+                    varargout = {obj.out,obj.out.epittl,commandstim};
+                    
+            end
         end
         
     end % methods
@@ -73,7 +83,7 @@ classdef EpiFlash2T < FlySoundProtocol
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
             obj.y(round(obj.params.samprateout*(obj.params.preDurInSec)+1): round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
-%             obj.out.epicommand = obj.y;
+            obj.out.epicommand = obj.y;
             obj.out.epittl = obj.y;
         end
         

@@ -23,13 +23,22 @@ classdef MultiClamp700AAux < MultiClamp700A
             obj.outputPorts = 1;
 
             obj.setModeSession;
-            obj.mode = 'VClamp';
+            obj.mode = 'VClamp2';
             obj.getmode;
             obj.setGainSession;
             obj.getgain;
 
         end
+
+        % 170830 - again, no longer static
+        function mccmode = subclassModeFunction(obj)
+            mccmode = 'mode2';
+        end
         
+        function varargout = subclassGainFunction(obj)
+            varargout = {[obj.mode '_gain2']};
+        end
+
     end
 
     
@@ -49,13 +58,6 @@ classdef MultiClamp700AAux < MultiClamp700A
         %             toc
         %         end
         
-        function mccmode = subclassModeFunction
-            mccmode = 'mode2';
-        end
-        
-        function varargout = subclassGainFunction
-            varargout = {'gain2'};
-        end
 
     end
 

@@ -28,7 +28,7 @@ A.untag('R_input')
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;
 A.setProtocol('Sweep');
-A.protocol.setParams('-q','durSweep',1);
+A.protocol.setParams('-q','durSweep',5);
 A.run(1)
 
 
@@ -36,8 +36,8 @@ A.run(1)
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;
 A.setProtocol('Sweep2T');
-A.protocol.setParams('-q','durSweep',5);
-A.run(5)
+A.protocol.setParams('-q','durSweep',1);
+A.run(1)
 
 
 %% Current Step 
@@ -55,7 +55,7 @@ A.run(2)
 
 
 %% EpiFlash2T
-setpref('AcquisitionHardware','cameraToggle','on')
+setpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2T');
@@ -63,11 +63,11 @@ A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
-    'ndfs',[1],...
-    'stimDurInSec',1,...
-    'postDurInSec',2);
+    'ndfs',[.075,.0825,.1]*2,...
+    'stimDurInSec',.01,...
+    'postDurInSec',.5);
 % A.tag
-A.run(1)
+A.run(3)
 % A.clearTags
 
 %% Piezo2T
