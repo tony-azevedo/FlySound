@@ -26,6 +26,7 @@ classdef Camera < Device
             obj.digitalInputLabels = {'exposure'};
             obj.digitalInputUnits = {'Bit'};
             obj.digitalInputPorts = [3];
+            obj.digitalInputPorts = [28];
 %             obj.digitalOutputLabels = {'trigger'};
 %             obj.digitalOutputUnits = {'Bit'};
 %             obj.digitalOutputPorts = [7];

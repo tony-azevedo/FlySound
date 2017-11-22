@@ -10,3 +10,4 @@ stimpnts = round(p.samprateout*p.preDurInSec+1:...
 y(stimpnts) = 1;
 
 stim = y.*p.ndf + p.background;
+%stim = y.*p.displacement + p.displacementOffset;

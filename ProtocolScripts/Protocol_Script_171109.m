@@ -6,23 +6,44 @@ setpref('AcquisitionHardware','cameraToggle','off')
 clear A, 
 A = Acquisition;
 
-
-%% EpiFlash2T
-setpref('AcquisitionHardware','LightStimulus','LED_Blue')
+%% EpiFlash2T fast
 setpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
-A.setProtocol('EpiFlash2T');
+A.setProtocol('EpiFlash2TTrain');
 A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
 A.rig.setParams('interTrialInterval',0);
 A.rig.devices.camera.setParams('framerate',75);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
-    'ndfs',[1],...
-    'stimDurInSec',4,...
+    'ndfs',5,...
+    'nrepeats',20,...
+    'flashDurInSec',.05,...
+    'cycleDurInSec',.1,...
     'postDurInSec',.5);
-% A.comment
-A.run(60)
+% A.tag
+A.run(8)
+% A.clearTags
+
+%% EpiFlash2T fast
+setpref('AcquisitionHardware','cameraToggle','on')
+A.rig.applyDefaults;
+
+A.setProtocol('EpiFlash2TTrain');
+A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.rig.devices.camera.setParams('framerate',150);
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'ndfs',5,...
+    'nrepeats',20,...
+    'flashDurInSec',.05,...
+    'cycleDurInSec',.1,...
+    'postDurInSec',.5);
+% A.tag
+A.run(8)
+% A.clearTags
+
 
 %% Piezo2T negative
 setpref('AcquisitionHardware','cameraToggle','on')

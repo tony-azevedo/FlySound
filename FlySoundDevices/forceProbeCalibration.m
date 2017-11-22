@@ -74,14 +74,49 @@ Probe3 = [
     ];
 Probe3 = Probe3(~isnan(Probe3(:,2)),:);
 
+Probe4 = [
+    0   0   NaN NaN -4  0   NaN
+    50  10  NaN NaN 8   12  11
+    100 21  NaN 25  20  24  21
+    150 28  20  NaN NaN 36  35   
+    200 40  42  49  44  48  45
+    250 54  53  NaN NaN 60  59
+    300 65  65  74  67  72  66
+    350 75  76  nan NaN 77  76
+    400 84  84  94  92  93  87
+    450 94  90  nan NaN 102 104
+    500 107 106 124 111 116 112
+    600 NaN NaN 140 137 130 131
+    700 NaN NaN 161 161 152 162
+    800 NaN NaN 188 NaN 178 NaN];
+
+Probe4(:,2) = Probe4(:,2)-Probe4(1,2);
+Probe4(:,3) = Probe4(:,3)-Probe4(1,3);
+Probe4(:,5) = Probe4(:,5)-Probe4(1,5);
+Probe4(:,6) = Probe4(:,6)-Probe4(1,6);
+Probe4(:,7) = Probe4(:,7)-Probe4(1,7);
+Probe4 = [
+    Probe4(:,1) Probe4(:,2);
+    Probe4(:,1) Probe4(:,3);
+    Probe4(:,1) Probe4(:,4);
+    Probe4(:,1) Probe4(:,5);
+    Probe4(:,1) Probe4(:,6);
+    ];
+Probe4 = Probe4(~isnan(Probe4(:,2)),:);
+Probe4(:,1) = Probe4(:,1)*1E-6;
+Probe4(:,2) = Probe4(:,2)*1E-7; % kg
+
+k = polyfit(Probe4(:,1),(Probe4(:,2)*9.8),1)
+
 %%
 figure
-plot(Probe1(:,1),Probe1(:,2),'.','displayName','Probe1');
+% plot(Probe1(:,1),Probe1(:,2),'.','displayName','Probe1');
 hold on
-plot(Probe2(:,1),Probe2(:,2),'.','displayName','Probe2');
-plot(Probe3(:,1),Probe3(:,2),'.','displayName','Probe3');
-
+% plot(Probe2(:,1),Probe2(:,2),'.','displayName','Probe2');
+% plot(Probe3(:,1),Probe3(:,2),'.','displayName','Probe3');
+plot(Probe4(:,1),Probe4(:,2)*9.8,'.','displayName','Probe4');
+plot(Probe4(:,1),k(1)*Probe4(:,1)+k(2))
 
 legend toggle
 xlabel('um')
-ylabel('1E-4 g')
+ylabel('N')

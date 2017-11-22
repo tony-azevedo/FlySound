@@ -23,8 +23,8 @@ classdef CameraRig < EPhysRig
         function in = run(obj,protocol,varargin)
             dur = protocol.params.durSweep;
             frametime = 1/obj.devices.camera.params.framerate;
-            Nframes = floor((dur-.25)/frametime);
-            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.1f sec, %d frames',...
+            Nframes = floor((dur-.1)/frametime);
+            str = sprintf('%s\n%s\n%s%s\n\n%s\n%s\n\n%s%.1f sec, %d frames. POSTDURINSEC>100 ms!',...
                 'Ready the camera:',...
                 ' - Set Directory',...
                 ' - Set Prefix: ',...
@@ -49,7 +49,7 @@ classdef CameraRig < EPhysRig
             
             dur = evnt.protocol.params.durSweep;
             frametime = 1/obj.devices.camera.params.framerate;
-            Nframes = floor((dur-.25)/frametime);
+            Nframes = floor((dur-.1)/frametime);
 
             str = sprintf('Rig ready for trigger:\n%.5f frames',Nframes);
             h = msgbox(str,'CAMERA','replace');

@@ -1,8 +1,8 @@
 % Control the Epifluorescence, control displacements
-classdef EpiFlash2T < FlySoundProtocol
+classdef EpiFlash2TTrain < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'EpiFlash2T';
+        protocolName = 'EpiFlash2TTrain';
     end
     
     properties (SetAccess = protected)
@@ -20,7 +20,7 @@ classdef EpiFlash2T < FlySoundProtocol
     
     methods
         
-        function obj = EpiFlash2T(varargin)
+        function obj = EpiFlash2TTrain(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...
@@ -48,7 +48,7 @@ classdef EpiFlash2T < FlySoundProtocol
                     substim = [ones(N,1); zeros(D-N,1)];
                     substim = repmat(substim,T,1);
                     
-                    obj.out.epicommand = commandstim;
+                    %             obj.out.epicommand = commandstim;
                     obj.out.epittl = obj.y;
                     obj.out.epittl(obj.y==1) = substim;
                     varargout = {obj.out,obj.out.epittl,commandstim};
@@ -66,9 +66,12 @@ classdef EpiFlash2T < FlySoundProtocol
             obj.params.ndfs = 1;
             obj.params.ndf = obj.params.ndfs(1);
             obj.params.background = 0;
-            obj.params.stimDurInSec = .2;
-            obj.params.preDurInSec = .2;
-            obj.params.postDurInSec = .1;
+            obj.params.nrepeats = 10;
+            obj.params.flashDurInSec = .05;
+            obj.params.cycleDurInSec = 1;
+            obj.params.stimDurInSec = obj.params.nrepeats*obj.params.cycleDurInSec;
+            obj.params.preDurInSec = .5;
+            obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             
             obj.params.Vm_id = 0;
@@ -79,10 +82,17 @@ classdef EpiFlash2T < FlySoundProtocol
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
             obj.params.ndf = obj.params.ndfs(1);
+            obj.params.stimDurInSec = obj.params.nrepeats*obj.params.cycleDurInSec;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
-            obj.y(round(obj.params.samprateout*(obj.params.preDurInSec)+1): round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
+            
+            flash = zeros(obj.params.cycleDurInSec*obj.params.samprateout,1);
+            flash(1:obj.params.flashDurInSec*obj.params.samprateout) = 1;
+            flashes = repmat(flash,1,obj.params.nrepeats);
+            flashes = flashes(:);
+            obj.y(obj.params.samprateout*(obj.params.preDurInSec)+1: obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec)) = flashes;
+
             obj.out.epicommand = obj.y;
             obj.out.epittl = obj.y;
         end
