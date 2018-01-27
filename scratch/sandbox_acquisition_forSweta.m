@@ -37,5 +37,17 @@ s.addAnalogOutputChannel('Dev1',[0], 'Voltage');
 s.addDigitalChannel('Dev1', 'Port0/Line2', 'OutputOnly');
 s.Rate = samprateout;
 
+disp(s)
+
 s.queueOutputData([stim(:) triggerstim(:)]);
+
+disp(s)
+
 in = s.startForeground;
+
+%%
+figure
+subplot(2,1,1)
+plot(stim), hold on, plot(triggerstim);
+subplot(2,1,2)
+plot(in);

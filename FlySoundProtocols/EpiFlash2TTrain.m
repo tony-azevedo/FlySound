@@ -49,8 +49,8 @@ classdef EpiFlash2TTrain < FlySoundProtocol
                     substim = repmat(substim,T,1);
                     
                     %             obj.out.epicommand = commandstim;
-                    obj.out.epittl = obj.y;
-                    obj.out.epittl(obj.y==1) = substim;
+                    obj.out.epittl = commandstim;
+                    %obj.out.epittl(obj.y==1) = substim;
                     varargout = {obj.out,obj.out.epittl,commandstim};
                     
             end
