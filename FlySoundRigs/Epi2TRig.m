@@ -8,9 +8,9 @@ classdef Epi2TRig < TwoAmpRig
     
     methods
         function obj = Epi2TRig(varargin)
-            % setpref('AcquisitionHardware','LightStimulus','LED_Red')
+            % setacqpref('AcquisitionHardware','LightStimulus','LED_Red')
             % 'Epiflourescence'
-            lightstim = getpref('AcquisitionHardware','LightStimulus');
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
             switch lightstim
                 case 'LED_Red'
                     obj.addDevice('epi','LED_Red');

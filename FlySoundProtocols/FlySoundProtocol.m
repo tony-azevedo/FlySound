@@ -66,9 +66,9 @@ classdef FlySoundProtocol < handle
             obj.target = 1;
             
             obj.setupStimulus();
-            obj.queryCameraState
-            obj.queryPGRCameraState
-            obj.query2PState
+            %obj.queryCameraState
+            obj.queryCameraBaslerState
+            %obj.query2PState
 
         end        
         
@@ -142,9 +142,9 @@ classdef FlySoundProtocol < handle
                 obj.params.(results{r}) = p.Results.(results{r});
             end
             obj.setupStimulus
-            obj.queryCameraState;
-            obj.queryPGRCameraState;
-            obj.query2PState;
+            %obj.queryCameraState;
+            obj.queryCameraBaslerState;
+            % obj.query2PState;
             if ~quiet
                 obj.showParams
             end
@@ -157,7 +157,7 @@ classdef FlySoundProtocol < handle
         end
 
         function defaults = getDefaults(obj)
-            defaults = getpref(['defaults',obj.protocolName]);
+            defaults = getacqpref(['defaults',obj.protocolName]);
             if isempty(defaults)
                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
                 obj.setDefaults(defaultsnew{:});
@@ -174,7 +174,7 @@ classdef FlySoundProtocol < handle
             parse(p,varargin{:});
             results = fieldnames(p.Results);
             for r = 1:length(results)
-                setpref(['defaults',obj.protocolName],...
+                setacqpref(['defaults',obj.protocolName],...
                     [results{r}],...
                     p.Results.(results{r}));
             end
@@ -183,7 +183,7 @@ classdef FlySoundProtocol < handle
         function showDefaults(obj)
             disp('');
             disp('DefaultParameters');
-            disp(getpref(['defaults',obj.protocolName]));
+            disp(getacqpref(['defaults',obj.protocolName]));
         end
         
         function randomize(obj,varargin)
@@ -269,16 +269,16 @@ classdef FlySoundProtocol < handle
         end
                            
         function queryCameraState(obj,varargin)
-            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','cameraToggle')
+            if ~isacqpref('AcquisitionHardware') || ~isacqpref('AcquisitionHardware','cameraToggle')
                 addpref('AcquisitionHardware','cameraToggle','off')
             end
-            campref = getpref('AcquisitionHardware','cameraToggle');
+            campref = getacqpref('AcquisitionHardware','cameraToggle');
             if strcmp('on',campref)
-                try cameraRigMap = getpref('AcquisitionHardware','cameraRigMap');
+                try cameraRigMap = getacqpref('AcquisitionHardware','cameraRigMap');
                 catch
                     crm = load('cameraRigMap');
                     cameraRigMap = crm.cameraRigMap;
-                    setpref('AcquisitionHardware','cameraRigMap',cameraRigMap)
+                    setacqpref('AcquisitionHardware','cameraRigMap',cameraRigMap)
                     %  cd C:\Users\tony\Code\FlySound\FlySoundRigs
                     %  save('cameraRigMap','cameraRigMap')
                 end
@@ -288,18 +288,18 @@ classdef FlySoundProtocol < handle
             end
         end
 
-        function queryPGRCameraState(obj,varargin)
-            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','PGRCameraToggle')
-                addpref('AcquisitionHardware','PGRCameraToggle','off')
+        function queryCameraBaslerState(obj,varargin)
+            if ~isacqpref('AcquisitionHardware') || ~isacqpref('AcquisitionHardware','cameraBaslerToggle')
+                addpref('AcquisitionHardware','cameraBaslerToggle','off')
             end
-            campref = getpref('AcquisitionHardware','PGRCameraToggle');
+            campref = getacqpref('AcquisitionHardware','cameraBaslerToggle');
             if strcmp('on',campref)
-                try cameraRigMap = getpref('AcquisitionHardware','PGRcameraRigMap');
+                try cameraRigMap = getacqpref('AcquisitionHardware','cameraBaslerRigMap');
                 catch
-                    % save('C:\Users\tony\Code\FlySound\FlySoundRigs\PGRcameraRigMap','cameraRigMap');
-                    crm = load('PGRCameraRigMap');
+                    % save('C:\Users\tony\Code\FlySound\FlySoundRigs\cameraBaslerRigMap','cameraRigMap');
+                    crm = load('cameraBaslerRigMap');
                     cameraRigMap = crm.cameraRigMap;
-                    setpref('AcquisitionHardware','PGRcameraRigMap',cameraRigMap)
+                    setacqpref('AcquisitionHardware','cameraBaslerRigMap',cameraRigMap)
                 end
                 obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
                 obj.out.trigger = 0*obj.x;
@@ -307,16 +307,16 @@ classdef FlySoundProtocol < handle
         end
         
         function query2PState(obj,varargin)
-            if ~ispref('AcquisitionHardware') || ~ispref('AcquisitionHardware','twoPToggle')
+            if ~isacqpref('AcquisitionHardware') || ~isacqpref('AcquisitionHardware','twoPToggle')
                 addpref('AcquisitionHardware','twoPToggle','off')
             end
-            twoPpref = getpref('AcquisitionHardware','twoPToggle');
+            twoPpref = getacqpref('AcquisitionHardware','twoPToggle');
             if strcmp('on',twoPpref)
-                try twoPRigMap = getpref('AcquisitionHardware','twoPRigMap');
+                try twoPRigMap = getacqpref('AcquisitionHardware','twoPRigMap');
                 catch
                     tpm = load('twoPRigMap');
                     twoPRigMap = tpm.twoPRigMap;
-                    setpref('AcquisitionHardware','twoPRigMap',twoPRigMap)
+                    setacqpref('AcquisitionHardware','twoPRigMap',twoPRigMap)
                 end
                 obj.requiredRig = twoPRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
                 obj.out.trigger = 6*(obj.x >= obj.x(1)-eps & obj.x < obj.x(1)+.001+eps);

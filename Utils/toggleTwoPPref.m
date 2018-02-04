@@ -1,6 +1,6 @@
 function toggleTwoPPref(varargin)
 % Turn the Camera preference on or off
-campref = getpref('AcquisitionHardware','twoPToggle');
+campref = getacqpref('AcquisitionHardware','twoPToggle');
 if nargin
     campref = varargin{1};
     switch campref
@@ -12,11 +12,11 @@ if nargin
 end
 switch campref
     case 'on'
-        setpref('AcquisitionHardware','twoPToggle','off')
+        setacqpref('AcquisitionHardware','twoPToggle','off')
         systemsound('Windows Hardware Remove')
         fprintf('Two Photon System Disconnected\n')
     case 'off'
-        setpref('AcquisitionHardware','twoPToggle','on')
+        setacqpref('AcquisitionHardware','twoPToggle','on')
         systemsound('Windows Hardware Insert')
         fprintf('Two Photon System Connected\n')
 end

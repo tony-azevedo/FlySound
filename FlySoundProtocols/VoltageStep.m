@@ -26,7 +26,7 @@ classdef VoltageStep < FlySoundProtocol
         function obj = VoltageStep(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
-            if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
+            if strcmp('off', getacqpref('AcquisitionHardware','cameraToggle'));
                 obj.analyses = obj.analyses(~strcmp(obj.analyses,'dFoverF'));
             end
         end

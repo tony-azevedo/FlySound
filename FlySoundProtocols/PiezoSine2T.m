@@ -73,7 +73,7 @@ classdef PiezoSine2T < PiezoProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            % rmpref('defaultsPiezoSine')
+            % rmacqpref('defaultsPiezoSine')
             obj.params.displacementOffset = 5;
             obj.params.sampratein = 10000;
             obj.params.samprateout = 10000;

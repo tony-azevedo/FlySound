@@ -52,9 +52,9 @@ classdef TwoAmpRig < Rig
             addlistener(obj.devices.amplifier_1,'ModeChange',@obj.changeSessionsFromMode);
             addlistener(obj.devices.amplifier_2,'ModeChange',@obj.changeSessionsFromMode);
 
-%             rigDev = getpref('AcquisitionHardware','rigDev');
-%             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-%             triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+%             rigDev = getacqpref('AcquisitionHardware','rigDev');
+%             triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+%             triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
 %             
 %             obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
 %             obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');

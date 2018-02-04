@@ -74,7 +74,7 @@ classdef PiezoStimulus < PiezoProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            % rmpref('defaultsPiezoCourtshipSong')
+            % rmacqpref('defaultsPiezoCourtshipSong')
             obj.params.displacementOffset = 5;
             obj.params.stimulusName = 'Basic';
             

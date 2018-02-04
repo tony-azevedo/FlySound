@@ -38,16 +38,19 @@ classdef Acquisition < handle
     methods
         function obj = Acquisition(varargin)
 
-            if ~isfield(obj.userData,'PGRPCState')
-                obj.userData.PGRPCState = 0;
+            global acqprefdir
+            acqprefdir = 'C:\Users\tony\Code\FlySound\Preferences';
+            
+            if ~isfield(obj.userData,'CameraBaslerPCState')
+                obj.userData.CameraBaslerPCState = 0;
                 h = findall(0,'type','uicontrol','tag','start_button');
-                obj.userData.PGRCameraControl = h;
+                obj.userData.CameraControl = h;
             end
             
-            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
-                set(obj.userData.PGRCameraControl,'Value',0)
-                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-                obj.userData.PGRPCState = 1;
+            if ~isempty(obj.userData.CameraControl) && get(obj.userData.CameraControl,'Value')
+                set(obj.userData.CameraControl,'Value',0)
+                PatchCameraBasler('start_button_Callback',obj.userData.CameraControl,[],[])
+                obj.userData.CameraBaslerPCState = 1;
             end
             
             obj.tags = {};
@@ -64,10 +67,10 @@ classdef Acquisition < handle
             obj.analyze = 1;
 
             
-            if obj.userData.PGRPCState
-                set(obj.userData.PGRCameraControl,'Value',1)
-                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-                obj.userData.PGRPCState = 1;
+            if obj.userData.CameraBaslerPCState
+                set(obj.userData.CameraControl,'Value',1)
+                PatchCameraBasler('start_button_Callback',obj.userData.CameraBaslerPCState,[],[])
+                obj.userData.CameraBaslerPCState = 1;
             end
 
 
@@ -80,16 +83,16 @@ classdef Acquisition < handle
                 repeats = 1;
             end
             
-            if ~isfield(obj.userData,'PGRPCState')
-                obj.userData.PGRPCState = 0;
+            if ~isfield(obj.userData,'CameraBaslerPCState')
+                obj.userData.CameraBaslerPCState = 0;
                 h = findall(0,'type','uicontrol','tag','start_button');
-                obj.userData.PGRCameraControl = h;
+                obj.userData.CameraControl = h;
             end
             
-            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
-                set(obj.userData.PGRCameraControl,'Value',0)
-                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-                obj.userData.PGRPCState = 1;
+            if ~isempty(obj.userData.CameraControl) && get(obj.userData.CameraControl,'Value')
+                set(obj.userData.CameraControl,'Value',0)
+                PatchCameraBasler('start_button_Callback',obj.userData.CameraControl,[],[])
+                obj.userData.CameraBaslerPCState = 1;
             end
             
             if isa(obj.rig,'EPhysRig')
@@ -105,25 +108,25 @@ classdef Acquisition < handle
             obj.rig.run(obj.protocol,repeats);
             systemsound('Notify');
             
-            if obj.userData.PGRPCState
-                set(obj.userData.PGRCameraControl,'Value',1)
-                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-                obj.userData.PGRPCState = 1;
+            if obj.userData.CameraBaslerPCState
+                set(obj.userData.CameraControl,'Value',1)
+                PatchCameraBasler('start_button_Callback',obj.userData.CameraControl,[],[])
+                obj.userData.CameraBaslerPCState = 1;
             end
 
         end
         
         function setProtocol(obj,prot,varargin)
-            if ~isfield(obj.userData,'PGRPCState')
-                obj.userData.PGRPCState = 0;
+            if ~isfield(obj.userData,'CameraBaslerPCState')
+                obj.userData.CameraBaslerPCState = 0;
                 h = findall(0,'type','uicontrol','tag','start_button');
-                obj.userData.PGRCameraControl = h;
+                obj.userData.CameraControl = h;
             end
             
-            if ~isempty(obj.userData.PGRCameraControl) && get(obj.userData.PGRCameraControl,'Value')
-                set(obj.userData.PGRCameraControl,'Value',0)
-                PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-                obj.userData.PGRPCState = 1;
+            if ~isempty(obj.userData.CameraControl) && get(obj.userData.CameraControl,'Value')
+                set(obj.userData.CameraControl,'Value',0)
+                PatchCameraBasler('start_button_Callback',obj.userData.CameraControl,[],[])
+                obj.userData.CameraBaslerPCState = 1;
             end
 
             
@@ -226,7 +229,8 @@ classdef Acquisition < handle
         
         
         function setIdentifiers(obj,varargin)
-            
+            global acqprefdir
+
             p = inputParser;
             p.PartialMatching = 0;
 
@@ -280,8 +284,9 @@ classdef Acquisition < handle
                 defAns{4} = obj.amplifier1Device;
             end
             
-            if ispref('AcquisitionPrefs')
-                acquisitionPrefs = getpref('AcquisitionPrefs');
+            if isacqpref('AcquisitionPrefs')
+                acquisitionPrefs = getacqpref('AcquisitionPrefs');
+                
             else
                 acquisitionPrefs.flygenotype = [];
                 acquisitionPrefs.flynumber = [];
@@ -375,9 +380,11 @@ classdef Acquisition < handle
             end
             
             % then set preferences to current values
-            setpref('AcquisitionPrefs',...
+            
+            setacqpref('AcquisitionPrefs',...
                 {'flygenotype','flynumber','cellnumber','amplifier1Device','last_timestamp'},...
                 {obj.flygenotype,obj.flynumber,obj.cellnumber, obj.amplifier1Device, now});
+
             obj.updateFileNames();
             obj.openNotesFile();
             if ~isempty(obj.protocol)
@@ -477,7 +484,7 @@ classdef Acquisition < handle
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImagesBeforeTrial);
                     addlistener(obj.rig,'EndRun',@obj.cleanUpImagesAfterRun);
                 end
-                if isa(obj.rig,'PGRCameraRig')
+                if isa(obj.rig,'CameraBaslerRig')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                     addlistener(obj.rig,'StartTrial',@obj.setCameraLogging);
                 end
@@ -768,7 +775,7 @@ classdef Acquisition < handle
             save(data.name, '-struct', 'data');
         end
         
-        function cleanUpImagesBeforeRun(obj,varargin)
+        function cleanUpImages(obj,varargin)
 %             images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
 %             
 %             pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];

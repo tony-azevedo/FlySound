@@ -7,7 +7,7 @@ classdef CameraEpiRig < CameraRig
     
     methods
         function obj = CameraEpiRig(varargin)
-            lightstim = getpref('AcquisitionHardware','LightStimulus');
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
             switch lightstim
                 case 'LED_Red'
                     obj.addDevice('epi','LED_Red');

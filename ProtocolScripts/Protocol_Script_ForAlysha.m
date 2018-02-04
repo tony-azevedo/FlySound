@@ -1,6 +1,6 @@
 %% Protocol script to do the things we've talked about thus far: current steps, light flashes, record video.
 
-setpref('AcquisitionHardware','PGRCameraToggle','off')
+setacqpref('AcquisitionHardware','PGRCameraToggle','off')
 
 % clear all, close all
 clear A
@@ -74,7 +74,7 @@ A.run(3)
 %% EpiFlash - This protocol just flashes the epi fluorescent light.
 % The TLED from sutter has to be in TTL mode
 
-setpref('AcquisitionHardware','PGRCameraToggle','off') % This turns on the point grey camera below the foil
+setacqpref('AcquisitionHardware','PGRCameraToggle','off') % This turns on the point grey camera below the foil
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...
@@ -88,7 +88,7 @@ A.run(3)
 % Once the camera toggle is on, the camera will run for all of the
 % subsequent commands.
 % To turn the camera off, call the following command:
-% setpref('AcquisitionHardware','PGRCameraToggle','off') % This turns off the point grey camera below the foil
+% setacqpref('AcquisitionHardware','PGRCameraToggle','off') % This turns off the point grey camera below the foil
 
 
 %% Voltage steps

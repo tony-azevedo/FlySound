@@ -77,7 +77,7 @@ classdef PiezoSquareWave < FlySoundProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            % rmpref('defaultsPiezoSquareWave')
+            % rmacqpref('defaultsPiezoSquareWave')
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.displacement = 1;

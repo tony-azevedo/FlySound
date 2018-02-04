@@ -135,7 +135,7 @@ classdef MultiClamp700A < Device
         end
         
         function setModeSession(obj)            
-            st = getpref('MC700AGUIstatus','status');
+            st = getacqpref('MC700AGUIstatus','status');
             if ~st
                 MultiClamp700AGUI;
             end
@@ -146,7 +146,7 @@ classdef MultiClamp700A < Device
         end
                     
         function newmode = getmode(obj)
-            st = getpref('MC700AGUIstatus','status');
+            st = getacqpref('MC700AGUIstatus','status');
             if ~st
                 error('Open MultiClamp700AGUI')
             end
@@ -161,7 +161,7 @@ classdef MultiClamp700A < Device
             %     obj.mode = 'I=0';
             % end
             % newmode = obj.mode;
-            newmode = getpref('MC700AGUIstatus',modeorder);
+            newmode = getacqpref('MC700AGUIstatus',modeorder);
 
             obj.mode = newmode;
             if sum(strcmp('VClamp',newmode))
@@ -194,13 +194,13 @@ classdef MultiClamp700A < Device
         function newgain = getgain(obj)
             %[gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
             % see AxMultiClampMsg.h constants prim and secondary signal IDs
-            st = getpref('MC700AGUIstatus','status');
+            st = getacqpref('MC700AGUIstatus','status');
             if ~st
                 error('Open MultiClamp700AGUI')
             end
             
             gainorder = obj.subclassGainFunction;
-            obj.gain = str2double(getpref('MC700AGUIstatus',gainorder));
+            obj.gain = str2double(getacqpref('MC700AGUIstatus',gainorder));
             primarySignal = 0;
             secondarySignal =  1;
             newgain = obj.gain;
@@ -280,7 +280,7 @@ classdef MultiClamp700A < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            % try rmpref('defaultsMultiClamp700B'), catch, end
+            % try rmacqpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
             obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9

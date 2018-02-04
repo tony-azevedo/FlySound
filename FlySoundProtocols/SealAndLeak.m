@@ -43,7 +43,7 @@ classdef SealAndLeak < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
-            % rmpref('defaultsSealAndLeak')
+            % rmacqpref('defaultsSealAndLeak')
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             obj.params.stepamp = 5; %mV;

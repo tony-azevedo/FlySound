@@ -12,9 +12,9 @@ classdef CameraRig < EPhysRig
             obj.aiSession.addTriggerConnection('External','Dev1/PFI0','StartTrigger'); % start trigger from the camera
             obj.aiSession.ExternalTriggerTimeout = 60; % start trigger from the camera
             
-%             rigDev = getpref('AcquisitionHardware','rigDev');
-%             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-%             triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+%             rigDev = getacqpref('AcquisitionHardware','rigDev');
+%             triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+%             triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
             
             addlistener(obj,'StartTrial',@obj.readyCamera);
             addlistener(obj,'EndTrial',@obj.stopCameraTriggering);

@@ -4,7 +4,7 @@ if isempty(camfig)||~camfig.isvalid
     camfig = findobj('type','figure','tag','PGRCamFig');
     camax = findobj('type','axes','tag','PGRCamAx');
 end
-Loc = getpref('AcquisitionHardware','PGRCameraLocation');
+Loc = getacqpref('AcquisitionHardware','PGRCameraLocation');
 if isempty(camfig)|| isempty(camax)||~strcmp(get(camfig,'UserData'),Loc)
     camfig = figure(1001); clf;
     switch Loc

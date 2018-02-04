@@ -90,7 +90,7 @@ classdef Camera < Device
         end
 
         function defineParameters(obj)
-            % try rmpref('defaultsCamera'), catch, end
+            % try rmacqpref('defaultsCamera'), catch, end
             obj.params.setup = 'x Frames, write in the rest of the information';
             obj.params.framerate = 150;
             obj.params.Nframes = 30;

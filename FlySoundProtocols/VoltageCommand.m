@@ -27,7 +27,7 @@ classdef VoltageCommand < FlySoundProtocol
         function obj = VoltageCommand(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
-            if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
+            if strcmp('off', getacqpref('AcquisitionHardware','cameraToggle'));
                 obj.analyses = obj.analyses(~strcmp(obj.analyses,'dFoverF'));
             end
         end
@@ -64,7 +64,7 @@ classdef VoltageCommand < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
-            % rmpref('defaultsVoltageCommand')
+            % rmacqpref('defaultsVoltageCommand')
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             

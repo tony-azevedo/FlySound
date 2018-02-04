@@ -206,7 +206,7 @@ classdef AxoPatch200B_2P < Device
                 
         function defineParameters(obj)
             % create an amplifier class that implements these
-            % rmpref
+            % rmacqpref
             obj.params.filter = 1e4;
             obj.params.headstagegain = 1;
             

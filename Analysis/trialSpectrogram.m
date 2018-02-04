@@ -3,16 +3,16 @@ function varargout = trialSpectrogram(data,params,varargin)
 
 fig = findobj('tag',mfilename); 
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','trialSpectrogram')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','trialSpectrogram')
         proplist = {...
             'tag',mfilename,...
             'Position',[1159 10 560 256],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 [prot,d,fly,cell,trial] = extractRawIdentifiers(data.name);

@@ -81,7 +81,7 @@ classdef Device < handle
         end
         
         function defaults = getDefaults(obj)
-            defaults = getpref(['defaults',obj.deviceName]);
+            defaults = getacqpref(['defaults',obj.deviceName]);
             if isempty(defaults)
                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
                 obj.setDefaults(defaultsnew{:});
@@ -98,7 +98,7 @@ classdef Device < handle
             parse(p,varargin{:});
             results = fieldnames(p.Results);
             for r = 1:length(results)
-                setpref(['defaults',obj.deviceName],...
+                setacqpref(['defaults',obj.deviceName],...
                     [results{r}],...
                     p.Results.(results{r}));
             end

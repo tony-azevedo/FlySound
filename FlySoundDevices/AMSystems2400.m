@@ -103,7 +103,7 @@ classdef AMSystems2400 < Device
         end
         
         function setModeSession(obj)
-            modeDev = getpref('AcquisitionHardware','modeDev');
+            modeDev = getacqpref('AcquisitionHardware','modeDev');
             obj.modeSession = daq.createSession('ni');
             obj.modeSession.addAnalogInputChannel(modeDev,17, 'Voltage');
             obj.modeSession.Channels(1).TerminalConfig = 'SingleEndedNonReferenced';
@@ -112,7 +112,7 @@ classdef AMSystems2400 < Device
         end
         
         function setGainSession(obj)
-            gainDev = getpref('AcquisitionHardware','gainDev');
+            gainDev = getacqpref('AcquisitionHardware','gainDev');
             obj.gainSession = daq.createSession('ni');
             obj.gainSession.addAnalogInputChannel(gainDev,18, 'Voltage');
             obj.gainSession.Rate = 100000;  % 100 kHz

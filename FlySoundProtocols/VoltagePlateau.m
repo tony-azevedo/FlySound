@@ -27,7 +27,7 @@ classdef VoltagePlateau < FlySoundProtocol
         function obj = VoltagePlateau(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
-            if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
+            if strcmp('off', getacqpref('AcquisitionHardware','cameraToggle'));
                 obj.analyses = obj.analyses(~strcmp(obj.analyses,'dFoverF'));
             end
         end
@@ -42,7 +42,7 @@ classdef VoltagePlateau < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
-            % rmpref('defaultsCurrentPlateau')
+            % rmacqpref('defaultsCurrentPlateau')
             obj.params.sampratein = 50000;
             obj.params.samprateout = 50000;
             

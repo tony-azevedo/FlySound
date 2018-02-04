@@ -1,35 +1,35 @@
-function varargout = PGRSubstageCamera(varargin)
-% PGRSUBSTAGECAMERA MATLAB code for PGRSubstageCamera.fig
-%      PGRSUBSTAGECAMERA, by itself, creates a new PGRSUBSTAGECAMERA or raises the existing
+function varargout = PatchCameraBasler(varargin)
+% PATCHCAMERABASLER MATLAB code for PatchCameraBasler.fig
+%      PATCHCAMERABASLER, by itself, creates a new PATCHCAMERABASLER or raises the existing
 %      singleton*.
 %
-%      H = PGRSUBSTAGECAMERA returns the handle to a new PGRSUBSTAGECAMERA or the handle to
+%      H = PATCHCAMERABASLER returns the handle to a new PATCHCAMERABASLER or the handle to
 %      the existing singleton*.
 %
-%      PGRSUBSTAGECAMERA('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in PGRSUBSTAGECAMERA.M with the given input arguments.
+%      PATCHCAMERABASLER('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in PATCHCAMERABASLER.M with the given input arguments.
 %
-%      PGRSUBSTAGECAMERA('Property','Value',...) creates a new PGRSUBSTAGECAMERA or raises
+%      PATCHCAMERABASLER('Property','Value',...) creates a new PATCHCAMERABASLER or raises
 %      the existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before PGRSubstageCamera_OpeningFcn gets called.  An
+%      applied to the GUI before PatchCameraBasler_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to PGRSubstageCamera_OpeningFcn via varargin.
+%      stop.  All inputs are passed to PatchCameraBasler_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help PGRSubstageCamera
+% Edit the above text to modify the response to help PatchCameraBasler
 
-% Last Modified by GUIDE v2.5 11-Nov-2016 12:49:52
+% Last Modified by GUIDE v2.5 02-Feb-2018 13:59:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @PGRSubstageCamera_OpeningFcn, ...
-                   'gui_OutputFcn',  @PGRSubstageCamera_OutputFcn, ...
+                   'gui_OpeningFcn', @PatchCameraBasler_OpeningFcn, ...
+                   'gui_OutputFcn',  @PatchCameraBasler_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -43,15 +43,15 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before PGRSubstageCamera is made visible.
-function PGRSubstageCamera_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before PatchCameraBasler is made visible.
+function PatchCameraBasler_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to PGRSubstageCamera (see VARARGIN)
+% varargin   command line arguments to PatchCameraBasler (see VARARGIN)
 
-% Choose default command line output for PGRSubstageCamera
+% Choose default command line output for PatchCameraBasler
 handles.output = hObject;
 
 % Update handles structure
@@ -59,11 +59,11 @@ guidata(hObject, handles);
 
 initialize_gui(hObject, handles, false);
 
-% UIWAIT makes PGRSubstageCamera wait for user response (see UIRESUME)
+% UIWAIT makes PatchCameraBasler wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
-function varargout = PGRSubstageCamera_OutputFcn(hObject, eventdata, handles)
+function varargout = PatchCameraBasler_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
@@ -123,6 +123,7 @@ max_field_Callback(hObject, eventdata, h)
 
 
 function start_button_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
 if hObject.Value
     set(hObject,'String','Stop');
     if handles.videoInput.FramesAvailable > 0
@@ -180,13 +181,17 @@ guidata(hObject, handles);
 function initialize_gui(fig_handle, handles, isreset)
 
 % imaqreset;
-imqhwnfo = imaqhwinfo('pointgrey');
+imqhwnfo = imaqhwinfo('gentl');
+h = imaqfind('Tag','PatchCamera');
+if ~isempty(h)
+    delete(h{1});
+end
 for i = 1:length(imqhwnfo.DeviceInfo)
-    if strcmp(imqhwnfo.DeviceInfo(i).DeviceName,'Firefly MV FMVU-03MTM')
+    if strcmp(imqhwnfo.DeviceInfo(i).DeviceName,'acA1300-200um (22366722)')
         break
     end
 end
-handles.videoInput = videoinput('pointgrey', i, 'Mono8_640x480');
+handles.videoInput = videoinput('gentl', imqhwnfo.DeviceIDs{i}, 'Mono8','Tag','PatchCamera');
 % preview(handles.videoInput)
 % stoppreview(handles.videoInput)
 
@@ -245,7 +250,8 @@ function imaqplot(vid,event,himage,scale)
 persistent frame
 try    
     % Get the latest data to plot.
-    frame = getdata(vid,1);
+    % frame = getdata(vid,1);
+    frame = getsnapshot(vid);
     if isempty(frame)
         frame = getsnapshot(vid);
     end
@@ -281,5 +287,7 @@ end
 
 function figure1_DeleteFcn(hObject, eventdata, handles)
 h = guidata(hObject);
-delete(h.videoInput)
+if isfield(h,'videoInput')
+    delete(h.videoInput)
+end
 delete(handles.figure1)

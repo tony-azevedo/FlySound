@@ -15,9 +15,9 @@ classdef TwoPhotonRig < EPhysRig
     methods
         function obj = TwoPhotonRig(varargin)
             obj.addDevice('twophoton','TwoPhotonSystem');
-            rigDev = getpref('AcquisitionHardware','rigDev');
-            triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            rigDev = getacqpref('AcquisitionHardware','rigDev');
+            triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+            triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
             
             obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
             obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');

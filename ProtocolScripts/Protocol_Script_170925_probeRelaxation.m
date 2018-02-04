@@ -1,4 +1,4 @@
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
 % clear all, close all
@@ -8,7 +8,7 @@ A = Acquisition;
 
 
 %% Sweep
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;

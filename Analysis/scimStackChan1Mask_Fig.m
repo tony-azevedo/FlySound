@@ -76,7 +76,7 @@ panl.title([protocol '\_' dateID '\_' flynum '\_' cellnum '\_' trialnum])
 set(roifig,'name',['mask' '_' protocol '_' trialnum]);
 roidrawax = panl(2).select();
 
-roi_temp = getpref('quickshowPrefs','scimStackChan1Mask');
+roi_temp = getacqpref('quickshowPrefs','scimStackChan1Mask');
 rectangle('position',roi_temp,'parent',roidrawax,'edgecolor',[1 0 0]);
 
 %close(roifig)

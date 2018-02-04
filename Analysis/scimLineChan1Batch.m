@@ -21,16 +21,16 @@ else
     fig = p.Results.dFoFfig;
 end
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[1030 10 560 450],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 
@@ -73,7 +73,7 @@ I_mask(red_pix>Chan1TH) = 1;
 I_mask(red_pix<=Chan1TH) = 0;
 I_mask = repmat(I_mask,size(I_red,1),1);
 
-roi_temp = getpref('quickshowPrefs','scimLineChan1Mask');
+roi_temp = getacqpref('quickshowPrefs','scimLineChan1Mask');
 if strcmp(button,'Yes')
     
     roifig = figure;
@@ -112,7 +112,7 @@ roi_temp(3) = ceil(roi_temp(3));
 roi_temp(4) = ceil(roi_temp(4));
 
 %% Save the trace to the trial
-setpref('quickshowPrefs','scimLineChan1Mask',roi_temp)
+setacqpref('quickshowPrefs','scimLineChan1Mask',roi_temp)
 
 %% Batch process the bunch using the same ROI.
 

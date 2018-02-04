@@ -24,16 +24,16 @@ else
     fig = p.Results.dFoFfig;
 end
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[1030 10 560 450],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 
@@ -83,7 +83,7 @@ end
 %% select ROI 
 I_green = squeeze(nanmean(I(:,:,:,2),3));
 I_red = squeeze(nanmean(I(:,:,:,1),3));
-temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
+temp.ROI = getacqpref('quickshowPrefs','roiScimStackROI');
 
 if strcmp(button,'Yes');
     roifig = figure;
@@ -140,7 +140,7 @@ if strcmp(button,'Yes');
     close(roifig);
     toc, fprintf('Closing');
     temp.ROI = data.ROI;
-    setpref('quickshowPrefs','roiScimStackROI',temp.ROI)
+    setacqpref('quickshowPrefs','roiScimStackROI',temp.ROI)
 else
     if isempty(Masks)
         error('There is no mask with which to choose an ROI');

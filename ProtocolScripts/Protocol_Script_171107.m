@@ -1,13 +1,13 @@
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
 % clear all, close all
 
 clear A, 
 A = Acquisition;
-st = getpref('MC700AGUIstatus','status');
-setpref('MC700AGUIstatus','mode','VClamp')
-setpref('MC700AGUIstatus','VClamp_gain','50')
+st = getacqpref('MC700AGUIstatus','status');
+setacqpref('MC700AGUIstatus','mode','VClamp')
+setacqpref('MC700AGUIstatus','VClamp_gain','50')
 if ~st
     MultiClamp700AGUI;
 end
@@ -31,8 +31,8 @@ A.untag('R_input')
 %% Switch to current clamp, single electrode:
 
 %% Sweep
-setpref('MC700AGUIstatus','mode','IClamp')
-setpref('MC700AGUIstatus','IClamp_gain','50')
+setacqpref('MC700AGUIstatus','mode','IClamp')
+setacqpref('MC700AGUIstatus','IClamp_gain','50')
 
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;
@@ -54,7 +54,7 @@ A.run(5)
 
 
 %% EpiFlash2T
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2T');
@@ -70,7 +70,7 @@ A.run(5)
 % A.clearTags
 
 %% Piezo2T positive
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoStep2T');
@@ -87,7 +87,7 @@ A.run(5)
 % A.clearTags
 
 %% Piezo2T negative
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoStep2T');
@@ -103,7 +103,7 @@ A.run(5)
 
 
 %% Piezo2TSine
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoSine2T');
@@ -121,7 +121,7 @@ A.run(5)
 % A.clearTags
 
 %% Piezo2T slow negative
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoRamp2T');
@@ -139,7 +139,7 @@ A.run(5)
 % A.clearTags
 
 %% Piezo2T slow 
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoRamp2T');
@@ -158,7 +158,7 @@ A.run(5)
 
 
 %% Piezo2T slow by hand, just move the leg with the manipulator
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 % A.rig.setParams('testcurrentstepamp',0)
@@ -170,7 +170,7 @@ A.run(3)
 
 
 %% Current Step 
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('CurrentStep2T');
@@ -183,7 +183,7 @@ A.protocol.setParams('-q',...
 A.run(3)
 
 %% Sweep with the LED over the eye. see what the fly does
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.rig.setParams('testcurrentstepamp',0)

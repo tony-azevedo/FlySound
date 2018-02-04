@@ -35,7 +35,7 @@ classdef EpiFlash2TTrain < FlySoundProtocol
         function varargout = getStimulus(obj,varargin)
             commandstim = obj.y* obj.params.ndf + obj.params.background;
             totalstimpnts = obj.params.stimDurInSec*obj.params.sampratein;
-            lightstim = getpref('AcquisitionHardware','LightStimulus');
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
             switch lightstim
                 case 'LED_Bath'
                     obj.out.epicommand = commandstim;

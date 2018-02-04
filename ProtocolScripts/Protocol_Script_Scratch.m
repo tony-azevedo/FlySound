@@ -1,6 +1,6 @@
 % Protocol_Script_Scratch
 
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 clear A, 
 A = Acquisition;
 
@@ -16,13 +16,13 @@ A.protocol.setParams('-q','durSweep',.5);
 A.run(1)
 
 %%
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.setProtocol('Sweep2T');
 A.protocol.setParams('-q','durSweep',8);
 A.run(2)
 
 %%
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash');
@@ -39,7 +39,7 @@ A.run(5)
 A.clearTags
 
 %% Current Step 
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('CurrentStep2T');

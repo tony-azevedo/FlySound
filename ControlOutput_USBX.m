@@ -39,7 +39,7 @@ end
 if nargout
     [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
     a = varargout{1};
-    co = getpref('ControlOutput');
+    co = getacqpref('ControlOutput');
     if ~isempty(co); 
         set(a,'Units','characters');
         set(a,'position',co.Position);

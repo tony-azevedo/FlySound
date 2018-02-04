@@ -91,16 +91,16 @@ varargout = {[]};
     subplot(2,1,1,<span class="string">'parent'</span>,fig,<span class="string">'tag'</span>,[mfilename <span class="string">'ax'</span>]);
 <span class="keyword">end</span>
 <span class="keyword">if</span> isempty(fig);
-    <span class="keyword">if</span> ~ispref(<span class="string">'AnalysisFigures'</span>) ||~ispref(<span class="string">'AnalysisFigures'</span>,mfilename) <span class="comment">% rmpref('AnalysisFigures','powerSpectrum')</span>
+    <span class="keyword">if</span> ~isacqpref(<span class="string">'AnalysisFigures'</span>) ||~isacqpref(<span class="string">'AnalysisFigures'</span>,mfilename) <span class="comment">% rmacqpref('AnalysisFigures','powerSpectrum')</span>
         proplist = {<span class="keyword">...</span>
             <span class="string">'tag'</span>,mfilename,<span class="keyword">...</span>
             <span class="string">'Position'</span>,[1030 181 560 275],<span class="keyword">...</span>
             <span class="string">'NumberTitle'</span>, <span class="string">'off'</span>,<span class="keyword">...</span>
             <span class="string">'Name'</span>, mfilename,<span class="keyword">...</span><span class="comment"> % 'DeleteFcn',@obj.setDisplay);</span>
             };
-        setpref(<span class="string">'AnalysisFigures'</span>,mfilename,proplist);
+        setacqpref(<span class="string">'AnalysisFigures'</span>,mfilename,proplist);
     <span class="keyword">end</span>
-    proplist =  getpref(<span class="string">'AnalysisFigures'</span>,mfilename);
+    proplist =  getacqpref(<span class="string">'AnalysisFigures'</span>,mfilename);
     fig = figure(proplist{:});
 <span class="keyword">end</span>
 figure(fig);
@@ -277,16 +277,16 @@ else
     subplot(2,1,1,'parent',fig,'tag',[mfilename 'ax']);
 end
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[1030 181 560 275],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 figure(fig);

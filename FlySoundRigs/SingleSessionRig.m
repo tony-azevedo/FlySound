@@ -31,8 +31,8 @@ classdef SingleSessionRig < Rig
     
     methods
         function obj = SingleSessionRig(varargin)
-            % setpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
-            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
+            % setacqpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
+            % setacqpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
 
             obj.aiSession = obj.aoSession;
@@ -43,7 +43,7 @@ classdef SingleSessionRig < Rig
             p.addParameter('amplifier1Device','MultiClamp700A',@ischar);            
             parse(p,varargin{:});
             
-            acqhardware = getpref('AcquisitionHardware');
+            acqhardware = getacqpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier') ...
                     && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
                     && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');
@@ -114,7 +114,7 @@ classdef SingleSessionRig < Rig
         function setSessions(obj,varargin)
             % Establish all the output channels and input channels in one
             % place
-            rigDev = getpref('AcquisitionHardware','rigDev');
+            rigDev = getacqpref('AcquisitionHardware','rigDev');
             
             if nargin>1
                 keys = varargin;
@@ -137,7 +137,7 @@ classdef SingleSessionRig < Rig
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
-                    obj.outputs.device{dev.digitalOutputPorts(i)+getpref('AcquisitionHardware','AnalogOutN')+1} = dev;
+                    obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
                 end
                 obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
                 obj.outputs.datacolumns = obj.outputs.datavalues;
@@ -155,7 +155,7 @@ classdef SingleSessionRig < Rig
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
                     ch.Name = dev.digitalInputLabels{i};
                     obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
-                    obj.inputs.device{dev.digitalInputPorts(i)+getpref('AcquisitionHardware','AnalogInN')+1} = dev;
+                    obj.inputs.device{dev.digitalInputPorts(i)+getacqpref('AcquisitionHardware','AnalogInN')+1} = dev;
                     % obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
                 

@@ -1,4 +1,4 @@
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
 % clear all, close all
@@ -25,7 +25,7 @@ A.untag('R_input')
 
 
 %% Sweep
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('Sweep2T');
@@ -52,7 +52,7 @@ A.run(5)
 
 
 %% Current Step 
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('CurrentStep2T');
@@ -65,7 +65,7 @@ A.protocol.setParams('-q',...
 A.run(2)
 
 %% Current Step -> Movement?
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('CurrentStep2T');
@@ -79,7 +79,7 @@ A.run(5)
 
 
 %% EpiFlash2T
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2T');
@@ -95,7 +95,7 @@ A.run(4)
 % A.clearTags
 
 %% Piezo2T
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoStep2T');
@@ -112,7 +112,7 @@ A.run(10)
 % A.clearTags
 
 %% Current Step 
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('CurrentStep2T');

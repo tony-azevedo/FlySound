@@ -1,4 +1,4 @@
-setpref('AcquisitionHardware','cameraToggle','off')
+setacqpref('AcquisitionHardware','cameraToggle','off')
 
 % Start the bitch 
 % clear all, close all
@@ -7,7 +7,7 @@ clear A,
 A = Acquisition;
 
 %% EpiFlash2T fast
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2TTrain');
@@ -26,7 +26,7 @@ A.run(8)
 % A.clearTags
 
 %% EpiFlash2T fast
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2TTrain');
@@ -46,7 +46,7 @@ A.run(8)
 
 
 %% Piezo2T negative
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoStep2T');
@@ -61,7 +61,7 @@ A.protocol.setParams('-q',...
 A.run(3)
 
 %% Piezo2T positive
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoStep2T');
@@ -76,7 +76,7 @@ A.protocol.setParams('-q',...
 A.run(3)
 
 %% Piezo2T sines
-setpref('AcquisitionHardware','cameraToggle','on')
+setacqpref('AcquisitionHardware','cameraToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoSine2T');

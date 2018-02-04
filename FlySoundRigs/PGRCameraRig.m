@@ -21,7 +21,7 @@ classdef PGRCameraRig < EPhysRig
     
     methods
         function obj = PGRCameraRig(varargin)
-            currentPGRCamera = getpref('AcquisitionHardware','PGRCameraLocation');
+            currentPGRCamera = getacqpref('AcquisitionHardware','PGRCameraLocation');
             obj.addDevice('camera',currentPGRCamera);
             addlistener(obj,'StartTrial',@obj.readyCamera);
             addlistener(obj,'DataSaved',@obj.resetCamera);
