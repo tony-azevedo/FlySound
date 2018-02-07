@@ -2,6 +2,15 @@ function prefs = getacqpref(str,varargin)
 
 global acqprefdir
 
+if nargin==0
+    fprintf('Acquisition preferences:\n')
+    a = ls(acqprefdir);
+    for d = 3:size(a,1)
+        fprintf('\t%s\n',a(d,:))
+    end
+    return
+end
+
 yn = ~isempty(dir([fullfile(acqprefdir,str) '.mat']));
 if ~yn
     prefs = [];

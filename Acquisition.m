@@ -474,17 +474,20 @@ classdef Acquisition < handle
                 end
                 
                 addlistener(obj.rig,'StartRun',@obj.writeRunNotes); % gets destroyed when rig is destroyed
-                addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
                 addlistener(obj.rig,'SaveData',@obj.saveData);
+                addlistener(obj.rig,'SaveData',@obj.writeTrialNotes);
+                addlistener(obj.rig,'IncreaseTrialNum',@obj.increaseTrialNum);
                 if obj.analyze
                     obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
                 end
-                if isa(obj.rig,'CameraRig')
-                    addlistener(obj.rig,'StartRun',@obj.cleanUpImagesBeforeRun);
-                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImagesBeforeTrial);
-                    addlistener(obj.rig,'EndRun',@obj.cleanUpImagesAfterRun);
-                end
-                if isa(obj.rig,'CameraBaslerRig')
+                
+                % if isa(obj.rig,'CameraRig')
+                %     addlistener(obj.rig,'StartRun',@obj.cleanUpImagesBeforeRun);
+                %     addlistener(obj.rig,'StartTrial',@obj.cleanUpImagesBeforeTrial);
+                %     addlistener(obj.rig,'EndRun',@obj.cleanUpImagesAfterRun);
+                % end
+                
+                if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig')
                     addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                     addlistener(obj.rig,'StartTrial',@obj.setCameraLogging);
                 end
@@ -614,10 +617,10 @@ classdef Acquisition < handle
             % data has been saved and obj.n increased
             obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
-                obj.expt_n-1,...
+                obj.expt_n,...
                 obj.protocol.protocolName,...
-                obj.n-1);
-            fprintf(1,'\t\t%d, %s trial %d',obj.expt_n-1, obj.protocol.protocolName,obj.n-1);
+                obj.n);
+            fprintf(1,'\t\t%d, %s trial %d',obj.expt_n, obj.protocol.protocolName,obj.n);
             paramsToIter = obj.protocol.paramsToIter;
             for pti = 1:length(paramsToIter)
                 pname = paramsToIter{pti};
@@ -626,16 +629,22 @@ classdef Acquisition < handle
             end
             fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
             fprintf(1,', %s\n',datestr(clock,13));
-            if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig')
-                rawname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
-                try aviname = load(rawname,'imageFile');
-                    fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
-                    fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
-                catch
-                    fprintf(obj.notesFileID,'\t\tImageFile missing - %s\n',rawname);
-                    fprintf(1,'\t\tImageFile - %s\n',rawname);
-                end
+            
+            if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig')
+                fprintf(obj.notesFileID,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
+                fprintf(1,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
             end
+            % if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig')
+            %     rawname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
+            %     try aviname = load(rawname,'imageFile');
+            %         fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
+            %         fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
+            %     catch
+            %         fprintf(obj.notesFileID,'\t\tImageFile missing - %s\n',rawname);
+            %         fprintf(1,'\t\tImageFile - %s\n',rawname);
+            %     end
+            % end
+            
             fclose(obj.notesFileID);
         end
 
@@ -668,74 +677,79 @@ classdef Acquisition < handle
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             data.tags = obj.tags;
 
-            save(data.name, '-struct', 'data');
-            obj.n = obj.n + 1;
-            obj.expt_n = obj.expt_n+1;
-
-            if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig');
-                obj.matchAviFiles(data);
+            if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig');
+                data.imageFile = obj.rig.devices.camera.fileName;
             end
+            save(data.name, '-struct', 'data');
+
+            % if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig');
+            %     obj.matchAviFiles(data);
+            % end
             
             if isa(obj.rig,'TwoPhotonRig')
                 obj.match2PImages(data);
             end
         end
         
-        
-        function matchAviFiles(obj,data,varargin)
-            % global MATCHEDAVIFILES
-            pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
-            
-            savedirmat = ls(obj.D)';
-            savedirconts = savedirmat(:)';
-            avifiles = regexp(savedirconts,pattern,'match');
-            
-            if isempty(avifiles)
-                h = msgbox('No images. Saving in the wrong directory?');
-                set(h, 'position',[5 280 170 52.5])
-                uiwait(h);
-                %warning('There are no images to connect to this trial')
-                data.imageFile = []; % newname;
-                return
-            end
-            
-            avitimestamp = zeros(size(avifiles));
-            for im = 1:length(avifiles)
-                timestr = regexp(avifiles{im},pattern,'tokens');
-                avitimestamp(im) = datenum([datestr(data.timestamp,'yyyymmdd') 'T' timestr{1}{1}],'yyyymmddTHHMMSS');
-            end
-            % get the most recent movie
-            [~,curravi] = min(data.timestamp-avitimestamp);
-            oldname = avifiles{curravi};
-            
-            % Changed 170829 - the renaming of large files is slower than
-            % going through files and finding the timestamp, so I'm saving
-            % the file name of the timestamped video in the trial
-            % structure. If the video software were ever to use a different
-            % timestamp, I'd have to change that.
-            
-%             ext = regexp(oldname,'-(\d+)-\d+.avi','match');
-%             newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
-%             newname = fullfile(obj.D,newname);
-            
-%             [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
-            
-%             if ~success
-%                 if strcmp(m,'The process cannot access the file because it is being used by another process.')
-%                     h = msgbox('Close the file!');
-%                     set(h, 'position',[1280 700 170 52.5])
-%                     uiwait(h);
-%                     [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
-%                 end
-%             end
-
-            
-            data.imageFile = oldname; % newname;
-            data.imageMatch = 'after trial';
-            save(data.name, '-struct', 'data');
-            % MATCHEDAVIFILES = [MATCHEDAVIFILES,avifiles(curravi)];
-
+        function increaseTrialNum(obj,varargin)
+            obj.n = obj.n + 1;
+            obj.expt_n = obj.expt_n+1;
         end
+        
+        % function matchAviFiles(obj,data,varargin)
+        %     % global MATCHEDAVIFILES
+        %     pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
+        %
+        %     savedirmat = ls(obj.D)';
+        %     savedirconts = savedirmat(:)';
+        %     avifiles = regexp(savedirconts,pattern,'match');
+        %
+        %     if isempty(avifiles)
+        %         h = msgbox('No images. Saving in the wrong directory?');
+        %         set(h, 'position',[5 280 170 52.5])
+        %         uiwait(h);
+        %         %warning('There are no images to connect to this trial')
+        %         data.imageFile = []; % newname;
+        %         return
+        %     end
+        %
+        %     avitimestamp = zeros(size(avifiles));
+        %     for im = 1:length(avifiles)
+        %         timestr = regexp(avifiles{im},pattern,'tokens');
+        %         avitimestamp(im) = datenum([datestr(data.timestamp,'yyyymmdd') 'T' timestr{1}{1}],'yyyymmddTHHMMSS');
+        %     end
+        %     % get the most recent movie
+        %     [~,curravi] = min(data.timestamp-avitimestamp);
+        %     oldname = avifiles{curravi};
+        %
+        %     % Changed 170829 - the renaming of large files is slower than
+        %     % going through files and finding the timestamp, so I'm saving
+        %     % the file name of the timestamped video in the trial
+        %     % structure. If the video software were ever to use a different
+        %     % timestamp, I'd have to change that.
+        %
+        % %             ext = regexp(oldname,'-(\d+)-\d+.avi','match');
+        % %             newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
+        % %             newname = fullfile(obj.D,newname);
+        %
+        % %             [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
+        %
+        % %             if ~success
+        % %                 if strcmp(m,'The process cannot access the file because it is being used by another process.')
+        % %                     h = msgbox('Close the file!');
+        % %                     set(h, 'position',[1280 700 170 52.5])
+        % %                     uiwait(h);
+        % %                     [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
+        % %                 end
+        % %             end
+        %
+        %
+        %     data.imageFile = oldname; % newname;
+        %     data.imageMatch = 'after trial';
+        %     save(data.name, '-struct', 'data');
+        %     % MATCHEDAVIFILES = [MATCHEDAVIFILES,avifiles(curravi)];
+        %
+        % end
  
         
         function match2PImages(obj,data,varargin)
@@ -776,6 +790,7 @@ classdef Acquisition < handle
         end
         
         function cleanUpImages(obj,varargin)
+            a = [];
 %             images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
 %             
 %             pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
@@ -826,7 +841,7 @@ classdef Acquisition < handle
 
         
         function setCameraLogging(obj,varargin)
-            name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),'_Raw_','_Images_'));            
+            name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),{'_Raw_','.mat'},{'_Images_','_%s'}));            
             obj.rig.devices.camera.setLogging(name);
         end
         

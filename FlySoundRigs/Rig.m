@@ -46,6 +46,7 @@ classdef Rig < handle
         EndTrial
         SaveData
         DataSaved
+        IncreaseTrialNum
         EndRun
     end
     
@@ -112,7 +113,7 @@ classdef Rig < handle
                     
                     %disp(obj.aiSession)
                     obj.transformInputs(in);
-                    if obj.params.interTrialInterval >0;
+                    if obj.params.interTrialInterval >0
                         t = timerfind('Name','ITItimer');
                         start(t)
                         wait(t)
@@ -120,6 +121,7 @@ classdef Rig < handle
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);
                     notify(obj,'DataSaved');
+                    notify(obj,'IncreaseTrialNum');
                 end
                 protocol.reset;
             end
@@ -270,8 +272,7 @@ classdef Rig < handle
             % rmacqpref('defaultsTwoPhotonEPhysRig')
             % rmacqpref('defaultsBasicEPhysRig')
             % rmacqpref('defaultsPiezoRig')
-            global prefdir
-            defaults = load(fullfile(prefdir,['defaults',obj.rigName])); defaults = defaults.defaults;
+            defaults = getacqpref(['defaults',obj.rigName]);
             if isempty(defaults)
                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
                 obj.setDefaults(defaultsnew{:});

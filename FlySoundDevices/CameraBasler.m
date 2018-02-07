@@ -8,21 +8,18 @@ classdef CameraBasler < Device
     end
     
     properties (SetAccess = protected)
-        gaincorrection
         videoInput
         source
         fileDestination
         fileName
-        living
-        cameraLocation
-        format
         camPortID
-        triggermode
-        triggerpolarity
-        dispFunc
+        format
+        living
+        
     end
     
     properties
+        deviceName = 'CameraBasler';
     end
 
     events
@@ -33,40 +30,30 @@ classdef CameraBasler < Device
         function obj = CameraBasler(varargin)
             % This and the transformInputs function are hard coded
             
-            obj.gaincorrection = [];
             obj.videoInput = [];
             obj.source = [];
             obj.fileDestination = 'C:\Users\tony\Acquisition\fly_movement_videos';
             obj.fileName = 'default_name';
             obj.living = 0;
-            obj.cameraLocation = 'PGRCamDefaultLoc';
             obj.format = 'Mono8';
             obj.camPortID = 1;
-            obj.triggermode = '';
-            obj.triggerpolarity = 'risingEdge';
+            
+            obj.digitalInputLabels = {'exposure'};
+            obj.digitalInputUnits = {'Bit'};
+            obj.digitalInputPorts = [3];
+            
+            obj.digitalOutputLabels = {'trigger'};
+            obj.digitalOutputUnits = {'Bit'};
+            obj.digitalOutputPorts = [2];
+
+            obj.setupDevice();
         end
+                
         
-        function setup(obj,varargin)
-            % See acquire_fly_movement_01_2018
-
-            fprintf('Turn off Pylon software');
-            h = warndlg('Turn off Pylon software');
-            uiwait(h)
-            % imaqreset
-            fprintf('\n')
-
-            obj.videoInput = videoinput('gentl', obj.camPortID, obj.format); %vid = videoinput('gentl', 1, 'Mono8');
-            obj.source = getselectedsource(obj.videoInput);
-            
-            % Setup source and pulses etc
-            triggerconfig(obj.videoInput, 'hardware');
-            obj.videoInput.TriggerRepeat = 0;
-            obj.videoInput.FramesPerTrigger = 1;
-            obj.videoInput.LoggingMode = 'disk&memory';
-            
-            
-            obj.living = 0;
-
+        function obj = setup(obj,protocol)
+            obj.params.Nframes = floor(obj.params.framerate*protocol.params.durSweep)-1;
+            obj.videoInput.FramesPerTrigger = obj.params.Nframes;
+            obj.params.SampsPerFrameBurstTrigger = ceil(double(obj.source.AcquisitionBurstFrameCount)/obj.params.framerate * protocol.params.samprateout);
         end
         
         function varargout = transformInputs(obj,inputstruct,varargin)
@@ -86,48 +73,53 @@ classdef CameraBasler < Device
         end
         
         function out = transformOutputs(obj,out,varargin)
-            rig = varargin{1};
+            % rig = varargin{1};
             if ~isfield(out,'trigger')
                 fns = fieldnames(out);
                 out.trigger = out.(fns{1});
                 out.trigger(:) = 0;
             else
             end
-            dur = length(out.trigger)/rig.aoSession.Rate;
-            frametime = 1/obj.params.framerate;
-            Nframes = floor(dur/frametime);
-            idxs = round(((1:Nframes)-1)*(frametime*rig.aoSession.Rate) + 1);
-            out.trigger(idxs) = 1;
-            out.trigger(idxs+1) = 0;
-            out.trigger(idxs(2)) = 0;
-            out.trigger(idxs(2)+1) = 0;
-            out.trigger(idxs(3)) = 0;
-            out.trigger(idxs(3)+1) = 0;
-            out.trigger(end) = 0;
-            obj.params.Nframes = sum(out.trigger)/1;%/2;
-            %out.trigger = ~out.trigger;
-            obj.params.Nframes = sum(out.trigger)/2;
-            obj.videoInput.TriggerRepeat = obj.params.Nframes-1;
-            obj.videoInput.TriggerFcn = {obj.dispFunc};
+            triggers = (0:obj.params.SampsPerFrameBurstTrigger:length(out.trigger(:)))+1;
+            out.trigger(triggers) = 1;
         end
     
-        function live(obj)
+        function live(obj)    
             preview(obj.videoInput)
             obj.living = 1;
+            obj.source.TriggerMode = 'off';
         end
+        
         function dead(obj)
+            obj.source.TriggerMode = 'on';
             stoppreview(obj.videoInput)
             obj.living = 0;
-
         end
+        
         function start(obj)
+            if obj.living && strcmp(obj.videoInput.preview,'on')
+                obj.dead;
+            end
+            
             start(obj.videoInput);
-            fprintf('Video started: %d of %d Triggers/Frames\n\tFilename:\t%s\n\tFilepath:\t%s\n',...
+            obj.living = 1;
+            fprintf('\n\t\t\tVideo started: %d of %d Triggers/Frames\n\t\t\t\tFilename:\t%s\n\t\t\t\tFilepath:\t%s\n',...
                 obj.videoInput.FramesAcquired,obj.videoInput.TriggerRepeat+1,get(obj.videoInput.DiskLogger,'Filename'),get(obj.videoInput.DiskLogger,'Path'))
         end
+        
         function stop(obj)
-            fprintf('Triggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount)
+            if obj.videoInput.FramesAcquired ~= obj.videoInput.DiskLoggerFrameCount
+                fprintf('Logging Video:')
+                while ( obj.videoInput.FramesAcquired ~= obj.videoInput.DiskLoggerFrameCount)
+                    fprintf('.')
+                    pause(.05);
+                end
+                fprintf('\n');
+            end
+
+            fprintf('\t\t\tTriggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount)
             stop(obj.videoInput)
+            obj.living = 0;
         end
         
         function varargout = status(obj)
@@ -139,8 +131,11 @@ classdef CameraBasler < Device
         function setLogging(obj,filename)
             [fn,D] = strtok(fliplr(filename),filesep);
             obj.fileName = fliplr(fn);
+            obj.fileName = sprintf(obj.fileName,[datestr(now,30) '.avi']); % yyyymmddTHHMMSS;
             obj.fileDestination = fliplr(D(2:end));
-            diskLogger = VideoWriter([fullfile(obj.fileDestination,obj.fileName) '.avi'], 'Motion JPEG AVI');
+            diskLogger = VideoWriter([fullfile(obj.fileDestination,obj.fileName)], 'Motion JPEG AVI');
+            diskLogger.FrameRate = obj.params.framerate;
+            diskLogger.Quality = 85;
             obj.videoInput.DiskLogger = diskLogger;
         end
         
@@ -148,12 +143,76 @@ classdef CameraBasler < Device
     
     methods (Access = protected)
         function setupDevice(obj)        
+            
+            % Only start a new video object if this one still exists.
+            [~,result] = system('tasklist /FI "imagename eq PylonViewerApp.exe" /fo table /nh');
+            if ~isempty(regexp(result,'PylonViewerApp','once'))
+                fprintf('Turn off Pylon software');
+                h = warndlg('Turn off Pylon software');
+                uiwait(h)
+                fprintf('\n')
+                % imaqreset
+                [~,result] = system('tasklist /FI "imagename eq PylonViewerApp.exe" /fo table /nh');
+                if ~isempty(regexp(result,'PylonViewerApp','once'))
+                    fprintf('Pylon software still on\n');
+                    beep
+                end
+            end
+            imaqs = imaqfind('DeviceID',obj.camPortID);
+            if isempty(obj.videoInput) && ~isempty(imaqs)
+                for dev = 1:length(imaqs)
+                    delete(imaqs{dev});
+                end
+            end
+            obj.videoInput = videoinput('gentl', obj.camPortID, obj.format); %vid = videoinput('gentl', 1, 'Mono8');
+            obj.source = getselectedsource(obj.videoInput);
+            
+            
+            % Setup source and pulses etc
+            triggerconfig(obj.videoInput, 'hardware');
+            obj.videoInput.TriggerRepeat = 0;
+            obj.videoInput.FramesPerTrigger = obj.params.Nframes;
+            obj.videoInput.LoggingMode = 'disk&memory';
+            
+            % Set up for
+            obj.source.LineSelector = 'Line3';             % brings up settings for line3
+            obj.source.LineMode = 'output';                % should be 'output'
+            obj.source.LineInverter = 'True';                % should be 'output'
+            
+            obj.source.LineSelector = 'Line4';             % brings up settings for line3
+            obj.source.LineMode = 'input';                % should be 'output'
+            
+            obj.source.TriggerSelector = 'FrameStart';
+            obj.source.TriggerMode = 'Off';
+            
+            obj.source.TriggerSelector = 'FrameBurstStart';
+            obj.source.TriggerSource = 'Line4';
+            obj.source.AcquisitionBurstFrameCount = 255;
+            obj.source.TriggerActivation = 'RisingEdge';
+            
+            obj.source.TriggerMode = 'On';
+            
+            obj.source.GainAuto = 'Once';
+            
+            obj.source.AcquisitionFrameRateEnable = 'True';
+            obj.source.AcquisitionFrameRate = obj.params.framerate;
+            obj.source.ExposureTime = 1E6/obj.source.AcquisitionFrameRate-300;            
+            obj.params.framerate = obj.source.ResultingFrameRate;
+
+            obj.living = 0;
+
+            fprintf(...
+                'SetupDevice: Camera Basler will record\n\t%d frames at %.2f Hz with %g us exposure time and %g gain\n',...
+                obj.videoInput.FramesPerTrigger,...
+                obj.params.framerate,...
+                obj.source.ExposureTime,...
+                obj.source.Gain);
         end
 
         function defineParameters(obj)
-            obj.params.setup = 'x Frames, write in the rest of the information';
-            obj.params.framerate = 40;
+            obj.params.framerate = 169.2906;
             obj.params.Nframes = 30;
+            obj.params.SampsPerFrameBurstTrigger = 255/obj.params.framerate * 10000;
         end
     end
 end
