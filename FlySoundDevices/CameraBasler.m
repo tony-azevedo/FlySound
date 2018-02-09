@@ -63,10 +63,11 @@ classdef CameraBasler < Device
                 if strcmp(inlabels{il},'exposure')
                     units = {'bit'};
                    
-                    inputstruct.exposure = inputstruct.exposure > 0.5;
-                    inputstruct.exposure = ...
-                        [inputstruct.exposure(2:end) - inputstruct.exposure(1:end-1); 0];
-                    inputstruct.exposure = inputstruct.exposure > 0;
+                    % currently keeping this raw, decide what to do postHoc
+                    % inputstruct.exposure = inputstruct.exposure > 0.5;
+                    % inputstruct.exposure = ...
+                    %     [inputstruct.exposure(2:end) - inputstruct.exposure(1:end-1); 0];
+                    % inputstruct.exposure = inputstruct.exposure > 0;
                 end
             end
             varargout = {inputstruct,units};
@@ -81,6 +82,8 @@ classdef CameraBasler < Device
             else
             end
             triggers = (0:obj.params.SampsPerFrameBurstTrigger:length(out.trigger(:)))+1;
+            triggers = [triggers;triggers+1];
+            triggers = triggers(:);
             out.trigger(triggers) = 1;
         end
     

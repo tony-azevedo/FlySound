@@ -43,6 +43,7 @@ classdef Rig < handle
         StimulusOutsideBounds
         StartRun
         StartTrial
+        StartTrialCamera
         EndTrial
         SaveData
         DataSaved
@@ -106,9 +107,24 @@ classdef Rig < handle
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
-                    notify(obj,'StartTrial',PassProtocolData(protocol));
-                    in = obj.aiSession.startForeground; % both amp and signal monitor input
                     
+                    % setup the data logger
+                    notify(obj,'StartTrial',PassProtocolData(protocol));
+                    % start the videoinput object
+                    notify(obj,'StartTrialCamera');
+                    
+                    if ~double(obj.aiSession.ScansQueued)
+                        error('No data is queued')
+                    end
+                    in = obj.aiSession.startForeground; % both amp and signal monitor input
+                    wait(obj.aiSession);
+                    % catch e
+                    %     disp(e)
+                    %     disp(obj.aiSession)
+                    %     disp(obj.devices.camera.videoInput)
+                    %     keyboard
+                    %     error(e)
+                    % end
                     notify(obj,'EndTrial');
                     
                     %disp(obj.aiSession)

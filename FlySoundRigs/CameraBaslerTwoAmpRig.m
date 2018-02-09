@@ -21,7 +21,7 @@ classdef CameraBaslerTwoAmpRig < TwoAmpRig
     methods
         function obj = CameraBaslerTwoAmpRig(varargin)
             obj.addDevice('camera','CameraBasler');            
-            addlistener(obj,'StartTrial',@obj.readyCamera);
+            addlistener(obj,'StartTrialCamera',@obj.readyCamera);
             addlistener(obj,'EndTrial',@obj.resetCamera);
         end
 

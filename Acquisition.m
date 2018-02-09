@@ -128,13 +128,10 @@ classdef Acquisition < handle
                 PatchCameraBasler('start_button_Callback',obj.userData.CameraControl,[],[])
                 obj.userData.CameraBaslerPCState = 1;
             end
-
             
             if ~isempty(obj.rig) && obj.rig.IsContinuous
                 obj.rig.stop
             end
-            
-            
             
             protstr = ['obj.protocol = ' prot '('];
             if nargin>2
@@ -841,7 +838,7 @@ classdef Acquisition < handle
 
         
         function setCameraLogging(obj,varargin)
-            name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),{'_Raw_','.mat'},{'_Images_','_%s'}));            
+            name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),{'_Raw_','.mat'},{'_Image_','_%s'}));            
             obj.rig.devices.camera.setLogging(name);
         end
         

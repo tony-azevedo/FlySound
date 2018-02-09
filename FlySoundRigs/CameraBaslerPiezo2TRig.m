@@ -52,7 +52,8 @@ classdef CameraBaslerPiezo2TRig < CameraBaslerTwoAmpRig
             x_ = min(xlims)+ 0.025 * diff(xlims);
             y_ = max(ylims)- 0.025 * diff(ylims);
             t = makeInTime(protocol);
-            fps = 1/median(diff(t(obj.inputs.data.exposure)));
+            frames = obj.inputs.data.exposure(1:end-1)==0&obj.inputs.data.exposure(2:end)>0;
+            fps = 1/median(diff(t(frames)));
             N = obj.devices.camera.videoInput.DiskLoggerFrameCount; %sum(obj.inputs.data.exposure);
             set(findobj(obj.TrialDisplay,'type','text','tag','CameraStatus'),'string',sprintf('Frames: %d at %.1f fps',N,fps),'position',[x_, y_, 0]);
 

@@ -26,7 +26,10 @@ classdef CameraBaslerRig < EPhysRig
             addlistener(obj,'DataSaved',@obj.resetCamera);
         end
         
-
+        function in = run(obj,protocol,varargin)
+            obj.devices.camera.setup(protocol);
+            in = run@EPhysRig(obj,protocol,varargin{:});
+        end
         
         function readyCamera(obj,fig,evnt,varargin)
             obj.devices.camera.start()
