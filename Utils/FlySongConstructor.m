@@ -6,8 +6,10 @@ easy = testsong.easy;
 Fs_easy = testsong.Fs;
 x_easy = (0:length(easy)-1)/Fs_easy;
 
-[song0,Fs0] = wavread('CourtshipSong.wav');
+% This is just to get FS = 40000;
+[song0,Fs0] = audioread('CourtshipSong.wav');
 
+% resample the easy test song to the new FS
 song = interp(easy,round(Fs0/Fs_easy));
 Fs = Fs0;
 x = (0:length(song)-1)/Fs;

@@ -31,15 +31,15 @@ classdef DoubleSessionRig < Rig
     
     methods
         function obj = DoubleSessionRig(varargin)
-            % setpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
-            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
+            % setacqpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
+            % setacqpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
 
             obj.aiSession = daq.createSession('ni');
             obj.aoSession = daq.createSession('ni');            
 
-            %             triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            %             triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            %             triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+            %             triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
             %
             %             obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
             %             obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
@@ -50,7 +50,7 @@ classdef DoubleSessionRig < Rig
             p.addParameter('amplifier1Device','MultiClamp700A',@ischar);            
             parse(p,varargin{:});
             
-            acqhardware = getpref('AcquisitionHardware');
+            acqhardware = getacqpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier') ...
                     && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
                     && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');
@@ -171,7 +171,7 @@ classdef DoubleSessionRig < Rig
         function setSessions(obj,varargin)
             % Establish all the output channels and input channels in one
             % place
-            rigDev = getpref('AcquisitionHardware','rigDev');
+            rigDev = getacqpref('AcquisitionHardware','rigDev');
             
             if nargin>1
                 keys = varargin;
@@ -194,7 +194,7 @@ classdef DoubleSessionRig < Rig
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
-                    obj.outputs.device{dev.digitalOutputPorts(i)+getpref('AcquisitionHardware','AnalogOutN')+1} = dev;
+                    obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
                 end
                 obj.outputs.datavalues = zeros(size(obj.aoSession.Channels));
                 obj.outputs.datacolumns = obj.outputs.datavalues;
@@ -212,7 +212,7 @@ classdef DoubleSessionRig < Rig
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
                     ch.Name = dev.digitalInputLabels{i};
                     obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
-                    obj.inputs.device{dev.digitalInputPorts(i)+getpref('AcquisitionHardware','AnalogInN')+1} = dev;
+                    obj.inputs.device{dev.digitalInputPorts(i)+getacqpref('AcquisitionHardware','AnalogInN')+1} = dev;
                     % obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
                 
@@ -280,13 +280,13 @@ end
 %     
 %     methods
 %         function obj = Rig(varargin)
-%             if ~ispref('AcquisitionHardware','rigDev')
-%                 setpref('AcquisitionHardware','rigDev','Dev1')
-%                 setpref('AcquisitionHardware','modeDev','Dev1')
-%                 setpref('AcquisitionHardware','gainDev','Dev1')
-%                 setpref('AcquisitionHardware','triggerChannelIn','PFI0')
-%                 setpref('AcquisitionHardware','triggerChannelOut','PFI2')
-%                 disp(getpref('AcquisitionHardware'));
+%             if ~isacqpref('AcquisitionHardware','rigDev')
+%                 setacqpref('AcquisitionHardware','rigDev','Dev1')
+%                 setacqpref('AcquisitionHardware','modeDev','Dev1')
+%                 setacqpref('AcquisitionHardware','gainDev','Dev1')
+%                 setacqpref('AcquisitionHardware','triggerChannelIn','PFI0')
+%                 setacqpref('AcquisitionHardware','triggerChannelOut','PFI2')
+%                 disp(getacqpref('AcquisitionHardware'));
 %                 error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')
 %             end
 %             obj.aiSession = daq.createSession('ni');
@@ -499,11 +499,11 @@ end
 %         end
 %         
 %         function defaults = getDefaults(obj)
-%             % rmpref('defaultsTwoPhotonEPhysRig')
-%             % rmpref('defaultsBasicEPhysRig')
-%             % rmpref('defaultsPiezoRig')
+%             % rmacqpref('defaultsTwoPhotonEPhysRig')
+%             % rmacqpref('defaultsBasicEPhysRig')
+%             % rmacqpref('defaultsPiezoRig')
 %             
-%             defaults = getpref(['defaults',obj.rigName]);
+%             defaults = getacqpref(['defaults',obj.rigName]);
 %             if isempty(defaults)
 %                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
 %                 obj.setDefaults(defaultsnew{:});
@@ -524,7 +524,7 @@ end
 %             parse(p,varargin{:});
 %             results = fieldnames(p.Results);
 %             for r = 1:length(results)
-%                 setpref(['defaults',obj.rigName],...
+%                 setacqpref(['defaults',obj.rigName],...
 %                     [results{r}],...
 %                     p.Results.(results{r}));
 %             end
@@ -596,7 +596,7 @@ end
 %         function setSessions(obj,varargin)
 %             % Establish all the output channels and input channels in one
 %             % place
-%             rigDev = getpref('AcquisitionHardware','rigDev');
+%             rigDev = getacqpref('AcquisitionHardware','rigDev');
 %             
 %             if nargin>1
 %                 keys = varargin;

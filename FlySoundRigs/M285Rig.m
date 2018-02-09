@@ -19,9 +19,9 @@ classdef M285Rig < EPhysRig
     
     methods
         function obj = M285Rig(varargin)
-            % rigDev = getpref('AcquisitionHardware','rigDev');
-            % triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            % triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            % rigDev = getacqpref('AcquisitionHardware','rigDev');
+            % triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+            % triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
             %
             % obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
             % obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
@@ -30,7 +30,8 @@ classdef M285Rig < EPhysRig
         
         
         function in = run(obj,protocol,varargin)
-            
+            %%% ------  Make sure to edit the PGRM285Rig run function too
+            %%% ---------
             if nargin>2
                 repeats = varargin{1};
             else
@@ -57,18 +58,39 @@ classdef M285Rig < EPhysRig
                     fprintf('%.1f sec inter trial\n',tObj.StartDelay);
                 set(t,'Name','ITItimer')
             end
-            M285_setupScript;
+            a = instrfind; delete(a), clear a;
+            sutterM285 = NewsutterMP285('COM4');
+            
+            updatePanel(sutterM285);
+            
+            [stepMult, currentVelocity, vScaleFactor] = getStatus(sutterM285);
+            
+            xyz_um = getPosition(sutterM285);
+            
+            setOrigin(sutterM285);
             
             notify(obj,'StartRun');
             
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.latestData = [];
-                    obj.setAOSession(protocol);
+                    obj.setAOSession(protocol); % gets the next stimulus
+                    
+                    setOrigin(sutterM285);
+                    setVelocity(sutterM285, 5000, 10)
+
                     notify(obj,'StartTrial',PassProtocolData(protocol));
+                    
                     obj.aiSession.startBackground; % both amp and signal monitor input
                     
-                    M285_acquisitionScript;
+                    pause(protocol.params.preDurInSec)
+                    for i = 1:length(protocol.params.coordinate)
+                        moveTime = moveTo(sutterM285,protocol.params.coordinate{i}); % outof (+)/ into (-) board (x) % left(+)/right(-) (y)
+                        pause(protocol.params.pause)
+                    end
+                    if protocol.params.return
+                        moveTime = moveTo(sutterM285,[0;0;0]); 
+                    end
                     
                     wait(obj.aiSession);
                     
@@ -101,16 +123,14 @@ classdef M285Rig < EPhysRig
                 line(makeTime(protocol),makeTime(protocol),'parent',ax,'color',[1 0 0],'linewidth',1,'tag','ampinput','displayname','input');
                 ylabel('Amp Input'); box off; set(gca,'TickDir','out');
                 
-                %ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
-                %out = protocol.getStimulus;
+                ax = subplot(3,1,3,'Parent',obj.TrialDisplay,'tag','outputax');
+                out = protocol.getStimulus;
                 
-                %delete(findobj(ax,'tag','sgsmonitor'));               
-                %delete(findobj(ax,'tag','piezocommand'));
-                %line(makeOutTime(protocol),out.piezocommand,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','piezocommand','displayname','V');
-                %line(makeInTime(protocol),makeInTime(protocol),'parent',ax,'color',[0 0 1],'linewidth',1,'tag','sgsmonitor','displayname','V');
-                %ylabel('SGS (V)'); box off; set(gca,'TickDir','out');
-                %xlabel('Time (s)'); %xlim([0 max(t)]);
-                %linkaxes(get(obj.TrialDisplay,'children'),'x');
+                delete(findobj(ax,'tag','commandnorm'));
+                line(makeOutTime(protocol),out.commandnorm,'parent',ax,'color',[.7 .7 .7],'linewidth',1,'tag','commandnorm','displayname','V');
+                ylabel('Norm'); box off; set(gca,'TickDir','out');
+                xlabel('Time (s)'); %xlim([0 max(t)]);
+                linkaxes(get(obj.TrialDisplay,'children'),'x');
             end
         end
         
@@ -131,8 +151,8 @@ classdef M285Rig < EPhysRig
             
             chnames = obj.getChannelNames;
             
-%             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','piezocommand');
-%             set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'piezocommand')));
+%             l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','commandnorm');
+%             set(l,'ydata',obj.outputs.datacolumns(:,strcmp(chnames.out,'commandnorm')));
 
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
             set(l,'ydata',invec);

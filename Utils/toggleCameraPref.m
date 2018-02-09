@@ -1,6 +1,6 @@
 function toggleCameraPref(varargin)
 % Turn the Camera preference on or off
-campref = getpref('AcquisitionHardware','cameraToggle');
+campref = getacqpref('AcquisitionHardware','cameraToggle');
 if nargin
     campref = varargin{1};
     switch campref
@@ -12,11 +12,11 @@ if nargin
 end
 switch campref
     case 'on'
-        setpref('AcquisitionHardware','cameraToggle','off')
+        setacqpref('AcquisitionHardware','cameraToggle','off')
         systemsound('Windows Hardware Remove')
         fprintf('Camera Disconnected\n')
     case 'off'
-        setpref('AcquisitionHardware','cameraToggle','on')
+        setacqpref('AcquisitionHardware','cameraToggle','on')
         systemsound('Windows Hardware Insert')
         fprintf('Camera Connected\n')
 end

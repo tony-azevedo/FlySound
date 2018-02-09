@@ -3,7 +3,7 @@ function varargout = autoCorrelation(data,params,varargin)
 
 fig = findobj('tag',mfilename); 
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[584    10   560   256],...
@@ -11,9 +11,9 @@ if isempty(fig);
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 [prot,d,fly,cell,trial] = extractRawIdentifiers(data.name);

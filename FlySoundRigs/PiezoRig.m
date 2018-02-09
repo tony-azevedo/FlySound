@@ -17,9 +17,9 @@ classdef PiezoRig < EPhysRig
         function obj = PiezoRig(varargin)
             obj.addDevice('piezo','Piezo');
             obj.addDevice('speaker','Speaker');
-            % rigDev = getpref('AcquisitionHardware','rigDev');
-            % triggerChannelIn = getpref('AcquisitionHardware','triggerChannelIn');
-            % triggerChannelOut = getpref('AcquisitionHardware','triggerChannelOut');
+            % rigDev = getacqpref('AcquisitionHardware','rigDev');
+            % triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
+            % triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
             %
             % obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
             % obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');

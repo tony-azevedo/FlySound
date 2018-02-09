@@ -1,17 +1,19 @@
 classdef Rig < handle
-    % current hierarchy: 7/14/16
+    % current hierarchy:
     %   Rig -> EPhysRig -> BasicEPhysRig
-    %                   -> TwoTrodeRig
     %                   -> PiezoRig 
     %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
-    %                                   -> PiezoCameraRig 
-    %                   -> PGRCameraRig -> PGREPhysRig
-    %                                   -> PGRPiezoRig % This setup is for
-    %                                   a digital output that requires same
-    %                                   session, and same input and output
-    %                                   sample rates
+    %                                   -> PiezoCameraRig
+    %       -> TwoAmpRig -> TwoTrodeRig
+    %                   -> Epi2TRig
+    %                   -> Piezo2TRig
+    %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
+    %                                         -> Camera2TRig
+    %                                         -> CameraPiezo2TRig
+    
+    
     
     properties (Constant, Abstract)
         rigName
@@ -41,19 +43,23 @@ classdef Rig < handle
         StimulusOutsideBounds
         StartRun
         StartTrial
+        StartTrialCamera
+        EndTrial
         SaveData
         DataSaved
+        IncreaseTrialNum
+        EndRun
     end
     
     methods
         function obj = Rig(varargin)
-            if ~ispref('AcquisitionHardware','rigDev')
-                setpref('AcquisitionHardware','rigDev','Dev1')
-                setpref('AcquisitionHardware','modeDev','Dev1')
-                setpref('AcquisitionHardware','gainDev','Dev1')
-                setpref('AcquisitionHardware','triggerChannelIn','PFI0')
-                setpref('AcquisitionHardware','triggerChannelOut','PFI2')
-                disp(getpref('AcquisitionHardware'));
+            if ~isacqpref('AcquisitionHardware','rigDev')
+                setacqpref('AcquisitionHardware','rigDev','Dev1')
+                setacqpref('AcquisitionHardware','modeDev','Dev1')
+                setacqpref('AcquisitionHardware','gainDev','Dev1')
+                setacqpref('AcquisitionHardware','triggerChannelIn','PFI0')
+                setacqpref('AcquisitionHardware','triggerChannelOut','PFI2')
+                disp(getacqpref('AcquisitionHardware'));
                 error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')
             end
             % for now ao Session is the master session
@@ -101,11 +107,29 @@ classdef Rig < handle
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
+                    
+                    % setup the data logger
                     notify(obj,'StartTrial',PassProtocolData(protocol));
+                    % start the videoinput object
+                    notify(obj,'StartTrialCamera');
+                    
+                    if ~double(obj.aiSession.ScansQueued)
+                        error('No data is queued')
+                    end
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
+                    wait(obj.aiSession);
+                    % catch e
+                    %     disp(e)
+                    %     disp(obj.aiSession)
+                    %     disp(obj.devices.camera.videoInput)
+                    %     keyboard
+                    %     error(e)
+                    % end
+                    notify(obj,'EndTrial');
+                    
                     %disp(obj.aiSession)
                     obj.transformInputs(in);
-                    if obj.params.interTrialInterval >0;
+                    if obj.params.interTrialInterval >0
                         t = timerfind('Name','ITItimer');
                         start(t)
                         wait(t)
@@ -113,9 +137,11 @@ classdef Rig < handle
                     notify(obj,'SaveData');
                     obj.displayTrial(protocol);
                     notify(obj,'DataSaved');
+                    notify(obj,'IncreaseTrialNum');
                 end
                 protocol.reset;
             end
+            notify(obj,'EndRun');
         end
                         
         function setAOSession(obj,protocol)
@@ -259,11 +285,10 @@ classdef Rig < handle
         end
         
         function defaults = getDefaults(obj)
-            % rmpref('defaultsTwoPhotonEPhysRig')
-            % rmpref('defaultsBasicEPhysRig')
-            % rmpref('defaultsPiezoRig')
-            
-            defaults = getpref(['defaults',obj.rigName]);
+            % rmacqpref('defaultsTwoPhotonEPhysRig')
+            % rmacqpref('defaultsBasicEPhysRig')
+            % rmacqpref('defaultsPiezoRig')
+            defaults = getacqpref(['defaults',obj.rigName]);
             if isempty(defaults)
                 defaultsnew = [fieldnames(obj.params),struct2cell(obj.params)]';
                 obj.setDefaults(defaultsnew{:});
@@ -284,7 +309,7 @@ classdef Rig < handle
             parse(p,varargin{:});
             results = fieldnames(p.Results);
             for r = 1:length(results)
-                setpref(['defaults',obj.rigName],...
+                setacqpref(['defaults',obj.rigName],...
                     [results{r}],...
                     p.Results.(results{r}));
             end
@@ -325,19 +350,22 @@ classdef Rig < handle
             rigStruct.rigConstructor = str2func(obj.rigName);
             rigStruct.outputs = obj.outputs.portlabels;
             if isfield(obj.outputs,'digitalPortlabels');
-                if length(rigStruct.outputs)<getpref('AcquisitionHardware','AnalogOutN')
-                    rigStruct.outputs{getpref('AcquisitionHardware','AnalogOutN')} = [];
+                if length(rigStruct.outputs)<getacqpref('AcquisitionHardware','AnalogOutN')
+                    rigStruct.outputs{getacqpref('AcquisitionHardware','AnalogOutN')} = [];
                 end
                 rigStruct.outputs = [rigStruct.outputs obj.outputs.digitalPortlabels];
             end
             rigStruct.inputs = obj.inputs.portlabels;
             if isfield(obj.inputs,'digitalPortlabels');
-                if length(rigStruct.inputs)<getpref('AcquisitionHardware','AnalogInN')
-                    rigStruct.inputs{getpref('AcquisitionHardware','AnalogInN')} = [];
+                if length(rigStruct.inputs)<getacqpref('AcquisitionHardware','AnalogInN')
+                    rigStruct.inputs{getacqpref('AcquisitionHardware','AnalogInN')} = [];
                 end
                 rigStruct.inputs = [rigStruct.inputs obj.inputs.digitalPortlabels];
             end
-            rigStruct.devices = obj.devices;
+            dnames = fieldnames(obj.devices);
+            for i = 1:length(dnames);                
+                rigStruct.devices.(dnames{i}) = obj.devices.(dnames{i}).deviceName;
+            end
             rigStruct.timestamp = now;
         end
         
@@ -356,8 +384,8 @@ classdef Rig < handle
     methods (Access = protected)
         
         function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
             obj.params.testcurrentstepamp = -5;
             obj.params.testvoltagestepamp = -2.5;
             obj.params.teststep_start = 0.010;
@@ -368,7 +396,7 @@ classdef Rig < handle
         function setSessions(obj,varargin)
             % Establish all the output channels and input channels in one
             % place
-            rigDev = getpref('AcquisitionHardware','rigDev');
+            rigDev = getacqpref('AcquisitionHardware','rigDev');
             
             if nargin>1
                 keys = varargin;
@@ -391,7 +419,7 @@ classdef Rig < handle
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
-                    obj.outputs.device{dev.digitalOutputPorts(i)+getpref('AcquisitionHardware','AnalogOutN')+1} = dev;
+                    obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
                 end
                 
                 for i = 1:length(dev.inputPorts)
@@ -407,7 +435,7 @@ classdef Rig < handle
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
                     ch.Name = dev.digitalInputLabels{i};
                     obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
-                    obj.inputs.device{dev.digitalInputPorts(i)+getpref('AcquisitionHardware','AnalogInN')+1} = dev;
+                    obj.inputs.device{dev.digitalInputPorts(i)+getacqpref('AcquisitionHardware','AnalogInN')+1} = dev;
                     % obj.inputs.data.(dev.inputLabels{i}) = [];
                 end
                 
@@ -431,7 +459,7 @@ classdef Rig < handle
                             case 'InputOnly'
                                 obj.inputchannelidx(end+1) = ch;
                             otherwise
-                                error('Not able to deal with Bidiretional Digital channels')
+                                error('Not able to deal with Bidirectional Digital channels')
                         end
                     case 'a'
                          switch obj.aoSession.Channels(ch).ID(2)

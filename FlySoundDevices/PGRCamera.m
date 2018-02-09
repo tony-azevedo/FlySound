@@ -14,10 +14,15 @@ classdef PGRCamera < Device
         fileDestination
         fileName
         living
+        cameraLocation
+        format
+        camPortID
+        triggermode
+        triggerpolarity
+        dispFunc
     end
     
     properties
-        deviceName = 'PGRCamera';
     end
 
     events
@@ -28,41 +33,38 @@ classdef PGRCamera < Device
         function obj = PGRCamera(varargin)
             % This and the transformInputs function are hard coded
             
-            obj.digitalInputLabels = {'exposure'};
-            obj.digitalInputUnits = {'Bit'};
-            obj.digitalInputPorts = [0];
-            obj.digitalOutputLabels = {'trigger'};
-            obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [2];
-
-            obj.outputPorts = [];
-
-            fprintf('RESET IMAQ');
-            imaqreset
-            fprintf('\n')
-
+            obj.gaincorrection = [];
+            obj.videoInput = [];
+            obj.source = [];
             obj.fileDestination = 'C:\Users\tony\Acquisition\fly_movement_videos';
             obj.fileName = 'default_name';
+            obj.living = 0;
+            obj.cameraLocation = 'PGRCamDefaultLoc';
+            obj.format = '';
+            obj.camPortID = 0;
+            obj.triggermode = '';
+            obj.triggerpolarity = 'risingEdge';
+        end
+        
+        function setup(obj,varargin)
             
-            % configure and start imaq
-            obj.videoInput = videoinput('pointgrey', 2, 'Mono8_640x480');
+
+            fprintf('Turn off FlyCap software');
+            h = warndlg('Turn off FlyCap software');
+            uiwait(h)
+            % imaqreset
+            fprintf('\n')
+
+            obj.videoInput = videoinput('pointgrey', obj.camPortID, obj.format,'Tag',obj.cameraLocation);
             obj.source = getselectedsource(obj.videoInput);
             
             % Setup source and pulses etc
-            triggerconfig(obj.videoInput, 'hardware', 'risingEdge', 'externalTriggerMode0-Source0');
+            triggerconfig(obj.videoInput, 'hardware', obj.triggerpolarity, obj.triggermode);
             obj.videoInput.TriggerRepeat = 0;
             obj.videoInput.FramesPerTrigger = 1;
-            obj.videoInput.LoggingMode = 'disk&memory';
-            
-            % Strobe stuff
-            obj.source.Strobe1 = 'On'; %% turn this on at the last minute
-            obj.source.Strobe1Polarity = 'High';
-            set(obj.source,'FrameRate','60')
-
+            obj.videoInput.LoggingMode = 'disk';
             obj.living = 0;
-            obj.live()
-            pause
-            obj.dead()
+
         end
         
         function varargout = transformInputs(obj,inputstruct,varargin)
@@ -82,7 +84,6 @@ classdef PGRCamera < Device
         end
         
         function out = transformOutputs(obj,out,varargin)
-            %multiply outputs by volts/micron
             rig = varargin{1};
             if ~isfield(out,'trigger')
                 fns = fieldnames(out);
@@ -95,16 +96,21 @@ classdef PGRCamera < Device
             Nframes = floor(dur/frametime);
             idxs = round(((1:Nframes)-1)*(frametime*rig.aoSession.Rate) + 1);
             out.trigger(idxs) = 1;
-            out.trigger(idxs+1) = 1;
+            out.trigger(idxs+1) = 0;
             out.trigger(idxs(2)) = 0;
             out.trigger(idxs(2)+1) = 0;
             out.trigger(idxs(3)) = 0;
             out.trigger(idxs(3)+1) = 0;
             out.trigger(end) = 0;
             
+<<<<<<< HEAD
+            obj.params.Nframes = sum(out.trigger)/1;%/2;
+=======
+            %out.trigger = ~out.trigger;
             obj.params.Nframes = sum(out.trigger)/2;
+>>>>>>> refs/remotes/origin/TutLabMaster
             obj.videoInput.TriggerRepeat = obj.params.Nframes-1;
-            obj.videoInput.TriggerFcn = {'display_frame'};
+            obj.videoInput.TriggerFcn = {obj.dispFunc};
         end
     
         function live(obj)
@@ -125,12 +131,12 @@ classdef PGRCamera < Device
             fprintf('Triggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount)
             stop(obj.videoInput)
         end
+        
         function varargout = status(obj)
             s = sprintf('Triggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount);
             missedFrames = obj.videoInput.TriggerRepeat+1 - obj.videoInput.TriggersExecuted;
             varargout = {obj.videoInput.Running,s,missedFrames};
         end
-
         
         function setLogging(obj,filename)
             [fn,D] = strtok(fliplr(filename),filesep);
@@ -148,7 +154,7 @@ classdef PGRCamera < Device
 
         function defineParameters(obj)
             obj.params.setup = 'x Frames, write in the rest of the information';
-            obj.params.framerate = 25;
+            obj.params.framerate = 40;
             obj.params.Nframes = 30;
         end
     end

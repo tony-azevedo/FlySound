@@ -7,7 +7,13 @@ classdef PGREpiRig < PGRCameraRig
     
     methods
         function obj = PGREpiRig(varargin)
-            obj.addDevice('epi','Epifluorescence');
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
+            switch lightstim
+                case 'LED_Red'
+                    obj.addDevice('epi','LED_Red');
+                case 'Epifluorescence'
+                    obj.addDevice('epi','Epifluorescence');
+            end
         end
                 
         function setDisplay(obj,fig,evnt,varargin)

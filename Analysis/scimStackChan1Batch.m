@@ -21,16 +21,16 @@ else
     fig = p.Results.dFoFfig;
 end
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[1030 10 560 450],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 
@@ -90,7 +90,7 @@ imshow(cat(3,I_mask,I_green/max(I_green(:)),I_mask),[],'initialmagnification','f
 title('Threshold ROI, double click when done')
 roidrawax = panl(2).select();
 
-roi_temp = getpref('quickshowPrefs','scimStackChan1Mask');
+roi_temp = getacqpref('quickshowPrefs','scimStackChan1Mask');
 rectangle('position',roi_temp,'parent',roidrawax,'edgecolor',[1 0 0]);
 button = questdlg('Make new ROI?','ROI','No');
 if strcmp(button,'Yes');
@@ -107,7 +107,7 @@ roi_temp(3) = ceil(roi_temp(3));
 roi_temp(4) = ceil(roi_temp(4));
 
 %% Save the trace to the trial
-setpref('quickshowPrefs','scimStackChan1Mask',roi_temp)
+setacqpref('quickshowPrefs','scimStackChan1Mask',roi_temp)
 
 %% Batch process the bunch using the same ROI.
 

@@ -252,7 +252,7 @@ classdef MultiClamp700B < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            % try rmpref('defaultsMultiClamp700B'), catch, end
+            % try rmacqpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
             obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9

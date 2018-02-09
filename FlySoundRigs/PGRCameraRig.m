@@ -7,7 +7,6 @@ classdef PGRCameraRig < EPhysRig
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
     %                                   -> PiezoCameraRig 
-    %       -> SingleSession rig?
     %                   -> PGRCameraRig -> PGREPhysRig
     %                                   -> PGRPiezoRig % This setup is for
     %                                   a digital output that requires same
@@ -22,8 +21,8 @@ classdef PGRCameraRig < EPhysRig
     
     methods
         function obj = PGRCameraRig(varargin)
-            obj.addDevice('camera','PGRCamera');
-            rigDev = getpref('AcquisitionHardware','rigDev');
+            currentPGRCamera = getacqpref('AcquisitionHardware','PGRCameraLocation');
+            obj.addDevice('camera',currentPGRCamera);
             addlistener(obj,'StartTrial',@obj.readyCamera);
             addlistener(obj,'DataSaved',@obj.resetCamera);
         end

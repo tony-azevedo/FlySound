@@ -25,8 +25,8 @@ classdef EPhysRig < Rig
     
     methods
         function obj = EPhysRig(varargin)
-            % setpref('AcquisitionHardware','Amplifier','MultiClamp700B') %
-            % setpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
+            % setacqpref('AcquisitionHardware','Amplifier','MultiClamp700A') %
+            % setacqpref('AcquisitionHardware','Amplifier','AxoPatch200B_2P') %
             % AxoPatch200B % AxoClamp2B % MultiClamp700B % AxoPatch200B_2P
             
             ampDevices = {'MultiClamp700A','MultiClamp700AAux'};
@@ -35,7 +35,7 @@ classdef EPhysRig < Rig
             p.addParameter('amplifier1Device','MultiClamp700A',@ischar);            
             parse(p,varargin{:});
             
-            acqhardware = getpref('AcquisitionHardware');
+            acqhardware = getacqpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier') ...
                     && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
                     && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');

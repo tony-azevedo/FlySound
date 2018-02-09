@@ -106,7 +106,7 @@ classdef AxoPatch200B < Device
         end
         
         function setModeSession(obj)
-            modeDev = getpref('AcquisitionHardware','modeDev');
+            modeDev = getacqpref('AcquisitionHardware','modeDev');
             obj.modeSession = daq.createSession('ni');
             obj.modeSession.addAnalogInputChannel(modeDev,2, 'Voltage');
             obj.modeSession.Channels(1).TerminalConfig = 'SingleEndedNonReferenced';
@@ -115,7 +115,7 @@ classdef AxoPatch200B < Device
         end
         
         function setGainSession(obj)
-            gainDev = getpref('AcquisitionHardware','gainDev');
+            gainDev = getacqpref('AcquisitionHardware','gainDev');
             obj.gainSession = daq.createSession('ni');
             obj.gainSession.addAnalogInputChannel(gainDev,1, 'Voltage');
             obj.modeSession.Channels(1).TerminalConfig = 'SingleEnded';

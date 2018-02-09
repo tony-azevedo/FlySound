@@ -1,8 +1,8 @@
 function fc = analysisFigConstructor(analstr)
 
-if ~ispref('AnalysisFigures')
-    setpref('AnalysisFigures',analstr,[]);
+if ~isacqpref('AnalysisFigures')
+    setacqpref('AnalysisFigures',analstr,[]);
 end
-fc = getpref('AnalysisFigures',analstr);
+fc = getacqpref('AnalysisFigures',analstr);
 
     

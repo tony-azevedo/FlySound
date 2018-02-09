@@ -66,10 +66,12 @@ classdef PGREPhysRig < PGRCameraRig
                 delete(findobj(ax,'tag','ampoutput'));
                 outlabel = fieldnames(out);
                 if ~isempty(outlabel)
-                    line(makeOutTime(protocol),out.(outlabel{1}),'parent',ax,'color',[.8 .8 .8],'linewidth',1,'tag','ampoutput','displayname','output');
+                    line(makeOutTime(protocol),out.(outlabel{1}),'parent',ax,'color',[.8 .8 .8]*0,'linewidth',1,'tag','trigger','displayname','trigger');
+                    line(makeOutTime(protocol),out.(outlabel{1}),'parent',ax,'color',[.8 .8 .8],'linewidth',1,'tag','exposure','displayname','exposure');
                     ylabel('out'); box off; set(gca,'TickDir','out');
                 else
-                    line(makeOutTime(protocol),makeOutTime(protocol),'parent',ax,'color',[.8 .8 .8],'linewidth',1,'tag','ampoutput','displayname','output');
+                    line(makeOutTime(protocol),makeOutTime(protocol),'parent',ax,'color',[.8 .8 .8]*0,'linewidth',1,'tag','trigger','displayname','trigger');
+                    line(makeOutTime(protocol),makeOutTime(protocol),'parent',ax,'color',[.8 .8 .8],'linewidth',1,'tag','exposure','displayname','exposure');
                     box off; set(gca,'TickDir','out');
                 end
                 xlabel('Time (s)'); %xlim([0 max(t)]);
@@ -97,12 +99,13 @@ classdef PGREPhysRig < PGRCameraRig
                 ind = find(strcmp(obj.devices.amplifier.inputLabels,'current'));
                 inaltunits = obj.devices.amplifier.inputUnits{ind(1)};
             end
+
             ylabel(findobj(obj.TrialDisplay,'tag','inputax'),inunits);
             ylabel(findobj(obj.TrialDisplay,'tag','outputax'),inaltunits);
 
             
             l = findobj(findobj(obj.TrialDisplay,'tag','inputax'),'tag','ampinput');
-            set(l,'ydata',invec);
+            set(l,'ydata',double(invec));
 
             [st,str,missedFrames] = obj.devices.camera.status;
             xlims = get(findobj(obj.TrialDisplay,'tag','inputax'),'xlim');
@@ -133,9 +136,15 @@ classdef PGREPhysRig < PGRCameraRig
                     %     strcmp(obj.devices.amplifier.outputLabels,'current')};
                 end
                 %ylabel(findobj(obj.TrialDisplay,'tag','outputax'),outunits);
+                outvec = 20*obj.outputs.datacolumns(:,2);
+                exvec = 20*obj.inputs.data.exposure;
 
-                l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','ampoutput');
-                set(l,'ydata',outvec);                
+                l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','trigger');
+                set(l,'ydata',outvec);           
+                
+                l = findobj(findobj(obj.TrialDisplay,'tag','outputax'),'tag','exposure');
+                set(l,'ydata',exvec);
+
             end
         end
     end

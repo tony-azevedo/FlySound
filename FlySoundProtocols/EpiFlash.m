@@ -1,4 +1,4 @@
-% Move the Piezo with steps, control displacements
+% Control the Epifluorescence, control displacements
 classdef EpiFlash < FlySoundProtocol
     
     properties (Constant)
@@ -33,9 +33,17 @@ classdef EpiFlash < FlySoundProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
-            commandstim = obj.y* obj.params.displacement + obj.params.displacementOffset;
-            obj.out.epicommand = commandstim;
-            varargout = {obj.out,obj.out.epicommand,commandstim};
+            commandstim = obj.y* obj.params.ndf + obj.params.background;
+            totalstimpnts = obj.params.stimDurInSec*obj.params.sampratein;
+            [N,D] = rat(obj.params.ndf);
+            T = totalstimpnts/D;
+            substim = [ones(N,1); zeros(D-N,1)];
+            substim = repmat(substim,T,1);
+            
+%             obj.out.epicommand = commandstim;
+            obj.out.epittl = obj.y;
+            obj.out.epittl(obj.y==1) = substim;
+            varargout = {obj.out,obj.out.epittl,commandstim};
         end
         
     end % methods
@@ -43,11 +51,11 @@ classdef EpiFlash < FlySoundProtocol
     methods (Access = protected)
         
         function defineParameters(obj)
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
-            obj.params.displacements = [2.5];
-            obj.params.displacement = obj.params.displacements(1);
-            obj.params.displacementOffset = 0;
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
+            obj.params.ndfs = 1;
+            obj.params.ndf = obj.params.ndfs(1);
+            obj.params.background = 0;
             obj.params.stimDurInSec = .2;
             obj.params.preDurInSec = .2;
             obj.params.postDurInSec = .1;
@@ -60,12 +68,13 @@ classdef EpiFlash < FlySoundProtocol
         
         function setupStimulus(obj,varargin)
             setupStimulus@FlySoundProtocol(obj);
-            obj.params.displacement = obj.params.displacements(1);
+            obj.params.ndf = obj.params.ndfs(1);
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
             obj.y(round(obj.params.samprateout*(obj.params.preDurInSec)+1): round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
-            obj.out.epicommand = obj.y;
+%             obj.out.epicommand = obj.y;
+            obj.out.epittl = obj.y;
         end
         
     end % protected methods

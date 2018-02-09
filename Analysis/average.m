@@ -1,20 +1,20 @@
 function varargout = average(data,params,varargin)
 % powerSpectrum(data,params,time,mode)
-% proplist = getpref('AnalysisFigures','average');
-% rmpref('AnalysisFigures','average');
+% proplist = getacqpref('AnalysisFigures','average');
+% rmacqpref('AnalysisFigures','average');
 
 fig = findobj('tag',mfilename); 
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[584         350        1089         616],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
     p = uicontrol('parent',fig,'style','pushbutton',...
         'units','normalized','position',[.01 .92 .1 .08],...

@@ -8,8 +8,7 @@ classdef MultiClamp700A < Device
     end
 
     properties (Hidden, SetAccess = protected)
-        modeSession
-        gainSession
+        modeGainGUI
         secondary_gain
         amplifierDevNumber = '_1';
         partOfSet = false;
@@ -136,7 +135,10 @@ classdef MultiClamp700A < Device
         end
         
         function setModeSession(obj)            
-            % add listener to the MC telegraphs...
+            st = getacqpref('MC700AGUIstatus','status');
+            if ~st
+                MultiClamp700AGUI;
+            end
         end
         
         function setGainSession(obj)
@@ -144,16 +146,24 @@ classdef MultiClamp700A < Device
         end
                     
         function newmode = getmode(obj)
-            mccmode = obj.subclassModeFunction();
-            % see AxMultiClampMsg.h mode constants
-            if mccmode == 0
-                obj.mode = 'VClamp';
-            elseif mccmode == 1
-                obj.mode = 'IClamp';
-            elseif mccmode == 2
-                obj.mode = 'I=0';
+            st = getacqpref('MC700AGUIstatus','status');
+            if ~st
+                error('Open MultiClamp700AGUI')
             end
-            newmode = obj.mode;
+            
+            modeorder = obj.subclassModeFunction();
+            % % see AxMultiClampMsg.h mode constants
+            % if mccmode == 0
+            %     obj.mode = 'VClamp';
+            % elseif mccmode == 1
+            %     obj.mode = 'IClamp';
+            % elseif mccmode == 2
+            %     obj.mode = 'I=0';
+            % end
+            % newmode = obj.mode;
+            newmode = getacqpref('MC700AGUIstatus',modeorder);
+
+            obj.mode = newmode;
             if sum(strcmp('VClamp',newmode))
                     obj.outputLabels{1} = 'voltage';
                     obj.outputUnits{1} = 'mV';
@@ -161,7 +171,7 @@ classdef MultiClamp700A < Device
                     obj.inputUnits{1} = 'pA';
                     obj.inputLabels{2} = 'voltage';
                     obj.inputUnits{2} = 'mV';
-            elseif sum(strcmp({'IClamp'},newmode)) 
+            elseif sum(strcmp({'IClamp','IClamp2'},newmode)) 
                     obj.outputLabels{1} = 'current';
                     obj.outputUnits{1} = 'pA';
                     obj.inputLabels{1} = 'voltage';
@@ -182,17 +192,26 @@ classdef MultiClamp700A < Device
         end
         
         function newgain = getgain(obj)
-            [gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
+            %[gain1,primarySignal,gain2,secondarySignal] = obj.subclassGainFunction;
             % see AxMultiClampMsg.h constants prim and secondary signal IDs
-
-            obj.gain = gain1;
+            st = getacqpref('MC700AGUIstatus','status');
+            if ~st
+                error('Open MultiClamp700AGUI')
+            end
+            
+            gainorder = obj.subclassGainFunction;
+            obj.gain = str2double(getacqpref('MC700AGUIstatus',gainorder));
+            primarySignal = 0;
+            secondarySignal =  1;
             newgain = obj.gain;
             obj.secondary_gain = 1;
             
             % check that signal IDs are correct for this mode
             if sum(strcmp('VClamp',obj.mode))
                 % have to record current and membrane potential
-                
+                primarySignal = 0;
+                secondarySignal =  1;
+
                 if primarySignal ~= 0
                     errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_VC_MEMBCURRENT',obj.mode);
                     errordlg(errorstr,'Incorrect Signals','modal');
@@ -206,6 +225,9 @@ classdef MultiClamp700A < Device
                     
                     
             elseif sum(strcmp({'IClamp','I=0'},obj.mode)) 
+                primarySignal = 2;
+                secondarySignal = 8;
+                
                 if primarySignal ~= 2
                     errorstr = sprintf('In %s mode, but primary signal is not MCCMSG_PRI_SIGNAL_IC_MEMBPOTENTIAL',obj.mode);
                     errordlg(errorstr,'Incorrect Signals','modal');
@@ -217,24 +239,30 @@ classdef MultiClamp700A < Device
                     error(errorstr); %#ok<SPERR>
                 end
             end                
-        end        
+        end
+        
+        % 170830 Moved these functions to normal methods rather than
+        % static
+        function mccmode = subclassModeFunction(obj)
+            %             tic
+            %             fprintf(1,'\nGetting %s mode:\n',mfilename);
+            %             mccmode = MCCGetMode;
+            %             toc
+            mccmode = 'mode';
+        end
+        
+        function varargout = subclassGainFunction(obj)
+            %             tic
+            %             fprintf(1,'\nGetting %s gain:\n',mfilename);
+            %             [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
+            %             varargout = {gain1,primarySignal,gain2,secondarySignal};
+            %             toc
+            varargout = {[obj.mode '_gain']};
+        end
+
     end
     
     methods (Static)
-        function mccmode = subclassModeFunction
-            tic
-            fprintf(1,'\nGetting %s mode:\n',mfilename);
-            mccmode = MCCGetMode;
-            toc
-        end
-        
-        function varargout = subclassGainFunction
-            tic
-            fprintf(1,'\nGetting %s gain:\n',mfilename);
-            [gain1,primarySignal,gain2,secondarySignal] = MCCGetGain;
-            varargout = {gain1,primarySignal,gain2,secondarySignal};
-            toc
-        end
     end
     
     methods (Access = protected)
@@ -252,7 +280,7 @@ classdef MultiClamp700A < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            % try rmpref('defaultsMultiClamp700B'), catch, end
+            % try rmacqpref('defaultsMultiClamp700B'), catch, end
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
             obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9

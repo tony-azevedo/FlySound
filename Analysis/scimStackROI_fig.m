@@ -66,7 +66,7 @@ end
 %% select ROI 
 I_green = squeeze(nanmean(I(:,:,:,2),3));
 I_red = squeeze(nanmean(I(:,:,:,1),3));
-temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
+temp.ROI = getacqpref('quickshowPrefs','roiScimStackROI');
 if ~isfield(data,'ROI')
     data.ROI = temp.ROI;
 end

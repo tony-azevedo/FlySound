@@ -1,8 +1,8 @@
 %% Whole cell voltage clamp, Cs internal, para,
 
-setpref('AcquisitionHardware','PGRCameraToggle','on')
-setpref('AcquisitionHardware','PGRCameraToggle','off')
-getpref('AcquisitionHardware','PGRCameraToggle')
+setacqpref('AcquisitionHardware','PGRCameraToggle','on')
+setacqpref('AcquisitionHardware','PGRCameraToggle','off')
+getacqpref('AcquisitionHardware','PGRCameraToggle')
 
 % Start the bitch 
 % clear all, close all
@@ -17,7 +17,7 @@ A.run(1);
 
 
 %% EpiFlash
-setpref('AcquisitionHardware','PGRCameraToggle','off')
+setacqpref('AcquisitionHardware','PGRCameraToggle','off')
 
 A.setProtocol('EpiFlash');
 A.protocol.setParams('-q',...
@@ -28,7 +28,7 @@ A.protocol.setParams('-q',...
 A.run(3)
 
 %% Sweep
-setpref('AcquisitionHardware','PGRCameraToggle','on')
+setacqpref('AcquisitionHardware','PGRCameraToggle','on')
 
 A.rig.setParams('testcurrentstepamp',0)
 A.rig.applyDefaults;

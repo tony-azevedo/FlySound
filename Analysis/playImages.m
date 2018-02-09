@@ -7,42 +7,33 @@ end
 
 fig = findobj('tag',mfilename);
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
-            'Position',[1030 547 560 420],...
+            'Position',[640 300 640 512+30],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
     
-    % forward button
-    uicontrol('parent',fig,'style','pushbutton','units','normalized','position',[.9,.92,.1,.08],...
-        'string','<-','tag','back','callback',@callbackfnc)
-    % back button
-    uicontrol('parent',fig,'style','pushbutton','units','normalized','position',[.9,.84,.1,.08],...
-        'string','->','tag','forward','callback',@callbackfnc)
+    % slider
+    sld = uicontrol('parent',fig,'Style', 'slider','units','pixels','position',[6,19,628,12],...
+        'Min',1,'Max',10,'Value',1,...
+        'Callback', @gotomovietime);
     % play button
-    uicontrol('parent',fig,'style','togglebutton','units','normalized','position',[.9,.76,.1,.08],...
-        'string','Play','tag','play','callback',@callbackfnc)
-    uicontrol('parent',fig,'style','text','units','normalized','position',[.9,.68,.1,.08],...
-        'tag','exposureNumText','backgroundcolor',get(fig,'color'))
-    
-    set(fig,'windowScrollWheelFcn',@callbackfnc)
-    
+    uicontrol('parent',fig,'style','togglebutton','units','pixels','position',[6,1,40,18],...
+        'string','Play','tag','play','callback',@playcallback)
+    uicontrol('parent',fig,'style','edit','units','pixels','position',[48,1,40,18],...
+        'tag','exposureNumText','backgroundcolor',[1 1 1],'string',1,'callback',@playbackspeed)
+        
 else
     c = guidata(fig);
 end
 figure(fig); 
-if nargin>2
-    exposureNum = varargin{1};
-else
-    exposureNum = 1;
-end
-exposureName = constructFilnameFromExposureNum(data,exposureNum);
+moviename = getMoviePath(data.name);
 im = imread(exposureName);
 
 c.data = data;
@@ -74,10 +65,10 @@ varargout = {h};
 
 function varargout = constructFilnameFromExposureNum(data,exposureNum)
 
-imdir = regexprep(data.name,{'_Raw_','.mat'},{'_Images_',''});
+imdir = regexprep(data.name,{'_Raw_','.mat','Acquisition'},{'_Images_','','Raw_Data'});
 d = ls(fullfile(imdir,'*_Image_*'));
 jnk = d(1,:);
-pattern = ['_Image_' '\d+' '_'];
+pattern = ['_Image_' '\d+-\d+-\d+-\d+-\d+'];
 ind = regexp(jnk,pattern,'end');
 jnk = jnk(ind(1)+1:end);
 pattern = '\.tif';

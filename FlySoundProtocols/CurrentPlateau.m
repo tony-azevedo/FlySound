@@ -27,7 +27,7 @@ classdef CurrentPlateau < FlySoundProtocol
         function obj = CurrentPlateau(varargin)
             % In case more construction is needed
             obj = obj@FlySoundProtocol(varargin{:});
-            if strcmp('off', getpref('AcquisitionHardware','cameraToggle'));
+            if strcmp('off', getacqpref('AcquisitionHardware','cameraToggle'));
                 obj.analyses = obj.analyses(~strcmp(obj.analyses,'dFoverF'));
             end
         end
@@ -42,9 +42,9 @@ classdef CurrentPlateau < FlySoundProtocol
     methods (Access = protected)
                                 
         function defineParameters(obj)
-            % rmpref('defaultsCurrentPlateau')
-            obj.params.sampratein = 50000;
-            obj.params.samprateout = 50000;
+            % rmacqpref('defaultsCurrentPlateau')
+            obj.params.sampratein = 10000;
+            obj.params.samprateout = 10000;
             obj.params.Vm_id = 0;
             
             obj.params.plateaux = [-30 -20 -10 0 10 20 30];

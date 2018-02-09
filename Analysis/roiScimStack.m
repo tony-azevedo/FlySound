@@ -24,16 +24,16 @@ else
     fig = p.Results.dFoFfig;
 end
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) % rmpref('AnalysisFigures','powerSpectrum')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) % rmacqpref('AnalysisFigures','powerSpectrum')
         proplist = {...
             'tag',mfilename,...
             'Position',[1030 10 560 450],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@obj.setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 
@@ -94,7 +94,7 @@ if ~isfield(data,'ROI') || ~strcmp(p.Results.NewROI,'No');
         end
         button = questdlg('Make new ROI?','ROI','No');
     else 
-        temp.ROI = getpref('quickshowPrefs','roiScimStackROI');
+        temp.ROI = getacqpref('quickshowPrefs','roiScimStackROI');
         for roi_ind = 1:length(temp.ROI)
             line(temp.ROI{roi_ind}(:,1),temp.ROI{roi_ind}(:,2),'parent',roidrawax,'color',[1 0 0]);
         end
@@ -136,7 +136,7 @@ close(roifig);
 toc
 %% Save the trace to the trial
 tic; fprintf('Saving: '); 
-setpref('quickshowPrefs','roiScimStackROI',data.ROI)
+setacqpref('quickshowPrefs','roiScimStackROI',data.ROI)
 data.roiScimStackTrace = I_traces;
 data.exposureTimes = exp_t;
 

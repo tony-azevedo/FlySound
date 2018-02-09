@@ -32,7 +32,7 @@ classdef BasicEPhysRig < EPhysRig
     methods
         function obj = BasicEPhysRig(varargin)
             obj = obj@EPhysRig(varargin{:});
-            rigDev = getpref('AcquisitionHardware','rigDev');
+            rigDev = getacqpref('AcquisitionHardware','rigDev');
         end
         
         function setDisplay(obj,fig,evnt,varargin)

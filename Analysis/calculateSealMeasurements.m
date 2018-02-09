@@ -8,16 +8,16 @@ end
 
 fig = findobj('tag',mfilename); 
 if isempty(fig);
-    if ~ispref('AnalysisFigures') ||~ispref('AnalysisFigures',mfilename) %rmpref('AnalysisFigures','calculateSealMeasurements')
+    if ~isacqpref('AnalysisFigures') ||~isacqpref('AnalysisFigures',mfilename) %rmacqpref('AnalysisFigures','calculateSealMeasurements')
         proplist = {...
             'tag',mfilename,...
             'Position',[9    10   560   219],...
             'NumberTitle', 'off',...
             'Name', mfilename,... % 'DeleteFcn',@setDisplay);
             };
-        setpref('AnalysisFigures',mfilename,proplist);
+        setacqpref('AnalysisFigures',mfilename,proplist);
     end
-    proplist =  getpref('AnalysisFigures',mfilename);
+    proplist =  getacqpref('AnalysisFigures',mfilename);
     fig = figure(proplist{:});
 end
 if nargin>2

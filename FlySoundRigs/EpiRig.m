@@ -15,7 +15,15 @@ classdef EpiRig < EPhysRig
     
     methods
         function obj = EpiRig(varargin)
-            obj.addDevice('epi','Epifluorescence');
+            % setacqpref('AcquisitionHardware','LightStimulus','LED_Red')
+            % 'Epiflourescence'
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
+            switch lightstim
+                case 'LED_Red'
+                    obj.addDevice('epi','LED_Red');
+                case 'LED_Blue'
+                    obj.addDevice('epi','LED_Blue');
+            end
         end
         
         function setDisplay(obj,fig,evnt,varargin)
