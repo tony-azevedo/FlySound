@@ -125,6 +125,30 @@ classdef CameraBasler < Device
             obj.living = 0;
         end
         
+        function quickpeak(obj)
+            frame =  peekdata(obj.videoInput,1);
+            % Set up a display window
+            displayf = findobj('type','figure','tag','cam_snapshot');
+            if isempty(displayf)
+                displayf = figure;
+                displayf.Position = [40 2 640 530];
+                displayf.Tag = 'cam_snapshot';
+            end
+            acquire_sandbox_dispax = findobj(displayf,'type','axes','tag','dispax');
+            if isempty(acquire_sandbox_dispax)
+                acquire_sandbox_dispax = axes('parent',displayf,'units','pixels','position',[0 0 640 512],'tag','dispax');
+                acquire_sandbox_dispax.Box = 'off'; acquire_sandbox_dispax.XTick = []; acquire_sandbox_dispax.YTick = []; acquire_sandbox_dispax.Tag = 'dispax';
+                colormap(acquire_sandbox_dispax,'gray')
+            end
+            
+            imshow(frame/(0.5*max(frame(:))),'initialmagnification',50,'parent',acquire_sandbox_dispax);
+            %acquire_sandbox_dispax.CLim = [0 10];
+            drawnow
+            imshow(frame,'initialmagnification',50,'parent',acquire_sandbox_dispax);
+            %acquire_sandbox_dispax.CLim = [0 255];          
+
+        end
+
         function varargout = status(obj)
             s = sprintf('Triggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount);
             missedFrames = obj.videoInput.TriggerRepeat+1 - obj.videoInput.TriggersExecuted;
@@ -181,7 +205,8 @@ classdef CameraBasler < Device
             obj.source.LineSelector = 'Line3';             % brings up settings for line3
             obj.source.LineMode = 'output';                % should be 'output'
             obj.source.LineInverter = 'True';                % should be 'output'
-            
+            obj.source.LineSource = 'ExposureActive';
+
             obj.source.LineSelector = 'Line4';             % brings up settings for line3
             obj.source.LineMode = 'input';                % should be 'output'
             

@@ -36,6 +36,7 @@ classdef CameraBaslerTwoAmpRig < TwoAmpRig
         
         function resetCamera(obj,fig,evnt,varargin)
             obj.devices.camera.stop()
+            obj.devices.camera.quickpeak()
         end     
 
     end
