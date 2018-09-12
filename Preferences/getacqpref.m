@@ -1,6 +1,9 @@
 function prefs = getacqpref(str,varargin)
 
 global acqprefdir
+if isempty(acqprefdir)
+    startup
+end
 
 if nargin==0
     fprintf('Acquisition preferences:\n')

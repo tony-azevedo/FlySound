@@ -81,8 +81,8 @@ classdef CameraBasler < Device
                 out.trigger(:) = 0;
             else
             end
-            triggers = (0:obj.params.SampsPerFrameBurstTrigger:length(out.trigger(:)))+1;
-            triggers = [triggers;triggers+1];
+            triggers = (0:round(obj.params.SampsPerFrameBurstTrigger):length(out.trigger(:)))+1;
+            triggers = [triggers;triggers+3;triggers+6];
             triggers = triggers(:);
             out.trigger(triggers) = 1;
         end
@@ -240,7 +240,7 @@ classdef CameraBasler < Device
         function defineParameters(obj)
             obj.params.framerate = 169.2906;
             obj.params.Nframes = 30;
-            obj.params.SampsPerFrameBurstTrigger = 255/obj.params.framerate * 10000;
+            obj.params.SampsPerFrameBurstTrigger = ceil(255/obj.params.framerate * 10000);
         end
     end
 end

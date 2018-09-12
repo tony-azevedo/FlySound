@@ -512,8 +512,10 @@ classdef Acquisition < handle
         end
                 
         function warn(obj,warning)
+            obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\t\t\t%s\n',warning);
             fprintf(1,'\t\t\t%s\n',warning);
+            fclose(obj.notesFileID);
         end
         
         function openNotesFile(obj)

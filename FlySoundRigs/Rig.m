@@ -333,7 +333,7 @@ classdef Rig < handle
                         'Position',[8 832 560 165],...
                         'NumberTitle', 'off',...
                         'Name', 'Test Display',...
-                        'DeleteFcn',@saveDeletedFigure_callback);
+                        'CloseRequestFcn',@saveDeletedFigure_callback);
                 end
                 ax = subplot(1,1,1,'parent',obj.TestDisplay);
                 bl = findobj(ax,'tag','baseline');
@@ -349,21 +349,21 @@ classdef Rig < handle
         function rigStruct = getRigStruct(obj)
             rigStruct.rigConstructor = str2func(obj.rigName);
             rigStruct.outputs = obj.outputs.portlabels;
-            if isfield(obj.outputs,'digitalPortlabels');
+            if isfield(obj.outputs,'digitalPortlabels')
                 if length(rigStruct.outputs)<getacqpref('AcquisitionHardware','AnalogOutN')
                     rigStruct.outputs{getacqpref('AcquisitionHardware','AnalogOutN')} = [];
                 end
                 rigStruct.outputs = [rigStruct.outputs obj.outputs.digitalPortlabels];
             end
             rigStruct.inputs = obj.inputs.portlabels;
-            if isfield(obj.inputs,'digitalPortlabels');
+            if isfield(obj.inputs,'digitalPortlabels')
                 if length(rigStruct.inputs)<getacqpref('AcquisitionHardware','AnalogInN')
                     rigStruct.inputs{getacqpref('AcquisitionHardware','AnalogInN')} = [];
                 end
                 rigStruct.inputs = [rigStruct.inputs obj.inputs.digitalPortlabels];
             end
             dnames = fieldnames(obj.devices);
-            for i = 1:length(dnames);                
+            for i = 1:length(dnames)              
                 rigStruct.devices.(dnames{i}) = obj.devices.(dnames{i}).deviceName;
             end
             rigStruct.timestamp = now;
