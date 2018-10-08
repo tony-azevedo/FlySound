@@ -268,27 +268,14 @@ classdef FlySoundProtocol < handle
             trialdata.repeats = p.Results.repeats;
         end
                            
-        function queryCameraState(obj,varargin)
-            if ~isacqpref('AcquisitionHardware') || ~isacqpref('AcquisitionHardware','cameraToggle')
-                setacqpref('AcquisitionHardware','cameraToggle','off');
-            end
-            campref = getacqpref('AcquisitionHardware','cameraToggle');
-            if strcmp('on',campref)
-                try cameraRigMap = getacqpref('AcquisitionHardware','cameraRigMap');
-                catch
-                    crm = load('cameraRigMap');
-                    cameraRigMap = crm.cameraRigMap;
-                    setacqpref('AcquisitionHardware','cameraRigMap',cameraRigMap);
-                    %  cd C:\Users\tony\Code\FlySound\FlySoundRigs
-                    %  save('cameraRigMap','cameraRigMap')
-                end
-                obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
-                obj.out.trigger = 0*obj.x;
-                %obj.out.shutter = obj.out.trigger + 10*(obj.x >= obj.x(end)-.003-eps & obj.x < obj.x(end)-.002+eps);
-            end
-        end
-
         function queryCameraBaslerState(obj,varargin)
+            % don't try this if the rig is a CameraBaslerPair rig
+            if isa(obj,'EpiFlash2CB2T')
+                obj.out.trigger = 0*obj.x;
+                obj.out.trigger2 = 0*obj.x;
+                return
+            end
+            
             if ~isacqpref('AcquisitionHardware') || ~isacqpref('AcquisitionHardware','cameraBaslerToggle')
                 setacqpref('AcquisitionHardware','cameraBaslerToggle','off');
             end

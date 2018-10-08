@@ -136,7 +136,7 @@ classdef Acquisition < handle
             protstr = ['obj.protocol = ' prot '('];
             if nargin>2
                 for i = 1:length(varargin)
-                    protstr = [protstr '''' varargin{i} ''','];
+                    protstr = [protstr '''' varargin{i} ''',']; %#ok<AGROW>
                 end
                 protstr = protstr(1:end-1);
             end
@@ -175,8 +175,8 @@ classdef Acquisition < handle
             else
                 tag = inputdlg('Enter tag:', 'Tag', [1 50]);
             end
-            for t = 1:length(tag);
-                if ~sum(strcmp(obj.tags,tag{t}));
+            for t = 1:length(tag)
+                if ~sum(strcmp(obj.tags,tag{t}))
                     obj.tags{end+1} = tag{t};
                 end
             end
@@ -194,7 +194,7 @@ classdef Acquisition < handle
                 end
             end
             
-            for t = 1:length(untag);
+            for t = 1:length(untag)
                 % convert nums or strings to strings
                 untagel = num2str(untag{t});
                 obj.tags = obj.tags(~strcmp(obj.tags,untagel));
@@ -226,7 +226,6 @@ classdef Acquisition < handle
         
         
         function setIdentifiers(obj,varargin)
-            global acqprefdir
 
             p = inputParser;
             p.PartialMatching = 0;
@@ -301,7 +300,7 @@ classdef Acquisition < handle
                     defAns{1} = acquisitionPrefs.flygenotype;
                     usingAcqPrefs = 1;
                 else
-                    if ~isempty(acquisitionPrefs.flygenotype);
+                    if ~isempty(acquisitionPrefs.flygenotype)
                         defAns{1} = acquisitionPrefs.flygenotype;
                     end
                     undefinedID = 1;
@@ -313,7 +312,7 @@ classdef Acquisition < handle
                     defAns{2} = acquisitionPrefs.flynumber;
                     usingAcqPrefs = 1;
                 else
-                    if ~isempty(acquisitionPrefs.flynumber);
+                    if ~isempty(acquisitionPrefs.flynumber)
                         defAns{2} = acquisitionPrefs.flynumber;
                     end
                     undefinedID = 1;
@@ -325,7 +324,7 @@ classdef Acquisition < handle
                     defAns{3} = num2str(acquisitionPrefs.cellnumber);
                     usingAcqPrefs = 1;
                 else
-                    if ~isempty(acquisitionPrefs.cellnumber);
+                    if ~isempty(acquisitionPrefs.cellnumber)
                         defAns{3} = acquisitionPrefs.cellnumber;
                     end
                     undefinedID = 1;
@@ -340,7 +339,7 @@ classdef Acquisition < handle
                     defAns{4} = acquisitionPrefs.amplifier1Device;
                     usingAcqPrefs = 1;
                 else
-                    if ~isempty(acquisitionPrefs.amplifier1Device);
+                    if ~isempty(acquisitionPrefs.amplifier1Device)
                         defAns{4} = acquisitionPrefs.amplifier1Device;
                     end
                     undefinedID = 1;
@@ -422,12 +421,12 @@ classdef Acquisition < handle
                 N = 1;
                 dn = expt_rawtrials(1).datenum;
                 for num = 1:length(expt_rawtrials)
-                    if expt_rawtrials(num).datenum > dn;
+                    if expt_rawtrials(num).datenum > dn
                         dn = expt_rawtrials(num).datenum;
                         N = num;
                     end
                 end
-                load(fullfile(obj.D,expt_rawtrials(N).name));
+                load(fullfile(obj.D,expt_rawtrials(N).name),'params');
                 obj.block_n = params.trialBlock;
             end
                         
@@ -435,8 +434,12 @@ classdef Acquisition < handle
                 obj.flynumber,obj.cellnumber,obj.n-1,obj.protocol.protocolName,obj.expt_n-1,obj.block_n);
         end
         
-        function updateFileNames(obj,metprop,propevnt)
+        function updateFileNames(obj)%,metprop,propevnt)
             obj.D = ['C:\Users\tony\Acquisition\',datestr(date,'yymmdd'),'\',...
+                datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
+            % UPDATE 181003: installed an MVMe SSD drive, supposedly a ton
+            % faster to save to. Now putting everything there.
+            obj.D = ['F:\Acquisition\',datestr(date,'yymmdd'),'\',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             if ~isempty(obj.rig)
                 obj.saveAcquisition();
@@ -477,20 +480,14 @@ classdef Acquisition < handle
                 if obj.analyze
                     obj.analyzelistener = addlistener(obj.rig,'DataSaved',@obj.runAnalyses);
                 end
-                
-                % if isa(obj.rig,'CameraRig')
-                %     addlistener(obj.rig,'StartRun',@obj.cleanUpImagesBeforeRun);
-                %     addlistener(obj.rig,'StartTrial',@obj.cleanUpImagesBeforeTrial);
-                %     addlistener(obj.rig,'EndRun',@obj.cleanUpImagesAfterRun);
-                % end
-                
-                if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig')
-                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
+                                
+                if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig') || isa(obj.rig,'CameraBaslerPairTwoAmpRig')
                     addlistener(obj.rig,'StartTrial',@obj.setCameraLogging);
                 end
+                
                 if isa(obj.rig,'TwoPhotonRig')
                     %error('Do I need to clean up files?')
-                    addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
+                    %addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);
                 end
                 
                 devs = fieldnames(obj.rig.devices);
@@ -591,12 +588,12 @@ classdef Acquisition < handle
             end
             
             paramnames = fieldnames(obj.protocol.params);
-            for i = 1:length(paramnames);
+            for i = 1:length(paramnames)
                 val = obj.protocol.params.(paramnames{i});
                 if iscell(val)
                     str = '{';
                     for val_idx = 1:length(val)
-                        str = [str '[' num2str(val{val_idx}) ']'];
+                        str = [str '[' num2str(val{val_idx}) ']']; %#ok<AGROW>
                     end
                     val = [str '}'];
                 elseif length(val)>1
@@ -633,17 +630,12 @@ classdef Acquisition < handle
                 fprintf(obj.notesFileID,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
                 fprintf(1,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
             end
-            % if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig')
-            %     rawname = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n-1);
-            %     try aviname = load(rawname,'imageFile');
-            %         fprintf(obj.notesFileID,'\t\tImageFile - %s\n',aviname.imageFile);
-            %         fprintf(1,'\t\tImageFile - %s\n',aviname.imageFile);
-            %     catch
-            %         fprintf(obj.notesFileID,'\t\tImageFile missing - %s\n',rawname);
-            %         fprintf(1,'\t\tImageFile - %s\n',rawname);
-            %     end
-            % end
-            
+            if isa(obj.rig,'CameraBaslerPairTwoAmpRig')
+                fprintf(obj.notesFileID,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
+                fprintf(1,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
+                fprintf(obj.notesFileID,'\t\tImageFile2 - %s\n',obj.rig.devices.cameratwin.fileName);
+                fprintf(1,'\t\tImageFile2 - %s\n',obj.rig.devices.cameratwin.fileName);
+            end
             fclose(obj.notesFileID);
         end
 
@@ -676,15 +668,16 @@ classdef Acquisition < handle
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             data.tags = obj.tags;
 
-            if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig');
+            if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig')
                 data.imageFile = obj.rig.devices.camera.fileName;
             end
+            if isa(obj.rig,'CameraBaslerPairTwoAmpRig')
+                data.imageFile = obj.rig.devices.camera.fileName;
+                data.imageFile2 = obj.rig.devices.cameratwin.fileName;
+            end
+            
             save(data.name, '-struct', 'data');
 
-            % if isa(obj.rig,'CameraRig') || isa(obj.rig,'CameraTwoAmpRig');
-            %     obj.matchAviFiles(data);
-            % end
-            
             if isa(obj.rig,'TwoPhotonRig')
                 obj.match2PImages(data);
             end
@@ -694,61 +687,7 @@ classdef Acquisition < handle
             obj.n = obj.n + 1;
             obj.expt_n = obj.expt_n+1;
         end
-        
-        % function matchAviFiles(obj,data,varargin)
-        %     % global MATCHEDAVIFILES
-        %     pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
-        %
-        %     savedirmat = ls(obj.D)';
-        %     savedirconts = savedirmat(:)';
-        %     avifiles = regexp(savedirconts,pattern,'match');
-        %
-        %     if isempty(avifiles)
-        %         h = msgbox('No images. Saving in the wrong directory?');
-        %         set(h, 'position',[5 280 170 52.5])
-        %         uiwait(h);
-        %         %warning('There are no images to connect to this trial')
-        %         data.imageFile = []; % newname;
-        %         return
-        %     end
-        %
-        %     avitimestamp = zeros(size(avifiles));
-        %     for im = 1:length(avifiles)
-        %         timestr = regexp(avifiles{im},pattern,'tokens');
-        %         avitimestamp(im) = datenum([datestr(data.timestamp,'yyyymmdd') 'T' timestr{1}{1}],'yyyymmddTHHMMSS');
-        %     end
-        %     % get the most recent movie
-        %     [~,curravi] = min(data.timestamp-avitimestamp);
-        %     oldname = avifiles{curravi};
-        %
-        %     % Changed 170829 - the renaming of large files is slower than
-        %     % going through files and finding the timestamp, so I'm saving
-        %     % the file name of the timestamped video in the trial
-        %     % structure. If the video software were ever to use a different
-        %     % timestamp, I'd have to change that.
-        %
-        % %             ext = regexp(oldname,'-(\d+)-\d+.avi','match');
-        % %             newname = [obj.protocol.protocolName '_Image_' num2str(obj.n-1) '_' datestr(data.timestamp,29) ext{1}];
-        % %             newname = fullfile(obj.D,newname);
-        %
-        % %             [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
-        %
-        % %             if ~success
-        % %                 if strcmp(m,'The process cannot access the file because it is being used by another process.')
-        % %                     h = msgbox('Close the file!');
-        % %                     set(h, 'position',[1280 700 170 52.5])
-        % %                     uiwait(h);
-        % %                     [success,m,~] = movefile(fullfile(obj.D,oldname),newname);
-        % %                 end
-        % %             end
-        %
-        %
-        %     data.imageFile = oldname; % newname;
-        %     data.imageMatch = 'after trial';
-        %     save(data.name, '-struct', 'data');
-        %     % MATCHEDAVIFILES = [MATCHEDAVIFILES,avifiles(curravi)];
-        %
-        % end
+       
  
         
         function match2PImages(obj,data,varargin)
@@ -787,21 +726,7 @@ classdef Acquisition < handle
             end
             save(data.name, '-struct', 'data');
         end
-        
-        function cleanUpImages(obj,varargin)
-            a = [];
-%             images = dir([obj.D,'\',obj.protocol.protocolName,'_Image_*']);
-%             
-%             pattern = [obj.protocol.protocolName,'_Image_' datestr(data.timestamp,29) '-(\d+)-\d+.avi'];
-%             savedirmat = ls(obj.D)';
-%             savedirconts = savedirmat(:)';
-%             avifiles = regexp(savedirconts,pattern,'match');
-%             
-%             for im = 1:length(avifiles)
-%                 
-%             end
-        end
-    
+            
         function cleanUpImagesBeforeTrial(obj,varargin)
             pattern = [obj.protocol.protocolName,'_Image_' datestr(date,29) '-(\d+)-\d+.avi'];
             savedirmat = ls(obj.D)';
@@ -810,7 +735,7 @@ classdef Acquisition < handle
             
             for im = 1:length(avifiles)
                 imagedir = fullfile(obj.D,'archive');
-                if ~isdir(imagedir);
+                if ~isdir(imagedir)
                     mkdir(imagedir);
                 end
                 [success,m,~] = movefile(fullfile(obj.D,avifiles{im}),imagedir);
@@ -828,7 +753,7 @@ classdef Acquisition < handle
             
             for im = 1:length(avifiles)
                 imagedir = fullfile(obj.D,'archive');
-                if ~isdir(imagedir);
+                if ~isdir(imagedir)
                     mkdir(imagedir);
                 end
                 [success,m,~] = movefile(fullfile(obj.D,avifiles{im}),imagedir);
@@ -842,6 +767,10 @@ classdef Acquisition < handle
         function setCameraLogging(obj,varargin)
             name = fullfile(regexprep(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n),{'_Raw_','.mat'},{'_Image_','_%s'}));            
             obj.rig.devices.camera.setLogging(name);
+            if isa(obj.rig,'CameraBaslerPairTwoAmpRig')
+                % CameraBaslerPairTwoAmpRig sets name of file to cam2.avi
+                obj.rig.devices.cameratwin.setLogging(name);
+            end
         end
         
         function saveAcquisition(obj,varargin)

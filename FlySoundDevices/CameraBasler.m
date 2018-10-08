@@ -1,7 +1,6 @@
 classdef CameraBasler < Device
     
     properties (Constant)
-        
     end
     
     properties (Hidden, SetAccess = protected)
@@ -15,7 +14,12 @@ classdef CameraBasler < Device
         camPortID
         format
         living
-        
+        modelSerialNumber
+        exampleframe
+        snapshotax
+        snapshotfigure
+        dwnsamp
+        displayimgobject
     end
     
     properties
@@ -30,26 +34,48 @@ classdef CameraBasler < Device
         function obj = CameraBasler(varargin)
             % This and the transformInputs function are hard coded
             
+            obj.modelSerialNumber = 'acA1300-200um (22366722)'; % Stable identifier of the camera
+
             obj.videoInput = [];
             obj.source = [];
             obj.fileDestination = 'C:\Users\tony\Acquisition\fly_movement_videos';
             obj.fileName = 'default_name';
             obj.living = 0;
             obj.format = 'Mono8';
-            obj.camPortID = 1;
+            
+            % Use the modelSerialNumber to get the camportID
+            obj.setCamPortID;
             
             obj.digitalInputLabels = {'exposure'};
             obj.digitalInputUnits = {'Bit'};
-            obj.digitalInputPorts = [3];
+            % UPDATE 181003: This becomes [26] when a second camera is
+            % added
+            % obj.digitalInputPorts = [3];
+            obj.digitalInputPorts = [26];
             
             obj.digitalOutputLabels = {'trigger'};
             obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [2];
-
-            obj.setupDevice();
+            % UPDATE 181003: This becomes [26] when a second camera is
+            % added
+            % obj.digitalOutputPorts = [2];
+            obj.digitalOutputPorts = [27];
+            if ~isa(obj,'CameraBaslerTwin')
+                obj.setupDevice();
+            end
         end
-                
         
+        function setCamPortID(obj)
+            % To determine obj.camPortID, use imaqhwinfo('gentl'), should
+            % give 2 Ids for paired camera
+            % each camera subclass should specify it's modelSerialNumber
+            hwi = imaqhwinfo('gentl');
+            devinfo = false(size(1:numel(hwi.DeviceInfo)));
+            for idx = 1:length(devinfo)
+                devinfo(idx) = strcmp(hwi.DeviceInfo(idx).DeviceName,obj.modelSerialNumber);
+            end
+            obj.camPortID = find(devinfo);
+        end
+
         function obj = setup(obj,protocol)
             obj.params.Nframes = floor(obj.params.framerate*protocol.params.durSweep)-1;
             obj.videoInput.FramesPerTrigger = obj.params.Nframes;
@@ -103,7 +129,15 @@ classdef CameraBasler < Device
             if obj.living && strcmp(obj.videoInput.preview,'on')
                 obj.dead;
             end
-            
+            if ~isa(obj,'CameraBaslerTwin')
+                
+                set(obj.videoInput,'FramesAcquiredFcnCount',20);
+                set(obj.videoInput,'FramesAcquiredFcn',@display_cam1_frame)
+                display_cam1_frame(obj.videoInput,[],obj.exampleframe,obj.snapshotax,obj.displayimgobject);
+                % test persistence of variables
+                % display_cam1_frame(obj.videoInput,[],obj.exampleframe);
+            end
+            figure(obj.snapshotfigure);
             start(obj.videoInput);
             obj.living = 1;
             fprintf('\n\t\t\tVideo started: %d of %d Triggers/Frames\n\t\t\t\tFilename:\t%s\n\t\t\t\tFilepath:\t%s\n',...
@@ -120,33 +154,15 @@ classdef CameraBasler < Device
                 fprintf('\n');
             end
 
-            fprintf('\t\t\tTriggers fired: %d of %d. Logger logged %d frames.\n',obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount)
+            fprintf('\t\t\tCam %d - Triggers fired: %d of %d. Logger logged %d frames.\n',obj.camPortID, obj.videoInput.TriggersExecuted,obj.videoInput.TriggerRepeat+1,obj.videoInput.DiskLoggerFrameCount)
             stop(obj.videoInput)
             obj.living = 0;
         end
         
         function quickpeak(obj)
-            frame =  peekdata(obj.videoInput,1);
-            % Set up a display window
-            displayf = findobj('type','figure','tag','cam_snapshot');
-            if isempty(displayf)
-                displayf = figure;
-                displayf.Position = [40 2 640 530];
-                displayf.Tag = 'cam_snapshot';
-            end
-            acquire_sandbox_dispax = findobj(displayf,'type','axes','tag','dispax');
-            if isempty(acquire_sandbox_dispax)
-                acquire_sandbox_dispax = axes('parent',displayf,'units','pixels','position',[0 0 640 512],'tag','dispax');
-                acquire_sandbox_dispax.Box = 'off'; acquire_sandbox_dispax.XTick = []; acquire_sandbox_dispax.YTick = []; acquire_sandbox_dispax.Tag = 'dispax';
-                colormap(acquire_sandbox_dispax,'gray')
-            end
-            
-            imshow(frame/(0.5*max(frame(:))),'initialmagnification',50,'parent',acquire_sandbox_dispax);
-            %acquire_sandbox_dispax.CLim = [0 10];
+            frame = getExampleFrame(obj);
+            obj.displayimgobject.CData(:) = frame(obj.dwnsamp);
             drawnow
-            imshow(frame,'initialmagnification',50,'parent',acquire_sandbox_dispax);
-            %acquire_sandbox_dispax.CLim = [0 255];          
-
         end
 
         function varargout = status(obj)
@@ -160,12 +176,29 @@ classdef CameraBasler < Device
             obj.fileName = fliplr(fn);
             obj.fileName = sprintf(obj.fileName,[datestr(now,30) '.avi']); % yyyymmddTHHMMSS;
             obj.fileDestination = fliplr(D(2:end));
-            diskLogger = VideoWriter([fullfile(obj.fileDestination,obj.fileName)], 'Motion JPEG AVI');
+            % UPDATE 181003: save videos on F:\ in grayscale AVI to speed
+            % up saving
+            diskLogger = VideoWriter(fullfile(obj.fileDestination,obj.fileName), 'Grayscale AVI');
+            % diskLogger = VideoWriter([fullfile(obj.fileDestination,obj.fileName)], 'Motion JPEG AVI');
+            % diskLogger.Quality = 85;
             diskLogger.FrameRate = obj.params.framerate;
-            diskLogger.Quality = 85;
+            
             obj.videoInput.DiskLogger = diskLogger;
         end
         
+        function frame = getExampleFrame(obj)
+            obj.source.TriggerSelector = 'FrameBurstStart';
+            obj.source.TriggerMode = 'Off';
+            triggerconfig(obj.videoInput, 'manual')
+            obj.exampleframe = getsnapshot(obj.videoInput);
+            
+            triggerconfig(obj.videoInput, 'hardware');
+
+            obj.source.TriggerSelector = 'FrameBurstStart';
+            obj.source.TriggerMode = 'On';
+            frame = obj.exampleframe;
+        end
+
     end
     
     methods (Access = protected)
@@ -193,7 +226,23 @@ classdef CameraBasler < Device
             end
             obj.videoInput = videoinput('gentl', obj.camPortID, obj.format); %vid = videoinput('gentl', 1, 'Mono8');
             obj.source = getselectedsource(obj.videoInput);
-            
+
+            % Set up ROIs
+            obj.source.CenterX = 'True';
+            obj.source.CenterY = 'True';
+            obj.videoInput.ROIPosition = [obj.params.ROIOffsetX obj.params.ROIOffsetY obj.params.ROIWidth obj.params.ROIHeight];                         
+            if isa(obj,'CameraBaslerTwin')
+                obj.source.ReverseX = 'True';
+            end
+
+            % Get a frame to set other properties of the cameraBasler
+            % object
+            obj.source.TriggerSelector = 'FrameStart';
+            obj.source.TriggerMode = 'Off';
+            obj.source.TriggerSelector = 'FrameBurstStart';
+            obj.source.TriggerMode = 'Off';
+            triggerconfig(obj.videoInput, 'manual');
+            obj.exampleframe = getsnapshot(obj.videoInput);
             
             % Setup source and pulses etc
             triggerconfig(obj.videoInput, 'hardware');
@@ -201,7 +250,7 @@ classdef CameraBasler < Device
             obj.videoInput.FramesPerTrigger = obj.params.Nframes;
             obj.videoInput.LoggingMode = 'disk&memory';
             
-            % Set up for
+            % Set up for triggering and exposure signals
             obj.source.LineSelector = 'Line3';             % brings up settings for line3
             obj.source.LineMode = 'output';                % should be 'output'
             obj.source.LineInverter = 'True';                % should be 'output'
@@ -209,10 +258,7 @@ classdef CameraBasler < Device
 
             obj.source.LineSelector = 'Line4';             % brings up settings for line3
             obj.source.LineMode = 'input';                % should be 'output'
-            
-            obj.source.TriggerSelector = 'FrameStart';
-            obj.source.TriggerMode = 'Off';
-            
+                        
             obj.source.TriggerSelector = 'FrameBurstStart';
             obj.source.TriggerSource = 'Line4';
             obj.source.AcquisitionBurstFrameCount = 255;
@@ -227,7 +273,42 @@ classdef CameraBasler < Device
             obj.source.ExposureTime = 1E6/obj.source.AcquisitionFrameRate-300;            
             obj.params.framerate = obj.source.ResultingFrameRate;
 
+            
             obj.living = 0;
+
+            obj.dwnsamp = obj.exampleframe;
+            obj.dwnsamp(:) = 0;
+            Cmap = 4:4:size(obj.dwnsamp,1);
+            Rmap = 4:4:size(obj.dwnsamp,2);
+            obj.dwnsamp(Cmap,Rmap) = 1;
+            shrunk = obj.dwnsamp(Cmap,Rmap);
+            obj.dwnsamp = logical(obj.dwnsamp);
+            
+            shrunk(:) = obj.exampleframe(obj.dwnsamp);
+            
+            obj.snapshotfigure = findobj('type','figure','tag',['cam' num2str(obj.camPortID) '_snapshotfigure']);
+            if isempty(obj.snapshotfigure)
+                obj.snapshotfigure = figure;
+                obj.snapshotfigure.Position = [400+320*(obj.camPortID-1) 2 320 266];
+                obj.snapshotfigure.Tag = ['cam' num2str(obj.camPortID) '_snapshotfigure'];
+                obj.snapshotfigure.MenuBar = 'none';
+                obj.snapshotfigure.ToolBar = 'none';
+                obj.snapshotfigure.NumberTitle = 'off';
+            end
+            obj.snapshotax = findobj(obj.snapshotfigure,'type','axes','tag',['cam' num2str(obj.camPortID) '_snapshotax']);
+            if isempty(obj.snapshotax)
+                obj.snapshotax = axes('parent',obj.snapshotfigure,'units','pixels','position',[0 0 320 256]);
+            else 
+                obj.snapshotax.Position = [obj.source.AutoFunctionROIOffsetX/4 obj.source.AutoFunctionROIOffsetY/4 obj.source.AutoFunctionROIWidth/4 obj.source.AutoFunctionROIHeight/4];
+            end
+            figure(obj.snapshotfigure)
+            
+            obj.displayimgobject = imshow(shrunk,'parent',obj.snapshotax);
+            obj.displayimgobject.ButtonDownFcn = {@CameraBaslerSnapshotAxFcn,obj};
+
+            obj.snapshotax.Position = [obj.source.AutoFunctionROIOffsetX/4 obj.source.AutoFunctionROIOffsetY/4 obj.source.AutoFunctionROIWidth/4 obj.source.AutoFunctionROIHeight/4];
+            obj.snapshotax.Box = 'off'; obj.snapshotax.XTick = []; obj.snapshotax.YTick = []; obj.snapshotax.Tag = ['cam' num2str(obj.camPortID) '_snapshotax'];
+            colormap(obj.snapshotax,'gray')
 
             fprintf(...
                 'SetupDevice: Camera Basler will record\n\t%d frames at %.2f Hz with %g us exposure time and %g gain\n',...
@@ -235,12 +316,21 @@ classdef CameraBasler < Device
                 obj.params.framerate,...
                 obj.source.ExposureTime,...
                 obj.source.Gain);
+
+
+            
         end
 
         function defineParameters(obj)
             obj.params.framerate = 169.2906;
             obj.params.Nframes = 30;
             obj.params.SampsPerFrameBurstTrigger = ceil(255/obj.params.framerate * 10000);
+            obj.params.ROIHeight = 1024;
+            obj.params.ROIWidth = 1280;
+            obj.params.ROIOffsetX = 0;
+            obj.params.ROIOffsetY = 0;
+            obj.params.ROISelector = 'ROI1';
         end
     end
 end
+

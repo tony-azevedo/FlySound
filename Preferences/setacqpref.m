@@ -1,6 +1,14 @@
 function yn = setacqpref(str,fields,values)
+% Functions similarly to setpref, but saves to a specific folder.
+% Note: this value is typically added at startup, but clearing all
+% variables can lead this value to dissapear. If that's the case, this
+% function calls startup.m
+% see also getacqpref
 
 global acqprefdir
+if isempty(acqprefdir)
+    startup
+end
 
 yn = ~isempty(dir([fullfile(acqprefdir,str) '.mat']));
 if yn
