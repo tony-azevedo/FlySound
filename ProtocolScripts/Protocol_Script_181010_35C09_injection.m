@@ -5,10 +5,9 @@ setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 
 clear A,    
 A = Acquisition;
-
 st = getacqpref('MC700AGUIstatus','status');
-% setacqpref('MC700AGUIstatus','mode','VClamp');
-% setacqpref('MC700AGUIstatus','VClamp_gain','50');
+setacqpref('MC700AGUIstatus','mode','VClamp');
+setacqpref('MC700AGUIstatus','VClamp_gain','50');
 if ~st
     MultiClamp700AGUI;
 end
@@ -35,7 +34,7 @@ A.untag('R_input')
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 
 setacqpref('MC700AGUIstatus','mode','IClamp');
-setacqpref('MC700AGUIstatus','IClamp_gain','100');
+setacqpref('MC700AGUIstatus','IClamp_gain','50');
 
 A.rig.setParams('testvoltagestepamp',0)
 A.rig.applyDefaults;
@@ -70,7 +69,7 @@ A = Acquisition;
 %% Use the Epis
 setacqpref('AcquisitionHardware','LightStimulus','LED_Blue')
 setacqpref('MC700AGUIstatus','mode','IClamp');
-setacqpref('MC700AGUIstatus','IClamp_gain','100');
+setacqpref('MC700AGUIstatus','IClamp_gain','50');
 
 
 %% Current Step 
@@ -82,7 +81,7 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'stimDurInSec',.5,...
-    'steps',[-.5 -.25  .25 .5, 1]* 100,... % [3 10]
+    'steps',[-1 -.5 -.25   .25 .5, 1]* 50,... % [3 10]
     'postDurInSec',1.5);
 A.run(1)
 
@@ -90,23 +89,23 @@ A.run(1)
 A.run(10)
 
 %% EpiFlash2T % What happens when the fly is jamming on the bar?
-% setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
-% A.rig.applyDefaults;
-% 
-% A.setProtocol('EpiFlash2T');
-% 
-% A.rig.setParams('testvoltagestepamp',0); %A.rig.applyDefaults;
-% A.rig.setParams('interTrialInterval',0);
-% A.protocol.setParams('-q',...
-%     'preDurInSec',.5,...
-%     'ndfs',1,...
-%     'stimDurInSec',2,...
-%     'postDurInSec',2.5);
-% % A.tag
-% 
-% A.run(3)%(60)
-% % do 60 or so repeats!
-% % A.clearTags
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+A.rig.applyDefaults;
+
+A.setProtocol('EpiFlash2T');
+
+A.rig.setParams('testvoltagestepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.2,...
+    'ndfs',1,...
+    'stimDurInSec',2,...
+    'postDurInSec',2.8);
+% A.tag
+
+A.run(3)%(60)
+% do 60 or so repeats!
+% A.clearTags
 
 %% EpiFlashTrain % what about when the bar is gone
 setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
@@ -119,12 +118,12 @@ A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'ndfs',1,...
     'nrepeats',5,...
-    'flashDurInSec',.05,...
+    'flashDurInSec',.1,...
     'cycleDurInSec',.4,...
     'postDurInSec',2);
-A.tag
-A.run(8)
-A.clearTags
+% A.tag
+A.run(2)
+% A.clearTags
 
 
 %% Piezo2TSine
@@ -144,6 +143,7 @@ A.protocol.setParams('-q',...
 % A.tag
 A.run(5)
 % A.clearTags
+
 
 %% Move the bar relative to origin
 A.clearTags
@@ -216,3 +216,39 @@ A.protocol.setParams('-q',...
 % A.tag
 A.run(7)
 % A.clearTags
+
+%% Now see if the bar moves differently at each position
+
+%% Current Step 
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+A.rig.applyDefaults;
+
+A.setProtocol('CurrentStep2T');
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'stimDurInSec',.5,...
+    'steps',[-1 -.5 -.25   .25 .5, 1]* 50,... % [3 10]
+    'postDurInSec',1.5);
+A.run(5)
+
+%% Play around
+
+%% Use manipulator to boing boing and record video and sensory
+
+% M285 motor program
+setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
+
+x = -1; % outof (+)/ into (-) board (x)
+y = 0; % left(+)/right(-) (y)
+A.setProtocol('ManipulatorMove2T');
+A.protocol.setParams('-q',...
+    'preDurInSec',2,...
+    'stimDurInSec',2,...
+    'pause',1,...
+    'velocity',5000,...
+    'coordinate',{[200, 0, 0]},...
+    'return',0,...
+    'postDurInSec',2);
+A.run
+%A.rig.devices.camera.live

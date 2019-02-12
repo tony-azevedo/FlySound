@@ -13,6 +13,7 @@ classdef EpiFlash2T < FlySoundProtocol
     
     % The following properties can be set only by class methods
     properties (SetAccess = private)
+        lightstim
     end
     
     events
@@ -35,8 +36,7 @@ classdef EpiFlash2T < FlySoundProtocol
         function varargout = getStimulus(obj,varargin)
             commandstim = obj.y* obj.params.ndf + obj.params.background;
             totalstimpnts = obj.params.stimDurInSec*obj.params.sampratein;
-            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
-            switch lightstim
+            switch obj.lightstim
                 case 'LED_Bath'
                     obj.out.epicommand = commandstim;
 %                     obj.out.epittl = obj.y;
@@ -85,6 +85,7 @@ classdef EpiFlash2T < FlySoundProtocol
             obj.y(round(obj.params.samprateout*(obj.params.preDurInSec)+1): round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
             obj.out.epicommand = obj.y;
             obj.out.epittl = obj.y;
+            obj.lightstim = getacqpref('AcquisitionHardware','LightStimulus');
         end
         
     end % protected methods

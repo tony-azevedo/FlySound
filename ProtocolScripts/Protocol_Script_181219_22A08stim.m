@@ -21,7 +21,7 @@ end
 setacqpref('AcquisitionHardware','LightStimulus','LED_Bath')
 
 % EpiFlash2T 
-setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2T');
@@ -29,7 +29,7 @@ A.setProtocol('EpiFlash2T');
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
-    'ndfs',[0.88,0.94 1]*.04,...
+    'ndfs',[0.88,0.94 1]*.1,...
     'stimDurInSec',0.010,...
     'postDurInSec',1);
 A.comment('Just looking for EMG events and movement of the leg')
@@ -85,12 +85,12 @@ A.run(1)
 A.rig.setParams('testvoltagestepamp',0)
 A.rig.applyDefaults;
 A.setProtocol('Sweep2T');
-A.protocol.setParams('-q','durSweep',5);
+A.protocol.setParams('-q','durSweep',20);
 
 A.rig.setParams('sampratein',50000); A.rig.setParams('samprateout',50000);A.rig.setDefaults;
 A.protocol.setParams('-q','sampratein',50000,'samprateout',50000); A.protocol.setDefaults;
 
-A.run(1)
+A.run(3)
 
 %% Proceed with patching
 
@@ -167,35 +167,17 @@ A.setProtocol('EpiFlash2T');
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
-    'ndfs',[0.88,0.94 1]*.04,...
+    'ndfs',[0.88,0.94 1]*.045,...
     'stimDurInSec',0.010,...
     'postDurInSec',1);
 % A.tag
 % A.clearTags
-A.run(1)
+%A.run(1)
 
 %%
-A.run(4)
+A.run(10)
 
 % do 60 or so repeats!
-
-%% EpiFlashTrain 
-setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
-A.rig.applyDefaults;
-
-A.setProtocol('EpiFlash2TTrain');
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'ndfs',[0.85,0.95,1]*.12,...
-    'nrepeats',5,...
-    'flashDurInSec',.01,...
-    'cycleDurInSec',.04,...
-    'postDurInSec',3);
-% A.tag
-A.run(3)
-% A.clearTags
-
 
 %% Piezo2T positive
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')

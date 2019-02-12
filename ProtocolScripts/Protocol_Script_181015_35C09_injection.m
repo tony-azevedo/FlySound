@@ -7,8 +7,8 @@ clear A,
 A = Acquisition;
 
 st = getacqpref('MC700AGUIstatus','status');
-% setacqpref('MC700AGUIstatus','mode','VClamp');
-% setacqpref('MC700AGUIstatus','VClamp_gain','50');
+setacqpref('MC700AGUIstatus','mode','VClamp');
+setacqpref('MC700AGUIstatus','VClamp_gain','50');
 if ~st
     MultiClamp700AGUI;
 end
@@ -123,7 +123,7 @@ A.protocol.setParams('-q',...
     'cycleDurInSec',.4,...
     'postDurInSec',2);
 A.tag
-A.run(8)
+A.run(4)
 A.clearTags
 
 
@@ -216,3 +216,24 @@ A.protocol.setParams('-q',...
 % A.tag
 A.run(7)
 % A.clearTags
+
+
+
+%% Sweep2T, slow manipulator movement
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+
+A.rig.applyDefaults;
+
+A.setProtocol('Sweep2T');
+A.protocol.setParams('-q','durSweep',10);
+
+A.rig.devices.camera.setParams(...
+    'framerate',50)
+
+A.run(10)
+
+%% Move the bar relative to origin
+A.clearTags
+A.tag
+
+

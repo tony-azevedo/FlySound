@@ -30,7 +30,7 @@ classdef LED_Blue < Device
 %             obj.outputPorts = [3];
             obj.digitalOutputLabels = {'epittl'};
             obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [24];
+            obj.digitalOutputPorts = [0];
 
         end
         
@@ -40,6 +40,9 @@ classdef LED_Blue < Device
         
         function out = transformOutputs(obj,out,varargin)
             %multiply outputs by volts/micron
+            out.epittl = 1-out.epittl; 
+            % Assumes 0 is off, 1 is on, need to flip the bit for Lambda
+            % HPX-L5 
         end
     
     end

@@ -20,9 +20,19 @@ classdef CameraBaslerTwin < CameraBasler
             % give 2 Ids for paired camera
             obj.setCamPortID;
             
+            % Current setup at time of writing 181011:
+            % Gray cable is going to camerabaslerTwin
+            % Black cable with elbow connection going to CameraBasler
+            % Gray cable controls the following lines, either here or in Pylonviewer:
+            %   Line 3 - exposure output from camera - input to dac - brown cable - port 3 (jack 68)
+            %   Line 4 - trigger input to camera - output from dac - green cable - port 2 (jack 67)
+            % Black cable controls the following lines, either here or in Pylonviewer:
+            %   Line 3 - exposure output from camera - input to dac - grey cable - port 26 (jack 117)
+            %   Line 4 - trigger input to camera - output from dac - green cable - port 27 (jack 119)
+            
             obj.digitalInputLabels = {'exposure2'};
             obj.digitalInputUnits = {'Bit'};
-            obj.digitalInputPorts = [3];
+            obj.digitalInputPorts = [3]; 
             % obj.digitalInputPorts = [26];
             
             obj.digitalOutputLabels = {'trigger2'};

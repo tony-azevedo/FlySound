@@ -46,6 +46,16 @@ classdef CameraBasler < Device
             % Use the modelSerialNumber to get the camportID
             obj.setCamPortID;
             
+            % Current setup at time of writing 181011:
+            % Gray cable is going to camerabaslerTwin
+            % Black cable with elbow connection going to CameraBasler
+            % Gray cable controls the following lines, either here or in Pylonviewer:
+            %   Line 3 - exposure output from camera - input to dac - brown cable - port 3 (jack 68)
+            %   Line 4 - trigger input to camera - output from dac - green cable - port 2 (jack 67)
+            % Black cable controls the following lines, either here or in Pylonviewer:
+            %   Line 3 - exposure output from camera - input to dac - grey cable - port 26 (jack 117)
+            %   Line 4 - trigger input to camera - output from dac - green cable - port 27 (jack 119)
+            
             obj.digitalInputLabels = {'exposure'};
             obj.digitalInputUnits = {'Bit'};
             % UPDATE 181003: This becomes [26] when a second camera is
@@ -228,9 +238,10 @@ classdef CameraBasler < Device
             obj.source = getselectedsource(obj.videoInput);
 
             % Set up ROIs
-            obj.source.CenterX = 'True';
-            obj.source.CenterY = 'True';
-            obj.videoInput.ROIPosition = [obj.params.ROIOffsetX obj.params.ROIOffsetY obj.params.ROIWidth obj.params.ROIHeight];                         
+            obj.source.CenterX = obj.params.ROICenterX;
+            obj.source.CenterY = obj.params.ROICenterY;
+            obj.videoInput.ROIPosition = [obj.params.ROIOffsetX obj.params.ROIOffsetY obj.params.ROIWidth obj.params.ROIHeight];
+
             if isa(obj,'CameraBaslerTwin')
                 obj.source.ReverseX = 'True';
             end
@@ -329,6 +340,8 @@ classdef CameraBasler < Device
             obj.params.ROIWidth = 1280;
             obj.params.ROIOffsetX = 0;
             obj.params.ROIOffsetY = 0;
+            obj.params.ROICenterX = 'True';
+            obj.params.ROICenterY = 'True';
             obj.params.ROISelector = 'ROI1';
         end
     end

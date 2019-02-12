@@ -7,8 +7,8 @@ clear A,
 A = Acquisition;
 
 st = getacqpref('MC700AGUIstatus','status');
-% setacqpref('MC700AGUIstatus','mode','VClamp');
-% setacqpref('MC700AGUIstatus','VClamp_gain','50');
+setacqpref('MC700AGUIstatus','mode','VClamp');
+setacqpref('MC700AGUIstatus','VClamp_gain','20');
 if ~st
     MultiClamp700AGUI;
 end
@@ -48,15 +48,13 @@ A.run(5)
 %% Switch to current clamp:
 
 %% Sweep2T
-setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 
 A.rig.setParams('testvoltagestepamp',0)
 A.rig.applyDefaults;
 A.setProtocol('Sweep2T');
 A.protocol.setParams('-q','durSweep',5);
 A.run(5)
-
-
 
 %%
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
@@ -82,12 +80,12 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'stimDurInSec',.5,...
-    'steps',[-.5 -.25  .25 .5, 1]* 100,... % [3 10]
+    'steps',[-.25 .25 .5 1]* 200,... % [3 10]
     'postDurInSec',1.5);
-A.run(1)
+% A.run(1)
 
 %%
-A.run(10)
+A.run(3)
 
 %% EpiFlash2T % What happens when the fly is jamming on the bar?
 % setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
@@ -116,14 +114,18 @@ A.setProtocol('EpiFlash2TTrain');
 A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
+    'sampratein',50000,...
+    'samprateout',50000,...
     'preDurInSec',.5,...
     'ndfs',1,...
     'nrepeats',5,...
     'flashDurInSec',.05,...
     'cycleDurInSec',.4,...
     'postDurInSec',2);
+% A.rig.devices.camera.live
+
 A.tag
-A.run(8)
+A.run(15)
 A.clearTags
 
 
@@ -166,6 +168,24 @@ A.protocol.setParams('-q',...
 A.run(7)
 % A.clearTags
 
+%% Piezo2T ramp 
+setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
+A.rig.applyDefaults;
+
+A.setProtocol('PiezoRamp2T');
+A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('interTrialInterval',0);
+A.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'displacementOffset',0,...
+    'speeds',50*[6 3 2 1],...
+    'displacements',[10],...
+    'stimDurInSec',.5,...
+    'postDurInSec',.5);
+% A.tag
+A.run(7)
+% A.clearTags
+
 %% Piezo2T negative
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
@@ -199,20 +219,23 @@ A.protocol.setParams('-q',...
 A.run(7)
 % A.clearTags
 
-%% Piezo2T ramp 
-setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
+
+
+%% Move the bar relative to origin
+A.clearTags
+A.tag
+
+
+%% Sweep2T, slow manipulator movement
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
+
 A.rig.applyDefaults;
 
-A.setProtocol('PiezoRamp2T');
-A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
-A.rig.setParams('interTrialInterval',0);
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'displacementOffset',0,...
-    'speeds',50*[6 3 2 1],...
-    'displacements',[10],...
-    'stimDurInSec',.5,...
-    'postDurInSec',.5);
-% A.tag
-A.run(7)
-% A.clearTags
+A.setProtocol('Sweep2T');
+A.protocol.setParams('-q','durSweep',10);
+
+A.rig.devices.camera.setParams(...
+    'framerate',50)
+
+A.run(10)
+
