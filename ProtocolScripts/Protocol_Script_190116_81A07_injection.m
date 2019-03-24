@@ -80,15 +80,15 @@ A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'stimDurInSec',.5,...
-    'steps',[-.25 .25 .5 1]* 200,... % [3 10]
-    'postDurInSec',1.5);
-% A.run(1)
+    'steps',[-.10 .25 .5  .6 .65 .675 .7]* 200,... 
+    'postDurInSec',1);
+A.run(1)
 
 %%
 A.run(3)
 
 %% EpiFlash2T % What happens when the fly is jamming on the bar?
-setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('EpiFlash2T');
@@ -102,7 +102,7 @@ A.protocol.setParams('-q',...
     'postDurInSec',2.5);
 % A.tag
 
-A.run(15)%(60)
+A.run(10)%(60)
 % do 60 or so repeats!
 % A.clearTags
 
@@ -151,7 +151,7 @@ A.run(5)
 A.clearTags
 A.tag
 
-%% Piezo2T positive
+%% PiezoStep2T flexion
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
 
@@ -165,15 +165,19 @@ A.protocol.setParams('-q',...
     'stimDurInSec',.5,...
     'postDurInSec',.5);
 % A.tag
+
+% cam = CameraBasler;
+% cam.live
+
 A.run(7)
 % A.clearTags
 
-%% Piezo2T ramp 
+%%% PiezoRamp2T flexion
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
 
 A.setProtocol('PiezoRamp2T');
-A.rig.setParams('testcurrentstepamp',0); %A.rig.applyDefaults;
+A.rig.setParams('testcurrentstepamp',0); 
 A.rig.setParams('interTrialInterval',0);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
@@ -182,11 +186,9 @@ A.protocol.setParams('-q',...
     'displacements',[10],...
     'stimDurInSec',.5,...
     'postDurInSec',.5);
-% A.tag
-A.run(7)
-% A.clearTags
+A.run(10)
 
-%% Piezo2T negative
+%%% PiezoStep2T extension
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
 
@@ -201,7 +203,7 @@ A.protocol.setParams('-q',...
     'postDurInSec',.5);
 A.run(7)
 
-%% Piezo2T ramp negative
+%%% PiezoRamp2T extension
 setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A.rig.applyDefaults;
 
@@ -216,7 +218,7 @@ A.protocol.setParams('-q',...
     'stimDurInSec',.5,...
     'postDurInSec',.5);
 % A.tag
-A.run(7)
+A.run(10)
 % A.clearTags
 
 
@@ -232,7 +234,7 @@ setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('Sweep2T');
-A.protocol.setParams('-q','durSweep',10);
+A.protocol.setParams('-q','durSweep',7);
 
 A.rig.devices.camera.setParams(...
     'framerate',50)
