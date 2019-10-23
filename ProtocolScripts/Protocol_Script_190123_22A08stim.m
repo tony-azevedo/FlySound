@@ -167,15 +167,15 @@ A.setProtocol('EpiFlash2T');
 A.rig.setParams('interTrialInterval',2);
 A.protocol.setParams('-q',...
     'preDurInSec',.5,...
-    'ndfs',[1 1.25 1.5 1.75 2 2.5]*.05,...     %'ndfs',[0.88,0.94 1]*.067,...
+    'ndfs',[0.88,0.94 1 1.2 1.5]*.046,... % 'ndfs',[1 1.25 1.5 1.75 2 2.5]*.05,...    
     'stimDurInSec',0.010,...
     'postDurInSec',1);
 % A.tag
 % A.clearTags
-%A.run(1)
+% A.run(1)
 
 %%
-A.run(8)
+A.run(150)
 
 % do 60 or so repeats!
 

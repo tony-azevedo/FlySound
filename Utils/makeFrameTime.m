@@ -5,5 +5,14 @@ else
     t = makeInTime(trial.params);
 end
 
-h2 = postHocExposure(trial,length(trial.forceProbeStuff.CoM));
+if isfield(trial,'forceProbeStuff')
+    N = length(trial.forceProbeStuff.CoM);
+elseif isfield(trial,'legPositions')
+    N = length(trial.legPositions.Tibia_Angle);
+else
+    ft = [];
+    return
+end
+    
+h2 = postHocExposure(trial,N);
 ft = t(h2.exposure);

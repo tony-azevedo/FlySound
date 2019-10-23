@@ -6,7 +6,8 @@ if isa(params, 'FlySoundProtocol')
 end
 
 time = (0:1:round(params.durSweep*params.sampratein) -1)/params.sampratein;
-if isfield(params,'preDurInSec');
+if isfield(params,'preDurInSec')
     time = time-params.preDurInSec;
 end
 time = time(:);
+
