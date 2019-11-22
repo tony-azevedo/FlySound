@@ -12,6 +12,7 @@ classdef CameraBaslerTwoAmpRig < TwoAmpRig
     %                                         -> Camera2TRig
     %                   -> CameraBaslerTwoAmpRig    -> CameraBaslerEpi2TRig
     %                                               -> CameraBasler2TRig
+    %                                               -> CameraBaslerPiezoEpi2TRig
     
     properties (Constant,Abstract)
         rigName;

@@ -7,6 +7,11 @@ classdef Device < handle
         deviceName
     end
     
+    properties (Hidden, SetAccess = protected)
+        mode
+        gain
+    end
+
     properties (SetAccess = protected)
         %deviceName
         params
@@ -24,8 +29,6 @@ classdef Device < handle
         outputLabels
         outputUnits %
         outputPorts % consider from point of view of cell, input to amp are lines out
-        mode
-        gain
     end
     
     events

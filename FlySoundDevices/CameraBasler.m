@@ -141,7 +141,7 @@ classdef CameraBasler < Device
             end
             if ~isa(obj,'CameraBaslerTwin')
                 
-                set(obj.videoInput,'FramesAcquiredFcnCount',20);
+                set(obj.videoInput,'FramesAcquiredFcnCount',10);
                 set(obj.videoInput,'FramesAcquiredFcn',@display_cam1_frame)
                 display_cam1_frame(obj.videoInput,[],obj.exampleframe,obj.snapshotax,obj.displayimgobject);
                 % test persistence of variables

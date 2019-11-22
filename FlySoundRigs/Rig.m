@@ -8,11 +8,11 @@ classdef Rig < handle
     %                                   -> PiezoCameraRig
     %       -> TwoAmpRig -> TwoTrodeRig
     %                   -> Epi2TRig
-    %                   -> Piezo2TRig
     %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
     %                                         -> Camera2TRig
-    %                                         -> CameraPiezo2TRig
-    
+    %                   -> CameraBaslerTwoAmpRig    -> CameraBaslerEpi2TRig
+    %                                               -> CameraBasler2TRig
+    %                                               -> CameraBaslerPiezoEpi2TRig    
     
     
     properties (Constant, Abstract)
@@ -118,13 +118,6 @@ classdef Rig < handle
                     end
                     in = obj.aiSession.startForeground; % both amp and signal monitor input
                     wait(obj.aiSession);
-                    % catch e
-                    %     disp(e)
-                    %     disp(obj.aiSession)
-                    %     disp(obj.devices.camera.videoInput)
-                    %     keyboard
-                    %     error(e)
-                    % end
                     notify(obj,'EndTrial');
                     
                     %disp(obj.aiSession)
@@ -149,6 +142,8 @@ classdef Rig < handle
             obj.transformOutputs(protocol.next());
             obj.aoSession.wait;
             obj.aoSession.queueOutputData(obj.outputs.datacolumns);
+            % in case you need to flip a bit or something
+            obj.aoSession.UserData.CurrentOutput = obj.outputs.datacolumns(end,:);
         end
                         
         function transformOutputs(obj,out)

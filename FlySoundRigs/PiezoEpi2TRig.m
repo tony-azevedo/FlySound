@@ -1,13 +1,25 @@
-classdef Piezo2TRig < TwoAmpRig
+classdef PiezoEpi2TRig < TwoAmpRig
+    % current hierarchy:
     
     properties (Constant)
-        rigName = 'Piezo2TRig';
+        rigName = 'PiezoEpi2TRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = Piezo2TRig(varargin)
+        function obj = PiezoEpi2TRig(varargin)
             obj.addDevice('piezo','Piezo');
+            lightstim = getacqpref('AcquisitionHardware','LightStimulus');
+            switch lightstim
+                case 'LED_Red'
+                    obj.addDevice('epi','LED_Red');
+                case 'LED_Blue'
+                    obj.addDevice('epi','LED_Blue');
+                case 'LED_Bath'
+                    obj.addDevice('epi','LED_Bath');
+                case 'LED_Arduino'
+                    obj.addDevice('epi','LED_Arduino');
+            end
         end
         
         function setDisplay(obj,fig,evnt,varargin)

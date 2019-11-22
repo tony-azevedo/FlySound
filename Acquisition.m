@@ -485,6 +485,8 @@ classdef Acquisition < handle
                     addlistener(obj.rig,'StartTrial',@obj.setCameraLogging);
                 end
                 
+                
+                
                 if isa(obj.rig,'TwoPhotonRig')
                     %error('Do I need to clean up files?')
                     %addlistener(obj.rig,'StartTrial',@obj.cleanUpImages);

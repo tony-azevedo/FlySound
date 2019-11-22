@@ -1,13 +1,18 @@
 classdef EPhysRig < Rig
     % current hierarchy:
     %   Rig -> EPhysRig -> BasicEPhysRig
-    %                   -> TwoTrodeRig
     %                   -> PiezoRig 
     %                   -> TwoPhotonRig -> TwoPhotonEPhysRig 
     %                                   -> TwoPhotonPiezoRig     
     %                   -> CameraRig    -> CameraEPhysRig 
-    %                                   -> PiezoCameraRig 
-    
+    %                                   -> PiezoCameraRig
+    %       -> TwoAmpRig -> TwoTrodeRig
+    %                   -> Epi2TRig
+    %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
+    %                                         -> Camera2TRig
+    %                   -> CameraBaslerTwoAmpRig    -> CameraBaslerEpi2TRig
+    %                                               -> CameraBasler2TRig
+    %                                               -> CameraBaslerPiezoEpi2TRig    
     properties (Constant,Abstract)
         rigName;
         IsContinuous;

@@ -1,12 +1,27 @@
-classdef CameraBaslerEpi2TRig < CameraBaslerTwoAmpRig
-    
+classdef CameraBaslerPiezoEpi2TRig < CameraBaslerTwoAmpRig
+    % current hierarchy:
+    %   Rig -> EPhysRig -> BasicEPhysRig
+    %                   -> PiezoRig
+    %                   -> TwoPhotonRig -> TwoPhotonEPhysRig
+    %                                   -> TwoPhotonPiezoRig
+    %                   -> CameraRig    -> CameraEPhysRig
+    %                                   -> PiezoCameraRig
+    %       -> TwoAmpRig -> TwoTrodeRig
+    %                   -> Epi2TRig
+    %                   -> CameraTwoAmpRig    -> CameraEpi2TRig
+    %                                         -> Camera2TRig
+    %                   -> CameraBaslerTwoAmpRig    -> CameraBaslerEpi2TRig
+    %                                               -> CameraBasler2TRig
+    %                                               -> CameraBaslerPiezoEpi2TRig
     properties (Constant)
-        rigName = 'CameraBaslerEpi2TRig';
+        rigName = 'CameraBaslerPiezoEpi2TRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = CameraBaslerEpi2TRig(varargin)
+        function obj = CameraBaslerPiezoEpi2TRig(varargin)
+            
+            obj.addDevice('piezo','Piezo');
             lightstim = getacqpref('AcquisitionHardware','LightStimulus');
             switch lightstim
                 case 'LED_Red'
