@@ -12,7 +12,7 @@ classdef TriggeredPiezo < Device
         triggeredOutputUnit
         triggeredOutputPort
         triggerPort
-        rigDev
+        trigDev
     end
     
     properties 
@@ -39,32 +39,32 @@ classdef TriggeredPiezo < Device
             % goes to the arduino to trigger the initial piezo pulse
             obj.digitalOutputLabels = {'piezotrigger'};
             obj.digitalOutputUnits = {'bits'};
-            obj.digitalOutputPorts = [29];
+            obj.digitalOutputPorts = [23];
             
             % TriggeredPiezo device runs its own session off the DAC, loads
             % it's own data, waits for triggers, runs the stimulus and then
             % resets.
             obj.triggeredOutputLabel = {'piezo'};
             obj.triggeredOutputUnit = {'V'};
-            obj.triggeredOutputPort = [3];
+            obj.triggeredOutputPort = [0];
             
             % the rig can trigger the arduino and the arduino then uses
             % this port to trigger the TriggeredPiezo
-            obj.triggerPort = ['PFI0'];
+            obj.triggerPort = ['PFI1'];
             
-            obj.rigDev = getacqpref('AcquisitionHardware','rigDev');
+            obj.trigDev = getacqpref('AcquisitionHardware','triggeredDev');
             obj.aoSession = daq.createSession('ni');
             
-            ch = obj.aoSession.addAnalogOutputChannel(obj.rigDev,obj.triggeredOutputPort(1), 'Voltage');
+            ch = obj.aoSession.addAnalogOutputChannel(obj.trigDev,obj.triggeredOutputPort(1), 'Voltage');
             ch.Name = obj.triggeredOutputLabel{1};
             %obj.outputs.portlabels{obj.triggeredOutputPort(1)+1} = obj.triggeredOutputLabel{1};
             %obj.outputs.device{obj.triggeredOutputPort(1)+1} = obj;
 
-            tc = obj.aoSession.addTriggerConnection('External',[obj.rigDev '/' obj.triggerPort],'StartTrigger');
+            tc = obj.aoSession.addTriggerConnection('External',[obj.trigDev '/' obj.triggerPort],'StartTrigger');
             obj.aoSession.ExternalTriggerTimeout = Inf;
             obj.aoSession.NotifyWhenScansQueuedBelow = 1000;
-            addlistener(obj.aoSession,'DataRequired', @obj.start);
-            
+            % addlistener(obj.aoSession,'DataRequired', @obj.start);
+            % addlistener(obj,'StartTrial',@obj.start)
             obj.setupDevice()
             
         end
@@ -93,7 +93,12 @@ classdef TriggeredPiezo < Device
             fprintf(1,'Scans queued: %d \t Scans acquired: %d\n',obj.aoSession.ScansQueued,obj.aoSession.ScansAcquired);
             obj.aoSession.stop;
         end
-
+        
+        function setuplistener(obj,rig)
+            addlistener(rig,'StartTrial',@obj.start)
+            addlistener(rig,'DataSaved',@obj.stop)
+        end
+        
         function setSession(obj,in,varargin)
             
         end

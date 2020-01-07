@@ -21,7 +21,7 @@ classdef CameraBaslerRig < EPhysRig
     
     methods
         function obj = CameraBaslerRig(varargin)
-            obj.addDevice('camera',CameraBasler);
+            obj.addDevice('camera','CameraBasler');
             addlistener(obj,'StartTrial',@obj.readyCamera);
             addlistener(obj,'DataSaved',@obj.resetCamera);
         end

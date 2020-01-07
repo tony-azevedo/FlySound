@@ -15,6 +15,7 @@ classdef LED_Arduino < Device
     
     events
         Abort
+        ControlFlag
     end
     
     methods
@@ -43,9 +44,12 @@ classdef LED_Arduino < Device
             %multiply outputs by volts/micron
             %out.epittl = 1-out.epittl; 
             out.epittl = out.epittl;
-            out.control = out.control;
-            % Assumes 0 is off, 1 is on, need to flip the bit for Lambda
-            % but not for Arduino
+            out.control = 0.*out.epittl+obj.params.controlToggle;
+        end
+        
+        function setParams(obj,varargin)
+            setParams@Device(obj,varargin{:})
+            notify(obj,'ControlFlag')
         end
 
         function abort(obj,varargin)
@@ -60,7 +64,7 @@ classdef LED_Arduino < Device
         end
                 
         function defineParameters(obj)
-            obj.params.controlToggle = 10/30;
+            obj.params.controlToggle = 0;
         end
     end
 end

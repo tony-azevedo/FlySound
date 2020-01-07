@@ -15,7 +15,7 @@ classdef Arduino < Device
     end
     
     events
-        
+        Abort
     end
     
     methods
@@ -25,9 +25,9 @@ classdef Arduino < Device
             obj.inputUnits = {};
             obj.inputPorts = [];
 
-            obj.digitalOutputLabels = {'ttl'};
-            obj.digitalOutputUnits = {'Bit'};
-            obj.digitalOutputPorts = [31];
+            obj.digitalOutputLabels = {'ttl','abort','control'};
+            obj.digitalOutputUnits = {'Bit','Bit','Bit'};
+            obj.digitalOutputPorts = [31,29,28];
             obj.digitalInputLabels = {'arduino_output'};
             obj.digitalInputUnits = {'Bit'};
             obj.digitalInputPorts = [30];
@@ -39,9 +39,19 @@ classdef Arduino < Device
         end
         
         function out = transformOutputs(obj,out,varargin)
-            %out.stimttl = out.stimttl;
+            %out.ttl = out.ttl;
+            out.control = 0.*out.ttl+obj.params.controlToggle;
         end
-    
+        
+        function abort(obj,varargin)
+            notify(obj,'Abort')
+        end
+        
+        function setParams(obj,varargin)
+            setParams@Device(obj,varargin{:})
+            notify(obj,'ControlFlag')
+        end
+        
     end
     
     methods (Access = protected)
@@ -49,7 +59,7 @@ classdef Arduino < Device
         end
                 
         function defineParameters(obj)
-            obj.params.powerPerVolt = 10/30;
+            obj.params.controlToggle = 0;
         end
     end
 end

@@ -371,6 +371,50 @@ classdef TwoAmpRig < Rig
             end
         end
         
+        function turnOffEpi(obj,callingobj,evntdata,varargin)
+            % Now set the abort channel off briefly before turning it back
+            % on
+            
+            output = obj.aoSession.UserData;
+            if isempty(output)
+                output = zeros(1,length(obj.outputchannelidx));
+                
+            else
+                output = output.CurrentOutput;
+                
+            end
+            output_a = output;
+            for chidx = 1:length(obj.outputchannelidx)
+                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'abort')
+                    output_a(chidx) = 1;
+                end
+            end
+            obj.aoSession.outputSingleScan(output_a);
+            obj.aoSession.outputSingleScan(output);
+        end
+        
+        function setArduinoControl(obj,callingobj,evntdata,varargin)
+            % Now set the control channel 
+            
+            output = obj.aoSession.UserData;
+            if isempty(output)
+                output = zeros(1,length(obj.outputchannelidx));
+                
+            else
+                output = output.CurrentOutput;
+                
+            end
+            output_a = output;
+            ardparams = callingobj.getParams;
+            for chidx = 1:length(obj.outputchannelidx)
+                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'control')
+                    output_a(chidx) = ardparams.controlToggle;
+                end
+            end
+            obj.aoSession.outputSingleScan(output_a);
+            % obj.aoSession.outputSingleScan(output);
+        end
+
     end
 end
 

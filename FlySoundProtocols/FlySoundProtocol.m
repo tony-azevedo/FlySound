@@ -288,7 +288,18 @@ classdef FlySoundProtocol < handle
                     cameraRigMap = crm.cameraRigMap;
                     setacqpref('AcquisitionHardware','cameraBaslerRigMap',cameraRigMap);
                 end
-                obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                try obj.requiredRig = cameraRigMap.(obj.requiredRig);  %CameraEPhysRig BasicEPhysRig
+                catch e
+                    if strcmp(e.identifier,'MATLAB:nonExistentField')
+                        cameraRigMap.(obj.requiredRig) = ['CameraBasler' obj.requiredRig];
+                        cameraRigMap.(cameraRigMap.(obj.requiredRig)) = obj.requiredRig;
+                        setacqpref('AcquisitionHardware','cameraBaslerRigMap',cameraRigMap);
+                        save('C:\Users\tony\Code\FlySound\FlySoundRigs\cameraBaslerRigMap','cameraRigMap');
+                    else
+                        e.rethrow
+                    end
+                end
+                    
                 obj.out.trigger = 0*obj.x;
             end
         end

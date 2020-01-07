@@ -45,17 +45,6 @@ A.run(10)
 
 %% EpiFlash2T - Fly IS in control
 
-setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
-A.rig.applyDefaults;
-
-A.setProtocol('EpiFlash2T');
-
-A.rig.setParams('interTrialInterval',1);
-A.protocol.setParams('-q',...
-    'preDurInSec',.5,...
-    'ndfs',1,...  
-    'stimDurInSec',4,...
-    'postDurInSec',.5);
 
 A.rig.devices.epi.setParams('controlToggle',1)
 
@@ -99,24 +88,29 @@ setacqpref('AcquisitionHardware','LightStimulus','LED_Arduino')
 %%
 
 clear A,    
+setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
 A = Acquisition;
 
-setacqpref('AcquisitionHardware','cameraBaslerToggle','off')
+
+setacqpref('AcquisitionHardware','cameraBaslerToggle','on')
 A.rig.applyDefaults;
 
 A.setProtocol('PairedPiezoArduino2T');
 
 % set the Piezo stimulus here
+
 %%
 A.rig.setParams('interTrialInterval',1);
 A.protocol.setParams('-q',...
     'preDurInSec',1.5,...
     'piezoPreInSec',1,...
-	'piezoDurInSec',.5,...
+	'piezoDurInSec',0,...
     'stimDurInSec',4,...
     'postDurInSec',.5);
+
+A.rig.devices.arduino.setParams('controlToggle',1)
 
 % A.clearTags
 % A.tag
 % A.comment
-% A.run
+A.run(3)

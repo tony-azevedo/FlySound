@@ -16,7 +16,10 @@ classdef CameraBaslerEpi2TRig < CameraBaslerTwoAmpRig
                 case 'LED_Bath'
                     obj.addDevice('epi','LED_Bath');
                 case 'LED_Arduino'
-                    obj.addDevice('epi','LED_Arduino');                    
+                    obj.addDevice('epi','LED_Arduino');    
+                    addlistener(obj.devices.epi,'ControlFlag',@obj.setArduinoControl);
+                    addlistener(obj.devices.epi,'Abort',@obj.turnOffEpi);
+                    addlistener(obj,'EndRun',@obj.turnOffEpi);
             end
         end
                

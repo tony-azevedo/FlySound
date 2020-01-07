@@ -1,13 +1,13 @@
-classdef PiezoArduino2TRig < TwoAmpRig
+classdef CameraBaslerPiezoArduino2TRig < CameraBaslerTwoAmpRig
     % current hierarchy:
     
     properties (Constant)
-        rigName = 'PiezoArduino2TRig';
+        rigName = 'CameraBaslerPiezoArduino2TRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = PiezoArduino2TRig(varargin)
+        function obj = CameraBaslerPiezoArduino2TRig(varargin)
             obj.addDevice('arduino','Arduino');
             obj.addDevice('triggeredpiezo','TriggeredPiezo');
             obj.devices.triggeredpiezo.setuplistener(obj);
@@ -18,8 +18,9 @@ classdef PiezoArduino2TRig < TwoAmpRig
         
         function in = run(obj,protocol,varargin)
             %obj.devices.triggeredpiezo.start();
-            in = run@TwoAmpRig(obj,protocol,varargin{:});
+            in = run@CameraBaslerTwoAmpRig(obj,protocol,varargin{:});
         end
+        
         function setDisplay(obj,fig,evnt,varargin)
             setDisplay@TwoAmpRig(obj,fig,evnt,varargin{:})
             if nargin>3
