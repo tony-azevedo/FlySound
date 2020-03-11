@@ -31,7 +31,7 @@ classdef TwoAmpRig < Rig
             % second as amplifier_2. If a protocol is going to stimulate
             % one cell then the next, make sure to use the protocol to
             % establish output one, then output 2, etc.
-            % Don't switch amp designations just to use a
+            % Don't switch amp designations just to use 
             % the same protocol on the second amp.
             % this means once the TwoRig Structure is saved, the same
             % electrode is always associated with the same output.
@@ -46,11 +46,16 @@ classdef TwoAmpRig < Rig
             obj.addDevice('amplifier_1',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
             obj.addDevice('amplifier_2',ampDevices{~strcmp(ampDevices,p.Results.amplifier1Device)});
 
+            % Adding a new, passive extensor EMG input. Not elegant, but
+            % working fine
+            obj.addDevice('extEMGAmplifier','AxoPatch200B_EMG');
+            
             obj.devices.amplifier_1.setOrder('amplifierDevNumber',1);
             obj.devices.amplifier_2.setOrder('amplifierDevNumber',2);
             
             addlistener(obj.devices.amplifier_1,'ModeChange',@obj.changeSessionsFromMode);
             addlistener(obj.devices.amplifier_2,'ModeChange',@obj.changeSessionsFromMode);
+            addlistener(obj.devices.extEMGAmplifier,'ModeChange',@obj.changeSessionsFromMode);
 
 %             rigDev = getacqpref('AcquisitionHardware','rigDev');
 %             triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
@@ -67,6 +72,9 @@ classdef TwoAmpRig < Rig
 
             obj.devices.amplifier_2.getmode;
             obj.devices.amplifier_2.getgain;
+            
+%             obj.devices.extEMGAmplifier.getmode;
+%             obj.devices.extEMGAmplifier.getgain;
             
             in = run@Rig(obj,protocol,varargin{:});
         end        

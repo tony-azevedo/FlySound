@@ -26,12 +26,14 @@ classdef AxoPatch200B < Device
             obj.deviceName = 'AxoPatch200B';
             
             % This and the transformInputs function are hard coded
+            % Currently using the AxoPatch as the extensor EMG, no need for
+            % outputs
             obj.inputLabels = {'scaled','current','voltage'};
             obj.inputUnits = {'mV','pA','mV'};
             obj.inputPorts = [0,3,4];
-            obj.outputLabels = {'scaled'};
-            obj.outputUnits = {'pA'};
-            obj.outputPorts = 0;
+            %             obj.outputLabels = {'scaled'};
+            %             obj.outputUnits = {'pA'};
+            %             obj.outputPorts = 0;
 
             obj.setModeSession;
             obj.mode = 'VClamp';
@@ -142,13 +144,13 @@ classdef AxoPatch200B < Device
             obj.mode = newmode;
             
             if sum(strcmp('VClamp',obj.mode))
-                    obj.outputLabels{1} = 'voltage';
-                    obj.outputUnits{1} = 'mV';
+%                     obj.outputLabels{1} = 'voltage';
+%                     obj.outputUnits{1} = 'mV';
                     obj.inputLabels{1} = 'current';
                     obj.inputUnits{1} = 'pA';
             elseif sum(strcmp({'IClamp','IClamp_fast'},obj.mode)) 
-                    obj.outputLabels{1} = 'current';
-                    obj.outputUnits{1} = 'pA';
+%                     obj.outputLabels{1} = 'current';
+%                     obj.outputUnits{1} = 'pA';
                     obj.inputLabels{1} = 'voltage';
                     obj.inputUnits{1} = 'mV';
             end

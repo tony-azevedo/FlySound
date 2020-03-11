@@ -281,9 +281,12 @@ classdef MultiClamp700A < Device
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
             % try rmacqpref('defaultsMultiClamp700B'), catch, end
+            
+            % Don't know why, but I've found that the command sensitivity
+            % in the Multiclamp software was wrong! Check that!
             obj.params.filter = 1e4;
             obj.params.headstagegain = .2; % This converts resistor to currentsentitivity
-            obj.params.headstageresistorCC = 5000e6; % 50e6, 5e9
+            obj.params.headstageresistorCC = 500e6; % 50e6, 5e9
             
             cursensitivity = obj.params.headstagegain/obj.params.headstageresistorCC*1e12; % pA/V
             obj.params.daqout_to_current = 1/cursensitivity; % nA/V, multiply DAQ voltage to get nA injected
