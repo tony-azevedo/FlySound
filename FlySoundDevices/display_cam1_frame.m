@@ -18,7 +18,7 @@ elseif isempty(ax)
     ax = findobj(displayf,'type','axes','tag',['cam' num2str(obj.camPortID) '_snapshotax']);
 end
 
-if isempty(indices)
+if isempty(indices) || ~all(size(indices) == size(frame))
     indices = frame;
     indices(:) = 0;
     Cmap = 4:4:size(indices,1);

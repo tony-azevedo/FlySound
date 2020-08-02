@@ -315,6 +315,7 @@ classdef CameraBasler < Device
             figure(obj.snapshotfigure)
             
             obj.displayimgobject = imshow(shrunk,'parent',obj.snapshotax);
+            obj.snapshotax.CLim = [0 obj.params.displayMax];
             obj.displayimgobject.ButtonDownFcn = {@CameraBaslerSnapshotAxFcn,obj};
 
             obj.snapshotax.Position = [obj.source.AutoFunctionROIOffsetX/4 obj.source.AutoFunctionROIOffsetY/4 obj.source.AutoFunctionROIWidth/4 obj.source.AutoFunctionROIHeight/4];
@@ -343,6 +344,7 @@ classdef CameraBasler < Device
             obj.params.ROICenterX = 'True';
             obj.params.ROICenterY = 'True';
             obj.params.ROISelector = 'ROI1';
+            obj.params.displayMax = 255;
         end
     end
 end
