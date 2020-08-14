@@ -298,7 +298,7 @@ classdef TwoAmpRig < Rig
             if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
                 teststep_start = obj.params.teststep_start*obj.params.samprateout;
                 teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
-                if teststep_dur>0;
+                if teststep_dur>0
                     
                     testresp_i = mean(obj.inputs.data.(inname)(1:teststep_start));
                     testresp_f = mean(obj.inputs.data.(inname)(teststep_start+teststep_dur-teststep_start+1:teststep_start+teststep_dur));
@@ -379,50 +379,6 @@ classdef TwoAmpRig < Rig
             end
         end
         
-        function turnOffEpi(obj,callingobj,evntdata,varargin)
-            % Now set the abort channel off briefly before turning it back
-            % on
-            
-            output = obj.aoSession.UserData;
-            if isempty(output)
-                output = zeros(1,length(obj.outputchannelidx));
-                
-            else
-                output = output.CurrentOutput;
-                
-            end
-            output_a = output;
-            for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'abort')
-                    output_a(chidx) = 1;
-                end
-            end
-            obj.aoSession.outputSingleScan(output_a);
-            obj.aoSession.outputSingleScan(output);
-        end
-        
-        function setArduinoControl(obj,callingobj,evntdata,varargin)
-            % Now set the control channel 
-            
-            output = obj.aoSession.UserData;
-            if isempty(output)
-                output = zeros(1,length(obj.outputchannelidx));
-                
-            else
-                output = output.CurrentOutput;
-                
-            end
-            output_a = output;
-            ardparams = callingobj.getParams;
-            for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'control')
-                    output_a(chidx) = ardparams.controlToggle;
-                end
-            end
-            obj.aoSession.outputSingleScan(output_a);
-            % obj.aoSession.outputSingleScan(output);
-        end
-
     end
 end
 

@@ -1,4 +1,4 @@
-classdef CameraBaslerEpi2TRig < CameraBaslerTwoAmpRig
+classdef CameraBaslerEpi2TRig < CameraBaslerTwoAmpRig & EpiOrLEDRig
     
     properties (Constant)
         rigName = 'CameraBaslerEpi2TRig';
@@ -66,5 +66,7 @@ classdef CameraBaslerEpi2TRig < CameraBaslerTwoAmpRig
     end
     
     methods (Access = protected)
+        
+        
     end
 end

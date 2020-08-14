@@ -93,7 +93,7 @@ classdef Rig < handle
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
             obj.aoSession.Rate = protocol.params.samprateout;
             
-            if obj.params.interTrialInterval >0;
+            if obj.params.interTrialInterval >0
                 t = timerfind('Name','ITItimer');
                 if isempty(t)
                     t = timer;
@@ -235,7 +235,7 @@ classdef Rig < handle
             if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
                 teststep_start = obj.params.teststep_start*obj.params.samprateout;
                 teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
-                if teststep_dur>0;
+                if teststep_dur>0
                     
                 testresp_i = mean(obj.inputs.data.(testoutname)(1:teststep_start));
                 testresp_f = mean(obj.inputs.data.(testoutname)(teststep_start+teststep_dur-teststep_start+1:teststep_start+teststep_dur));
@@ -398,10 +398,12 @@ classdef Rig < handle
             else
                 keys = fieldnames(obj.devices);
             end
-            for k = 1:length(keys);
+            for k = 1:length(keys)
+                fprintf('\tAdding %s\n',keys{k}) 
                 dev = obj.devices.(keys{k});
                 for i = 1:length(dev.outputPorts)
                     % configure AO
+                    fprintf('\t\t%s\n',dev.outputLabels{i}) 
                     ch = obj.aoSession.addAnalogOutputChannel(rigDev,dev.outputPorts(i), 'Voltage');
                     ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
@@ -411,6 +413,7 @@ classdef Rig < handle
                 % obj.outputs.labels = obj.outputs.portlabels(strncmp(obj.outputs.portlabels,'',0));
                 
                 for i = 1:length(dev.digitalOutputPorts)
+                    fprintf('\t\t%s\n',dev.digitalOutputLabels{i}) 
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
@@ -418,6 +421,7 @@ classdef Rig < handle
                 end
                 
                 for i = 1:length(dev.inputPorts)
+                    fprintf('\t\t%s\n',dev.inputLabels{i}) 
                     ch = obj.aoSession.addAnalogInputChannel(rigDev,dev.inputPorts(i), 'Voltage');
                     ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
@@ -427,7 +431,10 @@ classdef Rig < handle
                 end
             
                 for i = 1:length(dev.digitalInputPorts)
+                    fprintf('\t\t%s\t',dev.digitalInputLabels{i}) 
+                    tic
                     ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
+                    toc
                     ch.Name = dev.digitalInputLabels{i};
                     obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
                     obj.inputs.device{dev.digitalInputPorts(i)+getacqpref('AcquisitionHardware','AnalogInN')+1} = dev;
@@ -470,12 +477,14 @@ classdef Rig < handle
             obj.outputs.datacolumns = obj.outputs.datavalues;
         end
         
-        function chNames = getChannelNames(obj)
+        function [chNames,avsd] = getChannelNames(obj)
             for ch = 1:length(obj.outputchannelidx)
                 chNames.out{ch} = obj.aoSession.Channels(obj.outputchannelidx(ch)).Name;
+                avsd.out(ch) = strcmp('ao',obj.aoSession.Channels(obj.outputchannelidx(ch)).ID(1:2));
             end
             for ch = 1:length(obj.inputchannelidx)
                 chNames.in{ch} = obj.aoSession.Channels(obj.inputchannelidx(ch)).Name;
+                avsd.in(ch) = strcmp('ai',obj.aoSession.Channels(obj.inputchannelidx(ch)).ID(1:2));
             end
         end
         

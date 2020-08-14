@@ -15,6 +15,7 @@ classdef LED_Arduino < Device
     
     events
         Abort
+        Override
         ControlFlag
     end
     
@@ -54,6 +55,10 @@ classdef LED_Arduino < Device
 
         function abort(obj,varargin)
             notify(obj,'Abort')
+        end
+
+        function override(obj,varargin)
+            notify(obj,'Override')
         end
 
         

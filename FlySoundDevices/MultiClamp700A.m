@@ -200,6 +200,9 @@ classdef MultiClamp700A < Device
             end
             
             gainorder = obj.subclassGainFunction;
+            %% TODO:
+            % currently gain is defined in Device. Find out where this is
+            % defined and root it out.
             obj.gain = str2double(getacqpref('MC700AGUIstatus',gainorder));
             primarySignal = 0;
             secondarySignal =  1;

@@ -147,12 +147,6 @@ classdef Acquisition < handle
             fprintf(1,'Protocol Set to: \n');
             obj.protocol.showParams          
             
-%             if obj.userData.PGRPCState
-%                 set(obj.userData.PGRCameraControl,'Value',1)
-%                 PGRPatchCamera('start_button_Callback',obj.userData.PGRCameraControl,[],[])
-%                 obj.userData.PGRPCState = 1;
-%             end
-
         end
         
         function comment(obj,varargin)
@@ -393,6 +387,15 @@ classdef Acquisition < handle
             nfn = obj.notesFileName;
         end
 
+        function delete(obj)
+            try 
+                fclose(obj.notesFileID);
+            catch e
+                disp(e)
+            end
+        end
+
+        
     end % methods
     
     methods (Access = protected)
@@ -406,12 +409,21 @@ classdef Acquisition < handle
             % check whether a saved data file exists with today's date
             name = [obj.D,'\',obj.protocol.protocolName,'_Raw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*'];
+            if contains(obj.protocol.requiredRig,'Continuous')
+                name = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
+                    datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*A.bin'];
+            end
+
             rawtrials = dir(name);
 
             obj.n = length(rawtrials)+1;
             
             expt_rawtrials = dir([obj.D,'\','*_Raw_*',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*']);
+            if contains(obj.protocol.requiredRig,'Continuous')
+                expt_rawtrials = dir([obj.D,'\','*_ContRaw_*',...
+                    datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*A.bin']);
+            end
             if isempty(expt_rawtrials)
                 obj.expt_n = 1;
                 obj.block_n = 0;
@@ -426,8 +438,12 @@ classdef Acquisition < handle
                         N = num;
                     end
                 end
-                load(fullfile(obj.D,expt_rawtrials(N).name),'params');
-                obj.block_n = params.trialBlock;
+                if ~contains(obj.protocol.requiredRig,'Continuous')
+                    load(fullfile(obj.D,expt_rawtrials(N).name),'params');
+                    obj.block_n = params.trialBlock;
+                else
+                    obj.block_n = obj.n;
+                end
             end
                         
             fprintf('Fly %s, Cell %s currently has %d %s trials \n(Total: %d trials in %d blocks)\n',...
@@ -435,14 +451,15 @@ classdef Acquisition < handle
         end
         
         function updateFileNames(obj)%,metprop,propevnt)
-            obj.D = ['C:\Users\tony\Acquisition\',datestr(date,'yymmdd'),'\',...
-                datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             % UPDATE 181003: installed an MVMe SSD drive, supposedly a ton
             % faster to save to. Now putting everything there.
             obj.D = ['F:\Acquisition\',datestr(date,'yymmdd'),'\',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             if ~isempty(obj.rig)
                 obj.saveAcquisition();
+                if isa(obj.rig,'ContinuousRig')
+                    obj.rig.updateFileNames('directory',obj.D,'flynumber',obj.flynumber,'cellnumber',obj.cellnumber,'protocol',obj.protocol);
+                end
             end
         end
         
@@ -466,7 +483,7 @@ classdef Acquisition < handle
                     delete(obj.rig);
                 end
                 if ~isempty(regexp(obj.protocol.requiredRig,'Continuous','once'))
-                    % the ContinousRig's need different inputs.
+                    % the ContinousRigs need different inputs.
                     eval(['obj.rig = ' obj.protocol.requiredRig ...
                             '(''amplifier1Device'',obj.amplifier1Device,''directory'',obj.D,''flynumber'',obj.flynumber,''cellnumber'',obj.cellnumber,''protocol'',obj.protocol);']);
                 else
@@ -612,6 +629,14 @@ classdef Acquisition < handle
         end
         
         function writeTrialNotes(obj,varargin)
+            %             if isa(obj.rig,'ContinuousRig')
+            %                 % data will be saved, writing some details here
+            %                 % trial bl
+            %                 trialname = obj.rig.getFileName;
+            %                 endstr = regexp(trialname,'_\d*.bin','match');
+            %                 endnum = str2double(regexp(endstr{1},'\d*','match'));
+            %                 obj.n = endnum;
+            %             end
             % data has been saved and obj.n increased
             obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
@@ -639,10 +664,15 @@ classdef Acquisition < handle
                 fprintf(1,'\t\tImageFile2 - %s\n',obj.rig.devices.cameratwin.fileName);
             end
             fclose(obj.notesFileID);
+            
         end
 
         
         function saveData(obj,varargin)
+            if isa(obj.rig,'ContinuousRig')
+                % continuous rigs save their data themselves
+                return
+            end
             data = obj.rig.inputs.data;
             data.params = obj.protocol.params;
             if isa(obj.rig,'EPhysRig')
