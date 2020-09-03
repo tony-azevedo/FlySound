@@ -20,17 +20,15 @@ if ~st
 end
 
 %% ContinuousFB2T - run continuously
-
 A.setProtocol('AcquireWithEpiFeedback');
 A.rig.devices.epi.setParams('controlToggle',1)
-A.protocol.setParams('ttlval',false);
+A.protocol.setParams('ttlval',true);
 
 %%
 A.run
-% pause(10)
 
 %% 
-A.rig.stop
+A.rig.stop  
 
 %% 
 A.comment

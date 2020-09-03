@@ -106,7 +106,9 @@ classdef Acquisition < handle
             obj.block_n = obj.block_n+1;
             obj.protocol.reset;
             obj.rig.run(obj.protocol,repeats);
-            systemsound('Notify');
+            if ~isa(obj.rig,'ContinuousRig')
+                systemsound('Notify');
+            end
             
             if obj.userData.CameraBaslerPCState
                 set(obj.userData.CameraControl,'Value',1)
@@ -629,15 +631,6 @@ classdef Acquisition < handle
         end
         
         function writeTrialNotes(obj,varargin)
-            %             if isa(obj.rig,'ContinuousRig')
-            %                 % data will be saved, writing some details here
-            %                 % trial bl
-            %                 trialname = obj.rig.getFileName;
-            %                 endstr = regexp(trialname,'_\d*.bin','match');
-            %                 endnum = str2double(regexp(endstr{1},'\d*','match'));
-            %                 obj.n = endnum;
-            %             end
-            % data has been saved and obj.n increased
             obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,'\t\t%d, %s trial %d',...
                 obj.expt_n,...
@@ -651,7 +644,17 @@ classdef Acquisition < handle
                 fprintf(1,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
             end
             fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
-            fprintf(1,', %s\n',datestr(clock,13));
+            fprintf(1,', %s',datestr(clock,13));
+            
+            if isa(obj.rig,'ContinuousRig')
+                [~,name,ext] = fileparts(obj.rig.getFileName);
+                fprintf(1,'\n\t\t%s%s\n',name,ext);
+                fprintf(obj.notesFileID,'\t\t%s%s\n',name,ext);
+            else
+                [~,name] = fileparts(sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n));
+                fprintf(1,'\t%s\n',name);
+                fprintf(obj.notesFileID,'\t%s\n',name);
+            end
             
             if isa(obj.rig,'CameraBaslerRig') || isa(obj.rig,'CameraBaslerTwoAmpRig')
                 fprintf(obj.notesFileID,'\t\tImageFile - %s\n',obj.rig.devices.camera.fileName);
@@ -664,7 +667,6 @@ classdef Acquisition < handle
                 fprintf(1,'\t\tImageFile2 - %s\n',obj.rig.devices.cameratwin.fileName);
             end
             fclose(obj.notesFileID);
-            
         end
 
         

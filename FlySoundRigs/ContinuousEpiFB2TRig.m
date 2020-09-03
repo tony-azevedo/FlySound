@@ -22,6 +22,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
         aiXRange
         aixchannelidx
         diChannelNames
+        dichannelidx
         diXChannelNames 
         dixchannelidx
     end
@@ -127,6 +128,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             catch
                 fprintf(1,'Analog and digital FIDs not open. n = %d\n',obj.n);
             end
+            systemsound('Notify');
         end
         
         function [filename,aname,dname] = getFileName(obj)
@@ -153,7 +155,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             fwrite(obj.fid_digital,info,'char');
 
             % add the ch names and gains to analog header
-            fprintf(1,'Inputs: '); fprintf(1,'%s\t',obj.aiXChannelNames{:}); fprintf(1,'\n');
+            fprintf(1,'Analog Inputs: '); fprintf(1,'%s\t',obj.aiXChannelNames{:}); fprintf(1,'\n');
             inputs = sprintf('%s ',obj.aiXChannelNames{:}); 
             inputs = inputs(1:end-1);
             inputs = ['<',inputs,'>'];
@@ -165,11 +167,18 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             fwrite(obj.fid_analog,'>','char');
             
             % add channel names to digital channel (no gain - bits)
-            fprintf(1,'Inputs: '); fprintf(1,'%s\t',obj.diXChannelNames{:}); fprintf(1,'\n');
-            inputs = sprintf('%s ',obj.diXChannelNames{:}); 
+            % fprintf(1,'Inputs: '); fprintf(1,'%s\t',obj.diXChannelNames{:}); fprintf(1,'\n');
+            % inputs = sprintf('%s ',obj.diXChannelNames{:}); 
+            % inputs = inputs(1:end-1);
+            % inputs = ['<',inputs,'>'];
+            % fwrite(obj.fid_digital,inputs,'char');
+
+            fprintf(1,'Digital Inputs: '); fprintf(1,'%s\t',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); fprintf(1,'\n');
+            inputs = sprintf('%s ',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); 
             inputs = inputs(1:end-1);
             inputs = ['<',inputs,'>'];
             fwrite(obj.fid_digital,inputs,'char');
+
         end
         
         function saveData(obj,~,event)
@@ -182,6 +191,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
                 fprintf(1,'\n');
                 obj.count = 0;
             end
+            %obj.aoSession.stop;
         end
         
         function [ain_int16,din] = transformInputs(obj,in)
@@ -206,7 +216,8 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             ain_int16 = int16(ain ./ range * 2^15);
             ain_int16(:,strcmp(obj.aiXChannelNames,'probe_position')) = int16(obj.inputs.data.probe_position);
             
-            din = in(:,obj.dixchannelidx);
+            %din = in(:,obj.dixchannelidx);
+            din = in(:,obj.dichannelidx);
         end
         
         function getInputChannelGain(obj)
@@ -366,13 +377,19 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             [~,o] = sort(chids); % o is the column order for each input
             obj.aixchannelidx = false(size(o));
             obj.dixchannelidx = false(size(o));
+            obj.dichannelidx = false(size(o));
             % Find the columns with analog input, plus an extra
             for ch = length(o):-1:1
                 if any(contains(obj.aiXChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
                         || strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
                     obj.aixchannelidx(ch) = true;
-                elseif contains(obj.diXChannelNames, obj.aoSession.Channels(chids(ch)).Name)
+                end
+                if any(contains(obj.diXChannelNames, obj.aoSession.Channels(chids(ch)).Name))
                     obj.dixchannelidx(ch) = true;
+                end
+                if any(contains(obj.diChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
+                        && ~strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
+                    obj.dichannelidx(ch) = true;
                 end
             end
         end
