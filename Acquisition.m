@@ -56,16 +56,13 @@ classdef Acquisition < handle
             obj.tags = {};
             obj.setIdentifiers(varargin{:})
             obj.updateFileNames()
-
+            
             addlistener(...
                 obj,...
                 'analyze',...
                 'PostSet',@obj.setAnalysisFlag);
 
-            % set a simple protocol
-            obj.setProtocol('Sweep');
-            obj.analyze = 1;
-
+            obj.chooseDefaultProtocol;
             
             if obj.userData.CameraBaslerPCState
                 set(obj.userData.CameraControl,'Value',1)
@@ -118,6 +115,12 @@ classdef Acquisition < handle
 
         end
         
+        function chooseDefaultProtocol(obj)
+            % set a simple protocol
+            obj.setProtocol('Sweep');
+            obj.analyze = 0;
+        end
+            
         function setProtocol(obj,prot,varargin)
             if ~isfield(obj.userData,'CameraBaslerPCState')
                 obj.userData.CameraBaslerPCState = 0;
@@ -155,7 +158,7 @@ classdef Acquisition < handle
             if nargin > 1
                 com = varargin{1};
             else
-                com = inputdlg('Enter comment:', 'Comment', [1 50]);
+                com = inputdlg('Enter comment:', 'Comment', [10 120]);
                 com = strcat(com{:});
             end
             obj.notesFileID = fopen(obj.notesFileName,'a');
@@ -551,10 +554,35 @@ classdef Acquisition < handle
             if ~isdir(obj.D)
                 mkdir(obj.D);
             end
-            
+            if newnoteslogical
+                obj.askAboutTheExperiment;
+            end            
             % obj.notesFileID = fopen(obj.notesFileName,'a');
         end
-                
+           
+        function askAboutTheExperiment(obj)
+            inputprompts = {
+                'Purpose: ';
+                'Fly Age: ';
+                'Drugs and internal: ';
+                'Equipment check (stuff fixed or need fixing); ';
+                'Fly Movement: ';
+                'Planned playtime: '};
+            
+            numlines = [2,40; 1,40; 1,40; 3,40; 2, 40;2,40];
+            dlgtitle = 'Enter experiment information';
+            answer = inputdlg(inputprompts,dlgtitle,numlines);
+            
+            obj.notesFileID = fopen(obj.notesFileName,'a');
+            for i = 1:length(answer)
+                fprintf(1,...
+                    '%s %s\n', inputprompts{i},answer{i});
+                fprintf(obj.notesFileID,...
+                    '%s %s\n', inputprompts{i},answer{i});
+            end
+            fclose(obj.notesFileID);
+        end
+        
         function writePrologueNotes(obj)
             obj.notesFileID = fopen(obj.notesFileName,'a');
             fprintf(obj.notesFileID,...
@@ -643,7 +671,7 @@ classdef Acquisition < handle
                 fprintf(obj.notesFileID,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
                 fprintf(1,', %s=%.2f',pname(1:end-1),obj.protocol.params.(pname(1:end-1)));
             end
-            fprintf(obj.notesFileID,', %s\n',datestr(clock,13));
+            fprintf(obj.notesFileID,', %s',datestr(clock,13));
             fprintf(1,', %s',datestr(clock,13));
             
             if isa(obj.rig,'ContinuousRig')
@@ -812,7 +840,7 @@ classdef Acquisition < handle
                 mkdir(obj.D);
             end
 
-            name = [obj.D,'\Acquisition_', ...
+            name = [obj.D,'\', class(obj),'_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;
             acqStruct.flynumber = obj.flynumber;

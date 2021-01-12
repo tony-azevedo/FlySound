@@ -209,8 +209,8 @@ classdef FlySoundProtocol < handle
                 rig.setParams('samprateout',obj.params.samprateout);
                 status = 1;
             end
-            if rig.params.sampratein ~= obj.params.sampratein
-                rig.setParams('samprateout',obj.params.samprateout);
+            if isfield(rig.params,'sampraetin') && rig.params.sampratein ~= obj.params.sampratein
+                rig.setParams('sampratein',obj.params.sampratein);
                 status = 1;
             end
         end

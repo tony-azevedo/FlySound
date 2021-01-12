@@ -1,27 +1,21 @@
 % Control the Epifluorescence, control displacements
-classdef FBCntrlEpiFlash2T < FlySoundProtocol
+classdef LEDArduinoFlashControl < FlySoundProtocol
     
     properties (Constant)
-        protocolName = 'FBCntrlEpiFlash2T';
+        protocolName = 'LEDArduinoFlashControl';
     end
     
     properties (SetAccess = protected)
         requiredRig = 'LEDArduinoControlRig';
         analyses = {};
     end
-    
-    
-    % The following properties can be set only by class methods
-    properties (SetAccess = private)
-        lightstim
-    end
-    
+        
     events
     end
     
     methods
         
-        function obj = FBCntrlEpiFlash2T(varargin)
+        function obj = LEDArduinoFlashControl(varargin)
             obj = obj@FlySoundProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...
@@ -34,8 +28,9 @@ classdef FBCntrlEpiFlash2T < FlySoundProtocol
         end
         
         function varargout = getStimulus(obj,varargin)
-            obj.out.epittl = obj.y;
-            varargout = {obj.out,obj.out.epittl};
+            obj.out.epittl = obj.y*obj.params.ndf;
+            obj.out.refchan(1:end-1) = obj.params.stimhashval;
+            varargout = {obj.out,obj.out.epittl,obj.out.refchan};
         end
         
     end % methods
@@ -52,6 +47,7 @@ classdef FBCntrlEpiFlash2T < FlySoundProtocol
             obj.params.preDurInSec = .5;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
+            obj.params.stimhashval = 1.2;
             
             obj.params.Vm_id = 0;
             
@@ -65,9 +61,9 @@ classdef FBCntrlEpiFlash2T < FlySoundProtocol
             obj.x = makeTime(obj);
             obj.y = zeros(size(obj.x));
             obj.y(round(obj.params.samprateout*(obj.params.preDurInSec)+1): round(obj.params.samprateout*(obj.params.preDurInSec+obj.params.stimDurInSec))) = 1;
-            obj.out.epicommand = obj.y;
+            
             obj.out.epittl = obj.y;
-            obj.lightstim = getacqpref('AcquisitionHardware','LightStimulus');
+            obj.out.refchan = obj.y*0;
         end
         
     end % protected methods

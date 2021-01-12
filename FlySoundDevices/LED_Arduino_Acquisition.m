@@ -1,4 +1,4 @@
-classdef LED_Arduino < Device
+classdef LED_Arduino_Acquisition < Device
     
     properties (Constant)
     end
@@ -7,7 +7,7 @@ classdef LED_Arduino < Device
     end
     
     properties 
-        deviceName = 'LED_Arduino';
+        deviceName = 'LED_Arduino_Acquisition';
     end
     
     properties (SetAccess = protected)
@@ -20,7 +20,7 @@ classdef LED_Arduino < Device
     end
     
     methods
-        function obj = LED_Arduino(varargin)
+        function obj = LED_Arduino_Acquisition(varargin)
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {};
@@ -29,9 +29,9 @@ classdef LED_Arduino < Device
 %             obj.outputLabels = {'epicommand'};
 %             obj.outputUnits = {'V'};
 %             obj.outputPorts = [3];
-            obj.digitalOutputLabels = {'epittl','abort','control'};
-            obj.digitalOutputUnits = {'Bit','Bit','Bit'};
-            obj.digitalOutputPorts = [31,29,28];
+            %obj.digitalOutputLabels = {'epittl','abort','control'};
+            %obj.digitalOutputUnits = {'Bit','Bit','Bit'};
+            %obj.digitalOutputPorts = [31,29,28];
             obj.digitalInputLabels = {'arduino_output'}; %,'trial_duration'};
             obj.digitalInputUnits = {'Bit'};
             obj.digitalInputPorts = [30];

@@ -1,4 +1,4 @@
-classdef LED_Arduino < Device
+classdef LED_Arduino_Control < Device
     
     properties (Constant)
     end
@@ -7,7 +7,7 @@ classdef LED_Arduino < Device
     end
     
     properties 
-        deviceName = 'LED_Arduino';
+        deviceName = 'LED_Arduino_Control';
     end
     
     properties (SetAccess = protected)
@@ -17,24 +17,22 @@ classdef LED_Arduino < Device
         Abort
         Override
         ControlFlag
+        RoutineFlag
     end
     
     methods
-        function obj = LED_Arduino(varargin)
+        function obj = LED_Arduino_Control(varargin)
             % This and the transformInputs function are hard coded
             
             obj.inputLabels = {};
             obj.inputUnits = {};
             obj.inputPorts = [];
-%             obj.outputLabels = {'epicommand'};
-%             obj.outputUnits = {'V'};
-%             obj.outputPorts = [3];
-            obj.digitalOutputLabels = {'epittl','abort','control'};
-            obj.digitalOutputUnits = {'Bit','Bit','Bit'};
-            obj.digitalOutputPorts = [31,29,28];
-            obj.digitalInputLabels = {'arduino_output'}; %,'trial_duration'};
-            obj.digitalInputUnits = {'Bit'};
-            obj.digitalInputPorts = [30];
+            obj.digitalOutputLabels = {'epittl','abort','control','routine'};
+            obj.digitalOutputUnits = {'Bit','Bit','Bit','Bit'};
+            obj.digitalOutputPorts = [7,6,5,4];
+            %obj.digitalInputLabels = {'arduino_output'}; %,'trial_duration'};
+            %obj.digitalInputUnits = {'Bit'};
+            %obj.digitalInputPorts = [30];
         end
         
         function in = transformInputs(obj,in,varargin)
@@ -51,8 +49,9 @@ classdef LED_Arduino < Device
         function setParams(obj,varargin)
             setParams@Device(obj,varargin{:})
             notify(obj,'ControlFlag')
+            %notify(obj,'RoutineFlag')
         end
-
+        
         function abort(obj,varargin)
             notify(obj,'Abort')
         end
@@ -62,6 +61,7 @@ classdef LED_Arduino < Device
         end
 
         
+        
     end
     
     methods (Access = protected)
@@ -70,6 +70,7 @@ classdef LED_Arduino < Device
                 
         function defineParameters(obj)
             obj.params.controlToggle = 0;
+            obj.params.routineToggle = 0;
         end
     end
 end

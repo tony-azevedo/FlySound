@@ -6,7 +6,7 @@ classdef AcquireWithEpiFeedback < FlySoundProtocol
     end
     
     properties (SetAccess = protected)
-        requiredRig = 'ContinuousEpiFB2TRig';
+        requiredRig = 'ContinuousEpiFB2TRig_Acquisition';
         analyses = {};
     end
     
