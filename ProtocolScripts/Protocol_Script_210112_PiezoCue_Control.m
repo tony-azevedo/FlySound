@@ -16,6 +16,7 @@ C = Control;
 %% LEDArduinoFlash_Control - 
 C.rig.applyDefaults;
 C.setProtocol('LEDArduinoFlashControl');
+C.rig.devices.epi.abort
 
 %% FBCntrlEpiFlash2T - FlyIS in control
 
@@ -46,13 +47,13 @@ C.rig.setParams('scheduletimeout',0,'timeoutinterval',30,'turnoffLED', 1);
 C.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'ndfs',0,...  
-    'stimDurInSec',4,...
-    'postDurInSec',.5);
+    'stimDurInSec',3,...
+    'postDurInSec',.2);
 C.clearTags
 C.tag('rest')
 C.run(5)
 
-msgbox('Double check the continuous acquisition is running')
+% msgbox('Double check the continuous acquisition is running')
 
 %%
 C.rig.devices.epi.setParams('routineToggle',1,'controlToggle',1)
