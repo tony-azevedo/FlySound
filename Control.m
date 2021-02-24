@@ -214,8 +214,6 @@ classdef Control < Acquisition
             if ~isdir(obj.D)
                 mkdir(obj.D);
             end
-            
-            % obj.notesFileID = fopen(obj.notesFileName,'a');
         end
 
         function setRig(obj,varargin)    
@@ -280,6 +278,11 @@ classdef Control < Acquisition
             data.params = obj.protocol.params;
             data.params.trial = obj.n;
             data.params.trialBlock = obj.block_n;
+            if isa(obj.rig,'EpiOrLEDRig')
+                data.params.blueToggle = obj.rig.devices.epi.params.blueToggle;
+                data.params.controlToggle = obj.rig.devices.epi.params.controlToggle;
+                data.params.routineToggle = obj.rig.devices.epi.params.routineToggle;
+            end
             data.timestamp = now;
             data.name = sprintf(regexprep(obj.getRawFileStem,'\\','\\\'),obj.n);
             data.tags = obj.tags;

@@ -1,9 +1,9 @@
 % ContinuousRig defines abstract property IsContinuous.
 % TwoAmpRig defines RigName
-classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig 
+classdef ContinuousEpiFBPiezo2TRig_Acquisition < ContinuousRig & TwoAmpRig 
     
     properties (Constant)
-        rigName = 'ContinuousEpiFB2TRig_Acquisition';
+        rigName = 'ContinuousEpiFBPiezo2TRig_Acquisition';
     end
     
     properties (Hidden, SetAccess = protected)
@@ -31,25 +31,19 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
     end
     
     methods
-        function obj = ContinuousEpiFB2TRig_Acquisition(varargin)
+        function obj = ContinuousEpiFBPiezo2TRig_Acquisition(varargin)
                          
             % Make sure to add analog inputs first. At some point a final
             % channel is added for the probe_position
             obj.addDevice('refchan','ReferenceChannelAcquisition')
-            % Just add the arduino (used to depend on light
             if nargin<4
                 error('continuousInRig:notEnoughInputs','Not enough inputs')
             end
             obj.updateFileNames(varargin{3:end})
 
             obj.addDevice('epi','LED_Arduino_Acquisition');
-            % addlistener(obj.devices.epi,'ControlFlag',@obj.setArduinoControl);
-            % addlistener(obj.devices.epi,'Abort',@obj.turnOffEpi);
-            % addlistener(obj.devices.epi,'Override',@obj.turnOnEpi);
-            % addlistener(obj,'EndRun',@obj.turnOffEpi);
-            
+            obj.addDevice('piezo','Piezo_Acquisition');            
             obj.addDevice('forceprobe','Position_Arduino')
-            obj.addDevice('piezo','Piezo_Acquisition')
                         
             fprintf('CONTINUOUSRIG: Fly %s, Cell %s currently has %d %s trials\n',...
                 obj.flynumber,obj.cellnumber,obj.n-1,obj.protocol.protocolName);
@@ -99,7 +93,7 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             obj.count = 0;
             notify(obj,'SaveData');
             
-            uiwait(msgbox('Use Pyas to send the target values','Target','modal'));
+            msgbox('Use Pyas to send the target values');
             obj.aoSession.startBackground;    
             %obj.aoSession.startForeground;    
 
@@ -174,21 +168,20 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             fwrite(obj.fid_analog,'>','char');
             
             % add channel names to digital channel (no gain - bits)
-            fprintf(1,'Inputs: '); fprintf(1,'%s\t',obj.diXChannelNames{:}); fprintf(1,'\n');
-            inputs = sprintf('%s ',obj.diXChannelNames{:}); 
+            % fprintf(1,'Inputs: '); fprintf(1,'%s\t',obj.diXChannelNames{:}); fprintf(1,'\n');
+            % inputs = sprintf('%s ',obj.diXChannelNames{:}); 
+            % inputs = inputs(1:end-1);
+            % inputs = ['<',inputs,'>'];
+            % fwrite(obj.fid_digital,inputs,'char');
+
+            fprintf(1,'Digital Inputs: '); fprintf(1,'%s\t',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); fprintf(1,'\n');
+            inputs = sprintf('%s ',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); 
             inputs = inputs(1:end-1);
             inputs = ['<',inputs,'>'];
             fwrite(obj.fid_digital,inputs,'char');
 
-            % To debug in future, saves all the bit signals for int12
-            % probe_position
-            % fprintf(1,'Digital Inputs: '); fprintf(1,'%s\t',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); fprintf(1,'\n');
-            % inputs = sprintf('%s ',obj.diChannelNames{~contains(obj.diChannelNames,'b_sign')}); 
-            % inputs = inputs(1:end-1);
-            % inputs = ['<',inputs,'>'];
-            % fwrite(obj.fid_digital,inputs,'char');
         end
-            
+        
         function saveData(obj,~,event)
             [ain,din] = obj.transformInputs(event.Data);
             fwrite(obj.fid_analog,ain','int16');
@@ -224,10 +217,7 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             ain_int16 = int16(ain ./ range * 2^15);
             ain_int16(:,strcmp(obj.aiXChannelNames,'probe_position')) = int16(obj.inputs.data.probe_position);
             
-            
-            din = in(:,obj.dixchannelidx);
-            % If you want to keep all the bits for int12 probe position
-            %din = in(:,obj.dichannelidx);
+            din = in(:,obj.dichannelidx);
         end
         
         function getInputChannelGain(obj)

@@ -28,11 +28,11 @@ classdef ControlRig < handle
     properties (SetAccess = protected)
         devices
         % aiSession
-        % inputchannelidx
+        inputchannelidx
         aoSession
         outputchannelidx
         outputs
-        % inputs
+        inputs
         params
     end
     
@@ -56,16 +56,10 @@ classdef ControlRig < handle
         function obj = ControlRig(varargin)
             if ~isacqpref('ControlHardware','rigDev')
                 setacqpref('ControlHardware','rigDev','Dev2')
-                %setacqpref('ControlHardware','modeDev','Dev1')
-                %setacqpref('ControlHardware','gainDev','Dev1')
-                %setacqpref('ControlHardware','triggerChannelIn','PFI0')
-                %setacqpref('ControlHardware','triggerChannelOut','PFI2')
                 disp(getacqpref('ControlHardware'));
                 error('The control hardware preferences were not set. Check the above preferences for accuracy')
             end
-            % for now ao Session is the master session
             obj.aoSession = daq.createSession('ni');            
-            % obj.aiSession = obj.aoSession;
             obj.defineParameters();
             obj.params = obj.getDefaults();
         end
@@ -367,7 +361,18 @@ classdef ControlRig < handle
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
                     obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
                 end
-                                
+                if contains(dev.deviceName,'_Control')
+                    for i = 1:length(dev.digitalInputPorts)
+                        fprintf('\t\t%s\t',dev.digitalInputLabels{i})
+                        tic
+                        ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
+                        toc
+                        ch.Name = dev.digitalInputLabels{i};
+                        obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
+                        obj.inputs.device{dev.digitalInputPorts(i)+getacqpref('AcquisitionHardware','AnalogInN')+1} = dev;
+                        % obj.inputs.data.(dev.inputLabels{i}) = [];
+                    end
+                end
             end
             obj.sessionColumnsAndIndices();
 
@@ -376,6 +381,7 @@ classdef ControlRig < handle
         function sessionColumnsAndIndices(obj)
             obj.outputs.datavalues = [];
             obj.outputchannelidx = [];
+            obj.inputchannelidx = [];
             for ch = 1:length(obj.aoSession.Channels)
                 aord = obj.aoSession.Channels(ch).ID(1);
                 switch aord
@@ -385,7 +391,9 @@ classdef ControlRig < handle
                                 obj.outputs.datavalues(end+1) = 0;
                                 obj.outputchannelidx(end+1) = ch;
                             case 'InputOnly'
-                                error('ControlRigs should not have inputs')
+                                % fprintf('ControlRigs should not have inputs\n')
+                                obj.inputchannelidx(end+1) = ch;
+                                % error('ControlRigs should not have inputs')
                             otherwise
                                 error('Not able to deal with Bidirectional Digital channels')
                         end
@@ -408,6 +416,11 @@ classdef ControlRig < handle
                 chNames.out{ch} = obj.aoSession.Channels(obj.outputchannelidx(ch)).Name;
                 avsd.out(ch) = strcmp('ao',obj.aoSession.Channels(obj.outputchannelidx(ch)).ID(1:2));
             end
+            for ch = 1:length(obj.inputchannelidx)
+                chNames.in{ch} = obj.aoSession.Channels(obj.inputchannelidx(ch)).Name;
+                avsd.in(ch) = strcmp('ai',obj.aoSession.Channels(obj.inputchannelidx(ch)).ID(1:2));
+            end
+
         end
         
     end

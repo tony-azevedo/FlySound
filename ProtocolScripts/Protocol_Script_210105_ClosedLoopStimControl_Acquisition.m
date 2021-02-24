@@ -12,6 +12,7 @@ setacqpref('AcquisitionHardware','cameraBaslerToggle','off');
 clear A,    
 A = Acquisition;
 
+
 st = getacqpref('MC700AGUIstatus','status');
 setacqpref('MC700AGUIstatus','mode','VClamp');
 setacqpref('MC700AGUIstatus','VClamp_gain','20');
