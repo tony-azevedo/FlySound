@@ -59,7 +59,11 @@ classdef ControlRig < handle
                 disp(getacqpref('ControlHardware'));
                 error('The control hardware preferences were not set. Check the above preferences for accuracy')
             end
-            obj.aoSession = daq.createSession('ni');            
+            if isempty(obj.aoSession)
+                obj.aoSession = daq.createSession('ni');
+            else
+                fprintf(1,'%s: Daq object already created\n',obj.rigName);
+            end
             obj.defineParameters();
             obj.params = obj.getDefaults();
         end
@@ -99,8 +103,6 @@ classdef ControlRig < handle
                 set(t,'Name','ITItimer')
             end
             notify(obj,'StartRun_Control');
-            runtime = now;
-            controlduration = seconds(30);
             for n = 1:repeats
                 while protocol.hasNext()
                     obj.setAOSession(protocol);
@@ -126,10 +128,6 @@ classdef ControlRig < handle
                     notify(obj,'DataSaved_Control');
                     notify(obj,'IncreaseTrialNum_Control');
                     obj.params.trialnum = obj.params.trialnum+1;
-                    if now-runtime > controlduration
-                        notify(obj,'EndTimer_Control')
-                        runtime = now;
-                    end
                 end
                 protocol.reset;
             end

@@ -28,6 +28,7 @@ classdef Piezo_Acquisition < Device
         end
         
         function in = transformInputs(obj,in,varargin)
+            % disp(in)
             %multiply Inputs by micron/volts
         end
         

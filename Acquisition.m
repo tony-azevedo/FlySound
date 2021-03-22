@@ -395,8 +395,9 @@ classdef Acquisition < handle
         function delete(obj)
             try 
                 fclose(obj.notesFileID);
+                fprintf('Open notes file! Should be closed');
             catch e
-                disp(e)
+                %disp(e)
             end
         end
 

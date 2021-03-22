@@ -33,9 +33,10 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
     methods
         function obj = ContinuousEpiFB2TRig_Acquisition(varargin)
                          
-            % Make sure to add analog inputs first. At some point a final
-            % channel is added for the probe_position
+            % ----- Make sure to add analog inputs first. ---- 
+            % At some point a final channel is added for the probe_position
             obj.addDevice('refchan','ReferenceChannelAcquisition')
+            obj.addDevice('piezo','Piezo_Acquisition')
             % Just add the arduino (used to depend on light
             if nargin<4
                 error('continuousInRig:notEnoughInputs','Not enough inputs')
@@ -49,7 +50,6 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             % addlistener(obj,'EndRun',@obj.turnOffEpi);
             
             obj.addDevice('forceprobe','Position_Arduino')
-            obj.addDevice('piezo','Piezo_Acquisition')
                         
             fprintf('CONTINUOUSRIG: Fly %s, Cell %s currently has %d %s trials\n',...
                 obj.flynumber,obj.cellnumber,obj.n-1,obj.protocol.protocolName);
@@ -99,7 +99,7 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             obj.count = 0;
             notify(obj,'SaveData');
             
-            uiwait(msgbox('Use Pyas to send the target values','Target','modal'));
+            msgbox('Use Pyas to send the target values','Target');
             obj.aoSession.startBackground;    
             %obj.aoSession.startForeground;    
 

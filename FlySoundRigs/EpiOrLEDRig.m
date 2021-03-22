@@ -7,8 +7,9 @@ classdef EpiOrLEDRig < ControlRig
     
     properties (Constant)
     end
-
+    
     properties (Hidden, SetAccess = protected)
+        ardout_col
     end
     
     properties (SetAccess = protected)
@@ -23,8 +24,10 @@ classdef EpiOrLEDRig < ControlRig
             obj.addDevice('epi','LED_Arduino_Control')
             obj.addDevice('refchan','ReferenceChannelControl')
             obj.connectArduino;
+            [ch,ad] = obj.getChannelNames;
+            obj.ardout_col = find(strcmp(ch.in{~ad.in},'arduino_output'));
         end
-                    
+        
         function obj = connectArduino(obj)
             addlistener(obj.devices.epi,'ControlFlag',@obj.setArduinoControl);
             addlistener(obj.devices.epi,'RoutineFlag',@obj.setArduinoControl);
@@ -52,65 +55,21 @@ classdef EpiOrLEDRig < ControlRig
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
             obj.aoSession.Rate = protocol.params.samprateout;
             
-            % Start some timers
-            if obj.params.interTrialInterval >0
-                t = timerfind('Name','ITItimer');
-                if isempty(t)
-                    t = timer;
-                end
-                t.StartDelay = obj.params.interTrialInterval;
-                t.TimerFcn = @(tObj, thisEvent) ... 
-                    fprintf('%.1f sec inter trial\n',tObj.StartDelay);
-                set(t,'Name','ITItimer')
-            end
-            
+            obj.setUpITITimer();
+            [on_cntr, off_cntr] = obj.setUpWaitTimers();
             notify(obj,'StartRun_Control');
-            
-            if obj.params.waitForLED
-                wflt = timerfind('Name','LEDTimeoutTimer');
-                if isempty(wflt)
-                    wflt = timer;
-                end
-                wflt.StartDelay = .5;
-                wflt.TimerFcn = @(tObj, thisEvent) ...
-                    fprintf('.');
-                set(wflt,'Name','LEDTimeoutTimer')
-                
-                % Counter for trials with no movement
-                to_cntr = 0;
-                % logical flag indicating fly moved after turning on blue
-                % led
-                turnedBlueEpiOff_cntr = 0;
-            end
             
             for n = 1:repeats
                 while protocol.hasNext()
-                    if obj.params.waitForLED && ~obj.devices.epi.params.blueToggle && to_cntr >= obj.params.blueOnCount
-                        % turn on the blue led 
-                        obj.devices.epi.setParams('blueToggle',1)
-                        turnedBlueEpiOff_cntr = 0;
-                    end
-                    if obj.params.waitForLED && obj.devices.epi.params.blueToggle && turnedBlueEpiOff_cntr >= obj.params.blueOffCount
-                        % turn off the blue led
-                        obj.devices.epi.setParams('blueToggle',0)
-                        to_cntr = 0;
-                    end
-                    if obj.params.waitForLED && to_cntr >= obj.params.enforcedRestCount
-                        % turn off the blue led, reset the protocol and
-                        % quit!
-                        obj.devices.epi.setParams('blueToggle',0)
-                        protocol.reset;
-                        fprintf(1,'Failed trial threshold exceeded\n')
-                        notify(obj,'EndRun_Control');
-                        if obj.params.interTrialInterval >0
-                            delete(t)
+                    
+                    if obj.params.waitForLED
+                        [on_cntr, off_cntr] = obj.handleTrialFailures(on_cntr,off_cntr);
+                        if on_cntr<0
+                            protocol.reset
+                            return
                         end
-                        if obj.params.waitForLED
-                            delete(wflt)
-                        end
-                        return
                     end
-
+                    
                     obj.setAOSession(protocol);
                     
                     % setup the data logger
@@ -118,21 +77,12 @@ classdef EpiOrLEDRig < ControlRig
                     
                     in = obj.aoSession.startForeground; % both amp and signal monitor input
                     wait(obj.aoSession);
+                    
+                    % setup log data
+                    % obj.transformInputs(in);
                     notify(obj,'EndTrial_Control');
                     
-                    % obj.transformInputs(in);
-                    
-                    if obj.params.interTrialInterval >0
-                        t = timerfind('Name','ITItimer');
-                        start(t)
-                        wait(t)
-                        if obj.params.iTIInterval>0
-                            %                   0 <= x <=iTIInterval
-                            randdelay = round(((rand(1)-1/2)*2)*obj.params.iTIInterval*1000)/1000;
-                            t.StartDelay = obj.params.interTrialInterval+randdelay;
-                            t.StartDelay = max(0,t.StartDelay);
-                        end
-                    end
+                    obj.itiWait()
                     
                     notify(obj,'SaveData_Control');
                     obj.displayTrial(protocol);
@@ -145,58 +95,29 @@ classdef EpiOrLEDRig < ControlRig
                     if obj.params.turnoffLED
                         notify(obj,'EndTimer_Control')
                     elseif obj.params.waitForLED
-                        
-                        [ch,ad] = obj.getChannelNames;
-                        ardout_col = find(strcmp(ch.in{~ad.in},'arduino_output'));
-                        
-                        LEDstate = in(end,ardout_col);
+                        LEDstate = in(end,obj.ardout_col);
                         if ~LEDstate && obj.devices.epi.params.blueToggle
-                            to_cntr = 0;
-                            turnedBlueEpiOff_cntr = turnedBlueEpiOff_cntr + 1;
+                            on_cntr = 0;
+                            off_cntr = off_cntr + 1;
                         elseif LEDstate
-                            %obj.params.LEDTimeout = 10;
-                            elapsedtime = 0;
-                            wflt = timerfind('Name','LEDTimeoutTimer');
-                            fprintf(1,'Waiting: ')
-                            
-                            while elapsedtime<obj.params.LEDTimeout
-                                % timer goes for .5;
-                                start(wflt)
-                                wait(wflt)
-                                
-                                elapsedtime = elapsedtime+wflt.StartDelay;
-                                in = inputSingleScan(obj.aoSession);
-                                LEDstate = in(end,ardout_col);
-                                if ~LEDstate
-                                    fprintf(1,'Fly turned LED off in %g s\n',elapsedtime)
-                                    to_cntr = 0;
-                                    if  obj.devices.epi.params.blueToggle
-                                        turnedBlueEpiOff_cntr = turnedBlueEpiOff_cntr + 1;
-                                    end
-                                    break
-                                end
-                            end
-                            if LEDstate
-                                fprintf(1,'Timeout reached.\n')
-                                notify(obj,'EndTimer_Control')
-                                to_cntr = to_cntr+1;
-                            end
+                            [on_cntr, off_cntr] = obj.waitForLEDOff(on_cntr,off_cntr);
                         end
                     end
-                        
                 end
                 protocol.reset;
             end
             fprintf(1,'Block complete.\n')
             notify(obj,'EndRun_Control');
             if obj.params.interTrialInterval >0
+                t = timerfind('Name','ITItimer');
                 delete(t)
             end
             if obj.params.waitForLED
+                wflt = timerfind('Name','LEDTimeoutTimer');
                 delete(wflt)
             end
         end
-    
+        
         function turnOffEpi(obj,callingobj,evntdata,varargin)
             % Now set the abort channel on briefly before turning it back
             % off
@@ -244,7 +165,7 @@ classdef EpiOrLEDRig < ControlRig
             obj.aoSession.outputSingleScan(output);
             fprintf(1,'LED On\n')
         end
-                
+        
         function setArduinoControl(obj,callingobj,evntdata,varargin)
             % Now set the control channel
             
@@ -293,11 +214,115 @@ classdef EpiOrLEDRig < ControlRig
                 obj.params.waitForLED = 0;
             end
         end
-
+        
     end
     
     methods (Access = protected)
-
+        
+        function setUpITITimer(obj)
+            % Start some timers
+            if obj.params.interTrialInterval >0
+                t = timerfind('Name','ITItimer');
+                if isempty(t)
+                    t = timer;
+                end
+                t.StartDelay = obj.params.interTrialInterval;
+                t.TimerFcn = @(tObj, thisEvent) ...
+                    fprintf('\t\t\t%.1f sec inter trial\n',tObj.StartDelay);
+                set(t,'Name','ITItimer')
+            end
+        end
+        
+        function itiWait(obj)
+            if obj.params.interTrialInterval >0
+                t = timerfind('Name','ITItimer');
+                start(t)
+                wait(t)
+                if obj.params.iTIInterval>0
+                    %                   0 <= x <=iTIInterval
+                    randdelay = round(((rand(1)-1/2)*2)*obj.params.iTIInterval*1000)/1000;
+                    t.StartDelay = obj.params.interTrialInterval+randdelay;
+                    t.StartDelay = max(0,t.StartDelay);
+                end
+            end
+        end
+        
+        function [on_cntr, off_cntr] = setUpWaitTimers(obj)
+            if obj.params.waitForLED
+                wflt = timerfind('Name','LEDTimeoutTimer');
+                if isempty(wflt)
+                    wflt = timer;
+                end
+                wflt.StartDelay = .5;
+                wflt.TimerFcn = @(tObj, thisEvent) ...
+                    fprintf('.');
+                set(wflt,'Name','LEDTimeoutTimer')
+                
+                % Counter for trials with no movement
+                on_cntr = 0;
+                % logical flag indicating fly moved after turning on blue
+                % led
+                off_cntr = 0;
+            end
+        end
+        
+        function [on_cntr, off_cntr] = handleTrialFailures(obj,on_cntr,off_cntr)
+            if ~obj.devices.epi.params.blueToggle && on_cntr >= obj.params.blueOnCount
+                % turn on the blue led
+                obj.devices.epi.setParams('blueToggle',1)
+                off_cntr = 0;
+            end
+            if obj.devices.epi.params.blueToggle && off_cntr >= obj.params.blueOffCount
+                % turn off the blue led
+                obj.devices.epi.setParams('blueToggle',0)
+                on_cntr = 0;
+            end
+            if obj.params.waitForLED && on_cntr >= obj.params.enforcedRestCount
+                % turn off the blue led, reset the protocol and
+                % quit!
+                obj.devices.epi.setParams('blueToggle',0)
+                % protocol.reset;
+                fprintf(1,'Failed trial threshold exceeded\n')
+                notify(obj,'EndRun_Control');
+                if obj.params.interTrialInterval >0
+                    delete(t)
+                end
+                if obj.params.waitForLED
+                    delete(wflt)
+                end
+                on_cntr = -1;
+                return
+            end
+        end
+        
+        function [on_cntr,off_cntr] = waitForLEDOff(obj,on_cntr,off_cntr)
+            elapsedtime = 0;
+            wflt = timerfind('Name','LEDTimeoutTimer');
+            fprintf(1,'Waiting: ')
+            while elapsedtime<obj.params.LEDTimeout
+                % timer goes for .5;
+                start(wflt)
+                wait(wflt)
+                
+                elapsedtime = elapsedtime+wflt.StartDelay;
+                in = inputSingleScan(obj.aoSession);
+                LEDstate = in(end,obj.ardout_col);
+                if ~LEDstate
+                    fprintf(1,'Fly turned LED off in %g s\n',elapsedtime)
+                    on_cntr = 0;
+                    if  obj.devices.epi.params.blueToggle
+                        off_cntr = off_cntr + 1;
+                    end
+                    break
+                end
+            end
+            if LEDstate
+                fprintf(1,'Timeout reached.\n')
+                notify(obj,'EndTimer_Control')
+                on_cntr = on_cntr+1;
+            end
+        end
+        
         function defineParameters(obj)
             % rmacqpref('defaultsLEDArduinoControlRig')
             % obj.params.sampratein = 10000;
@@ -316,6 +341,6 @@ classdef EpiOrLEDRig < ControlRig
             obj.params.blueOnCount = 4;     % successful trials before turnin off blue LED (succes is moving and turnning off light)
             obj.params.enforcedRestCount = 10;   % number of failed trials before aborting
         end
-
+        
     end
 end

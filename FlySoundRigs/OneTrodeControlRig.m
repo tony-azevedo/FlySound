@@ -1,25 +1,13 @@
-classdef LEDArduinoPiezoControlRig < EPhysControlRig & EpiOrLEDRig 
-    % current hierarchy:
+classdef OneTrodeControlRig < EPhysControlRig
     
     properties (Constant)
-        rigName = 'LEDArduinoPiezoControlRig';
+        rigName = 'OneTrodeControlRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = LEDArduinoPiezoControlRig(varargin)
-            obj.addDevice('piezo','Piezo_Control');
-        end
-        
-        function in = run(obj,protocol,varargin)
-            % reimplement a few lines from the EPysiControlRig.run method
-            obj.devices.amplifier.getmode;
-            obj.devices.amplifier.getgain;
-            try in = run@EpiOrLEDRig(obj,protocol,varargin{:});
-            catch e
-                obj.devices.epi.abort
-                e.rethrow
-            end
+        function obj = OneTrodeControlRig(varargin)
+                ...
         end
         
         function setDisplay(obj,fig,evnt,varargin)

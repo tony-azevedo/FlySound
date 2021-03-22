@@ -14,7 +14,7 @@ setacqpref('MC700AGUIstatus','VClamp_gain','20');
 % setup the acquisition side first
 
 %% Seal
-C.setProtocol('SealAndLeak_Control');
+C.setProtocol('SealAndLeakControl');
 C.tag('R_input')
 C.run
 C.untag('R_input')
@@ -24,18 +24,18 @@ setacqpref('MC700AGUIstatus','mode','IClamp');
 setacqpref('MC700AGUIstatus','IClamp_gain','100');
 
 %% Current Step 
+setacqpref('MC700AGUIstatus','mode','IClamp');
+setacqpref('MC700AGUIstatus','IClamp_gain','100');
+
 C.rig.applyDefaults;
 
-C.setProtocol('CurrentStep_Control');
+C.setProtocol('CurrentStepControl');
 C.rig.setParams('interTrialInterval',0);
 C.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'stimDurInSec',.5,...
     'steps',[-.25 .25 .5 1]* 200,... % [3 10]
     'postDurInSec',1.5);
-% C.run(1)
-
-%%
 C.run(3)
 
 
@@ -60,14 +60,13 @@ C.protocol.randomize();
 
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
 C.rig.setParams('interTrialInterval',2,'iTIInterval',2);
-C.rig.setParams('waitForLED', 1,'LEDTimeout',1,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
-%C.rig.setParams('testcurrentamp', 1,'LEDTimeout',1,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
+C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
 
 C.clearTags
 C.tag('flex') % flex extend
-C.run%(11)
+C.run(11)
 
-%% *** Not in control: probe trial ***
+% *** Not in control: probe trial ***
 % C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',0)
 % C.clearTags
 % C.tag('out of control')
@@ -81,7 +80,7 @@ C.protocol.setParams('-q',...
     'preDurInSec',1,...
     'cueDelayDurInSec',.5,...
     'cueStimDurInSec',.3,...
-    'cueRampDurInSec',.07,...
+    'cueRampDurInSec',.07,...cledd
     'background',5,...
     'displacements',[0],...
     'ndfs',0,...  

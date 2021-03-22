@@ -29,7 +29,7 @@ classdef Control < Acquisition
         
         function chooseDefaultProtocol(obj)
             % set a simple protocol
-            obj.setProtocol('LEDArduinoFlashControl');
+            obj.setProtocol('SealAndLeakControl');
         end
         
         function setIdentifiers(obj,varargin)

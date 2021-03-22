@@ -1,5 +1,5 @@
 % Control the Epifluorescence, control displacements
-classdef LEDFlashWithPiezoCueControl < FlySoundProtocol
+classdef LEDFlashWithPiezoCueControl < ControlProtocol
 
     properties
         cue
@@ -7,6 +7,7 @@ classdef LEDFlashWithPiezoCueControl < FlySoundProtocol
     
     properties (Constant)
         protocolName = 'LEDFlashWithPiezoCueControl';
+        stimulusHash = 1.7;
     end
     
     properties (SetAccess = protected)
@@ -20,7 +21,7 @@ classdef LEDFlashWithPiezoCueControl < FlySoundProtocol
     methods
         
         function obj = LEDFlashWithPiezoCueControl(varargin)
-            obj = obj@FlySoundProtocol(varargin{:});
+            obj = obj@ControlProtocol(varargin{:});
             p = inputParser;
             p.addParameter('modusOperandi','Run',...
                 @(x) any(validatestring(x,{'Run','Stim','Cal'})));
@@ -34,7 +35,7 @@ classdef LEDFlashWithPiezoCueControl < FlySoundProtocol
         function varargout = getStimulus(obj,varargin)
             obj.out.epittl = obj.y*obj.params.ndf;
             obj.out.piezocommand = obj.cue*obj.params.displacement+obj.params.background;
-            obj.out.refchan(1:end-1) = obj.params.stimhashval;
+            obj.out.refchan(1:end-1) = obj.stimulusHash;
             varargout = {obj.out,obj.out.epittl,obj.out.piezocommand,obj.out.refchan};
         end
         
@@ -58,7 +59,7 @@ classdef LEDFlashWithPiezoCueControl < FlySoundProtocol
             obj.params.cueRampDurInSec = .07;
             obj.params.postDurInSec = .5;
             obj.params.durSweep = obj.params.stimDurInSec+obj.params.preDurInSec+obj.params.postDurInSec;
-            obj.params.stimhashval = 1.7;
+            obj.params.stimhashval = obj.stimulusHash;
             
             obj.params.Vm_id = 0;
             
