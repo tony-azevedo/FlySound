@@ -19,7 +19,16 @@ A.setProtocol('AcquireWithEpiFeedback');
 %controls the Arduino
 A.protocol.setParams('ttlval',true); % This no longer controls the led either
 
-%%
+%% run once for break in
+setacqpref('MC700AGUIstatus','mode','VClamp');
+setacqpref('MC700AGUIstatus','VClamp_gain','20');
+
+A.run 
+
+%% run current clamp
+setacqpref('MC700AGUIstatus','mode','IClamp');
+setacqpref('MC700AGUIstatus','IClamp_gain','100');
+
 A.run 
 
 %% 

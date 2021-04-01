@@ -51,8 +51,12 @@ classdef ContinuousRig < Rig
             todayname = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*_A.bin'];
             rawtrials = dir(todayname);
-
-            obj.n = length(rawtrials)+1;
+            if isempty(rawtrials)
+                obj.n = 1;
+            else
+                nstr = regexp(rawtrials(end).name,'_[\d+]_A.bin','match','once');
+                obj.n = str2double(nstr(2:regexp(nstr(2:end),'_')))+1;
+            end
             cd(obj.D);
         end
     

@@ -63,7 +63,18 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             if obj.aoSession.IsRunning
                 return
             end
-            
+            if ~isempty(fopen('all'))
+                fids = fopen('all');
+                for fid = 1:length(fids)
+                    [filename] = fopen(fids(fid));
+                    if contains(filename,'.bin') && contains(filename,obj.name(1:35))
+                        st = fclose(fids(fid));
+                        if ~st
+                            fprintf('Closing previously opened file:\n%s\n',filename)
+                        end
+                    end
+                end
+            end
             obj.devices.amplifier_1.getmode;
             obj.devices.amplifier_1.getgain;
 
@@ -85,6 +96,12 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             [obj.name,aname,dname] = obj.getFileName;
                         
             % Writing to two binary files, one analog, one digital
+            % one more check to ensure that the file name is ok and no data
+            % is overwritten.
+            if exist(aname,'file')
+                error('File already exists')
+            end
+                
             obj.fid_analog = fopen(aname,'w');
             obj.fid_digital = fopen(dname,'w');
 
@@ -139,8 +156,14 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
         end
         
         function [filename,aname,dname] = getFileName(obj)
+            % double check the names here. Don't overwrite files
             filename = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_' num2str(obj.n) '.bin'];
+            while exist(regexprep(filename,'.bin','_A.bin'),'file')
+                obj.n = obj.n+1;
+                filename = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
+                    datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_' num2str(obj.n) '.bin'];
+            end
             aname = regexprep(filename,'.bin','_A.bin');
             dname = regexprep(filename,'.bin','_D.bin');
         end
