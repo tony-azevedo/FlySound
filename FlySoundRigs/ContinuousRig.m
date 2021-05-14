@@ -54,9 +54,14 @@ classdef ContinuousRig < Rig
             if isempty(rawtrials)
                 obj.n = 1;
             else
-                nstr = regexp(rawtrials(end).name,'_[\d+]_A.bin','match','once');
-                obj.n = str2double(nstr(2:regexp(nstr(2:end),'_')))+1;
+                trials_sofar = zeros(size(rawtrials));
+                for t_idx = 1:length(trials_sofar)
+                    nstr = regexp(rawtrials(t_idx).name,'_(\d+)_A.bin','match','once');
+                    trials_sofar(t_idx) = str2double(nstr(2:regexp(nstr(2:end),'_')));
+                end
+                obj.n = max(trials_sofar)+1;
             end
+            
             cd(obj.D);
         end
     

@@ -3,7 +3,7 @@ classdef SealAndLeakControl < ControlProtocol
     
     properties (Constant)
         protocolName = 'SealAndLeakControl';
-        stimulusHash = .2;
+        stimulusHash = 8.2;
     end
     
     properties (SetAccess = protected)

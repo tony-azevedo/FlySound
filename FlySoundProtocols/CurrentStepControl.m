@@ -3,7 +3,7 @@ classdef CurrentStepControl < ControlProtocol
 
     properties (Constant)
         protocolName = 'CurrentStepControl';
-        stimulusHash = .7;
+        stimulusHash = 2.2;
     end
     
     properties (SetAccess = protected)

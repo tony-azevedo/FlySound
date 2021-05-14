@@ -7,7 +7,7 @@ classdef OneTrodeControlRig < EPhysControlRig
     
     methods
         function obj = OneTrodeControlRig(varargin)
-                ...
+            obj.addDevice('refchan','ReferenceChannelControl')
         end
         
         function setDisplay(obj,fig,evnt,varargin)

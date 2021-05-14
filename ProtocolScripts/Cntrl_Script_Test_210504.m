@@ -3,7 +3,6 @@
 % 1) Improve the system for R2020
 % 2) Write documentation, publish
 
-
 clear C, 
 C = Control;
 
@@ -67,7 +66,7 @@ C.protocol.randomize();
 
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
 C.rig.setParams('interTrialInterval',.5,'iTIInterval',0);
-C.rig.setParams('waitForLED', 1,'LEDTimeout',.5,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
+C.rig.setParams('waitForLED', 1,'LEDTimeout',.5,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',10);
 
 C.clearTags
 C.tag('flex') % flex extend

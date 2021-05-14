@@ -421,8 +421,23 @@ classdef Acquisition < handle
             end
 
             rawtrials = dir(name);
-
             obj.n = length(rawtrials)+1;
+            
+            if contains(obj.protocol.requiredRig,'Continuous')
+                todayname = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
+                    datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*_A.bin'];
+                rawtrials = dir(todayname);
+                if isempty(rawtrials)
+                    obj.n = 1;
+                else
+                    trials_sofar = zeros(size(rawtrials));
+                    for t_idx = 1:length(trials_sofar)
+                        nstr = regexp(rawtrials(t_idx).name,'_(\d+)_A.bin','match','once');
+                        trials_sofar(t_idx) = str2double(nstr(2:regexp(nstr(2:end),'_')));
+                    end
+                    obj.n = max(trials_sofar)+1;
+                end
+            end
             
             expt_rawtrials = dir([obj.D,'\','*_Raw_*',...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_*']);
@@ -749,6 +764,13 @@ classdef Acquisition < handle
         function increaseTrialNum(obj,varargin)
             obj.n = obj.n + 1;
             obj.expt_n = obj.expt_n+1;
+            if isa(obj.rig,'ContinuousRig')
+                if obj.n ~= obj.rig.n
+                    warning('Somehow Acquisition and %s trial nums are off',obj.rig.rigName)
+                    fprintf('%d vs %d\nNow %d\n',obj.n, obj.rig.n,obj.rig.n);
+                    obj.n = obj.rig.n;
+                end
+            end
         end
        
  

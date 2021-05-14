@@ -285,9 +285,11 @@ classdef EpiOrLEDRig < ControlRig
                 fprintf(1,'Failed trial threshold exceeded\n')
                 notify(obj,'EndRun_Control');
                 if obj.params.interTrialInterval >0
+                    t = timerfind('Name','ITItimer');
                     delete(t)
                 end
                 if obj.params.waitForLED
+                    wflt = timerfind('Name','LEDTimeoutTimer');
                     delete(wflt)
                 end
                 on_cntr = -1;

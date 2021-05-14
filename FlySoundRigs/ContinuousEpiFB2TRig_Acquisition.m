@@ -94,14 +94,16 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             obj.getInputChannelGain;
             
             [obj.name,aname,dname] = obj.getFileName;
-                        
+
             % Writing to two binary files, one analog, one digital
             % one more check to ensure that the file name is ok and no data
             % is overwritten.
-            if exist(aname,'file')
-                error('File already exists')
+            while exist(aname,'file')
+                warning('File already exists');
+                obj.n = obj.n+1;
+                [obj.name,aname,dname] = obj.getFileName;
             end
-                
+
             obj.fid_analog = fopen(aname,'w');
             obj.fid_digital = fopen(dname,'w');
 
@@ -151,6 +153,7 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
                 notify(obj,'IncreaseTrialNum');
             catch
                 fprintf(1,'Analog and digital FIDs not open. n = %d\n',obj.n);
+                notify(obj,'IncreaseTrialNum');
             end
             systemsound('Notify');
         end
@@ -159,11 +162,6 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             % double check the names here. Don't overwrite files
             filename = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_' num2str(obj.n) '.bin'];
-            while exist(regexprep(filename,'.bin','_A.bin'),'file')
-                obj.n = obj.n+1;
-                filename = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
-                    datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_' num2str(obj.n) '.bin'];
-            end
             aname = regexprep(filename,'.bin','_A.bin');
             dname = regexprep(filename,'.bin','_D.bin');
         end

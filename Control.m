@@ -61,6 +61,17 @@ classdef Control < Acquisition
             obj.cellnumber = '';
             obj.amplifier1Device = '';
             
+            if isacqpref('ControlPrefs')
+                controlPrefs = getacqpref('ControlPrefs');
+                acqPrefs = getacqpref('AcquisitionPrefs');
+            else
+                controlPrefs.flygenotype = [];
+                controlPrefs.flynumber = [];
+                controlPrefs.cellnumber = [];
+                controlPrefs.amplifier1Device = [];
+                controlPrefs.last_timestamp = 0;
+            end
+                            
             numlines = [1 1 1 1];
             defAns = {'','','','MultiClamp700A'};
             inputprompts{1} = 'Fly Genotype: ';
@@ -87,15 +98,14 @@ classdef Control < Acquisition
                 defAns{4} = obj.amplifier1Device;
             end
             
-            if isacqpref('ControlPrefs')
-                controlPrefs = getacqpref('ControlPrefs');
-                
-            else
-                controlPrefs.flygenotype = [];
-                controlPrefs.flynumber = [];
-                controlPrefs.cellnumber = [];
-                controlPrefs.amplifier1Device = [];
-                controlPrefs.last_timestamp = 0;
+            % Acquisition may be running, have to make sure the control and
+            % acquisition are saving to the same place
+            prompt_on_acq = 0;
+            if datenum([0 0 0 2 0 0]) > (now-acqPrefs.last_timestamp)
+                % acq was started within 2 hours
+                prompt_on_acq = 1;
+                inputprompts{2} = ['Fly Number: (F' acqPrefs.flynumber '?)'];
+                inputprompts{3} = ['Cell Number: (C' acqPrefs.cellnumber '?)'];
             end
             
             undefinedID = 0;
@@ -114,7 +124,11 @@ classdef Control < Acquisition
                 end
             end
             if isempty(obj.flynumber)
-                if datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
+                if prompt_on_acq
+                    obj.flynumber = acqPrefs.flynumber;
+                    defAns{2} = acqPrefs.flynumber;
+                    undefinedID = 1; % prompts the acquisition id, but allows user to change
+                elseif datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
                     obj.flynumber = controlPrefs.flynumber;
                     defAns{2} = controlPrefs.flynumber;
                     usingAcqPrefs = 1;
@@ -126,7 +140,11 @@ classdef Control < Acquisition
                 end
             end
             if isempty(obj.cellnumber)
-                if datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
+                if prompt_on_acq
+                    obj.cellnumber = acqPrefs.cellnumber;
+                    defAns{3} = acqPrefs.cellnumber;
+                    undefinedID = 1; % prompts the acquisition id, but allows user to change
+                elseif datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
                     obj.cellnumber = controlPrefs.cellnumber;
                     defAns{3} = num2str(controlPrefs.cellnumber);
                     usingAcqPrefs = 1;
@@ -167,7 +185,19 @@ classdef Control < Acquisition
                         error('AcquisitionPrefs, ''amplifier1Device'', preference is invalid.  Must be: {''MultiClamp700B'',''MultiClamp700BAux''}')
                     end
                     
-                    if ~isempty(obj.flynumber) && ~isempty(obj.cellnumber)
+                    if ~isempty(obj.flynumber) && ~isempty(obj.cellnumber) && ...
+                            (obj.flynumber ~= acqPrefs.flynumber || ...
+                            obj.cellnumber ~= acqPrefs.cellnumber)
+                        a = questdlg('Acquisition object and Control object fly or cell numbers are different. Proceed?','Alert!','No');
+                        switch a
+                            case 'Yes'
+                                break
+                            case 'No'
+                                continue
+                            case 'Cancel'
+                                continue
+                        end
+                    elseif ~isempty(obj.flynumber) && ~isempty(obj.cellnumber)
                         break
                     end
                 end

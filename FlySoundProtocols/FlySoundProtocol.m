@@ -90,7 +90,11 @@ classdef FlySoundProtocol < handle
         end
                 
         function reset(obj)
-            obj.current = 1;
+            if ~obj.randomizeIter
+                obj.current = 1;
+            elseif obj.randomizeIter
+                obj.setupStimulus()
+            end
         end
 
         function setParams(obj,varargin)
