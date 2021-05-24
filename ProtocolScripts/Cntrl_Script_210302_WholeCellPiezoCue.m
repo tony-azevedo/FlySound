@@ -66,12 +66,12 @@ C.protocol.setParams('-q',...
 C.protocol.randomize();
 
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
-C.rig.setParams('interTrialInterval',.5,'iTIInterval',0);
-C.rig.setParams('waitForLED', 1,'LEDTimeout',.5,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
+C.rig.setParams('interTrialInterval',2,'iTIInterval',2);
+C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
 
 C.clearTags
 C.tag('flex') % flex extend
-C.run(2)
+C.run(11)
 
 % *** Not in control: probe trial ***
 % C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',0)
