@@ -81,11 +81,9 @@ classdef EpiOrLEDRig < ControlRig
                     % setup log data
                     % obj.transformInputs(in);
                     notify(obj,'EndTrial_Control');
-                    
-                    obj.itiWait()
-                    
+                                        
                     notify(obj,'SaveData_Control');
-                    obj.displayTrial(protocol);
+                    % obj.displayTrial(protocol);
                     notify(obj,'DataSaved_Control');
                     notify(obj,'IncreaseTrialNum_Control');
                     obj.params.trialnum = obj.params.trialnum+1;
@@ -93,12 +91,14 @@ classdef EpiOrLEDRig < ControlRig
                     % options for what to do if light is still on. Else,
                     % just leave the led on
                     if obj.params.turnoffLED
+                        obj.itiWait()
                         notify(obj,'EndTimer_Control')
                     elseif obj.params.waitForLED
                         LEDstate = in(end,obj.ardout_col);
                         if ~LEDstate && obj.devices.epi.params.blueToggle
                             on_cntr = 0;
                             off_cntr = off_cntr + 1;
+                            obj.itiWait()
                         elseif LEDstate
                             [on_cntr, off_cntr] = obj.waitForLEDOff(on_cntr,off_cntr);
                         end
@@ -240,7 +240,7 @@ classdef EpiOrLEDRig < ControlRig
                 wait(t)
                 if obj.params.iTIInterval>0
                     %                   0 <= x <=iTIInterval
-                    randdelay = round(((rand(1)-1/2)*2)*obj.params.iTIInterval*1000)/1000;
+                    randdelay = ceil(((rand(1)-1/2)*2)*obj.params.iTIInterval*1000)/1000;
                     t.StartDelay = obj.params.interTrialInterval+randdelay;
                     t.StartDelay = max(0,t.StartDelay);
                 end
@@ -323,6 +323,7 @@ classdef EpiOrLEDRig < ControlRig
                 notify(obj,'EndTimer_Control')
                 on_cntr = on_cntr+1;
             end
+            obj.itiWait()
         end
         
         function defineParameters(obj)

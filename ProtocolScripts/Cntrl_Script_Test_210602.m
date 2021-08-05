@@ -3,7 +3,6 @@
 % 1) Improve the system for R2020
 % 2) Write documentation, publish
 
-
 clear C, 
 C = Control;
 
@@ -41,7 +40,7 @@ C.rig.setParams('interTrialInterval',0);
 C.protocol.setParams('-q',...
     'preDurInSec',.5,...
     'stimDurInSec',.5,...
-    'steps',[-.25 .25 .5 1]* 100,... % [3 10]
+    'steps',[-.25 .25 .5 1]* 200,... % [3 10]
     'postDurInSec',1.5);
 C.run(3)
 
@@ -61,17 +60,17 @@ C.protocol.setParams('-q',...
     'background',5,...
     'displacements',[-5, -2.5, 2.5, 5],...
     'ndfs',1,...  
-    'stimDurInSec',5,...
+    'stimDurInSec',.5,...
     'postDurInSec',.5);
 C.protocol.randomize();
 
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
-C.rig.setParams('interTrialInterval',2,'iTIInterval',2);
-C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
+C.rig.setParams('interTrialInterval',.5,'iTIInterval',0);
+C.rig.setParams('waitForLED', 1,'LEDTimeout',.5,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',10);
 
 C.clearTags
 C.tag('flex') % flex extend
-C.run(11)
+C.run(2)
 
 % *** Not in control: probe trial ***
 % C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',0)

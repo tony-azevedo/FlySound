@@ -30,12 +30,7 @@ classdef TriggeredPiezo < Device
     
     methods
         function obj = TriggeredPiezo(varargin)
-            
-            
-            obj.inputLabels = {'sgsmonitor'};
-            obj.inputUnits = {'V'};
-            obj.inputPorts = 20;
-            
+                        
             % goes to the arduino to trigger the initial piezo pulse
             obj.digitalOutputLabels = {'piezotrigger'};
             obj.digitalOutputUnits = {'bits'};

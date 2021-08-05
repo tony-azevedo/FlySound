@@ -112,7 +112,11 @@ classdef Control < Acquisition
             usingAcqPrefs = 0;
             dlgtitle = 'Enter remaining IDs (integers please)';
             if isempty(obj.flygenotype)
-                if datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
+                if prompt_on_acq
+                    obj.flygenotype = acqPrefs.flygenotype;
+                    defAns{1} = acqPrefs.flygenotype;
+                    undefinedID = 1; % prompts the acquisition id, but allows user to change
+                elseif datenum([0 0 0 1 0 0]) > (now-controlPrefs.last_timestamp)
                     obj.flygenotype = controlPrefs.flygenotype;
                     defAns{1} = controlPrefs.flygenotype;
                     usingAcqPrefs = 1;
