@@ -30,7 +30,7 @@ classdef MultiClamp700A_Control < Device
             % obj.inputPorts = [0 1];
             obj.outputLabels = {'scaled'};
             obj.outputUnits = {'pA'};
-            obj.outputPorts = 2;
+            obj.outputPorts = 0;
 
             obj.setModeSession;
             obj.mode = 'VClamp';
