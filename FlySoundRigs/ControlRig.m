@@ -178,27 +178,32 @@ classdef ControlRig < handle
             end
             
             if isfield(obj.devices,'amplifier')
-                % add a little step to the beginning of trials
-                if strcmp(obj.devices.amplifier.mode,'IClamp')
-                    testoutname = 'current';
-                elseif strcmp(obj.devices.amplifier.mode,'VClamp')
-                    testoutname = 'voltage';
-                else
-                    testoutname = '';
-                end
-                if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
-                    teststep_start = obj.params.teststep_start*obj.params.samprateout;
-                    teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
-                    
-                    teststep.(testoutname) = zeros(size(out.(outnames{1})));
-                    teststep.(testoutname)(teststep_start+1:teststep_start+teststep_dur) = obj.params.(['test' testoutname 'stepamp']);
-                    teststep = obj.devices.amplifier.transformOutputs(teststep);
-                    if ismember(testoutname,outnames)
-                        out.(testoutname) = out.(testoutname)+teststep.(testoutname);
+                % Run a test if testcnt has counted down
+                if obj.devices.amplifier.params.testcnt == 0
+                    % add a little step to the beginning of trials
+                    if strcmp(obj.devices.amplifier.mode,'IClamp')
+                        testoutname = 'current';
+                    elseif strcmp(obj.devices.amplifier.mode,'VClamp')
+                        testoutname = 'voltage';
                     else
-                        out.(testoutname) = teststep.(testoutname);
+                        testoutname = '';
                     end
+                    if ~isempty(testoutname) && obj.params.(['test' testoutname 'stepamp']) ~= 0
+                        teststep_start = obj.params.teststep_start*obj.params.samprateout;
+                        teststep_dur = obj.params.teststep_dur*obj.params.samprateout;
+                        
+                        teststep.(testoutname) = zeros(size(out.(outnames{1})));
+                        teststep.(testoutname)(teststep_start+1:teststep_start+teststep_dur) = obj.params.(['test' testoutname 'stepamp']);
+                        teststep = obj.devices.amplifier.transformOutputs(teststep);
+                        if ismember(testoutname,outnames)
+                            out.(testoutname) = out.(testoutname)+teststep.(testoutname);
+                        else
+                            out.(testoutname) = teststep.(testoutname);
+                        end
+                    end
+                    
                 end
+                obj.devices.amplifier.countTests
             end
             
             for ch = 1:length(obj.outputchannelidx)

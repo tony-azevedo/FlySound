@@ -3,7 +3,6 @@
 % 1) Improve the system for R2020
 % 2) Write documentation, publish
 
-
 clear C, 
 C = Control;
 
@@ -14,39 +13,42 @@ if ~st
     MultiClamp700AGUI;
 end
 
-% %% ContinuousFB2T - run continuously
-% % setup the acquisition side first
-% 
-% %% Seal
-% setacqpref('MC700AGUIstatus','mode','VClamp');
-% setacqpref('MC700AGUIstatus','VClamp_gain','20');
-% 
-% C.setProtocol('SealAndLeakControl');
-% C.tag('R_input')
-% C.run
-% C.untag('R_input')
-% 
-% %% Switch to current clamp, single electrode:
-% setacqpref('MC700AGUIstatus','mode','IClamp');
-% setacqpref('MC700AGUIstatus','IClamp_gain','100');
-% 
-% %% Current Step 
-% setacqpref('MC700AGUIstatus','mode','IClamp');
-% setacqpref('MC700AGUIstatus','IClamp_gain','100');
-% 
-% C.rig.applyDefaults;
-% 
-% C.setProtocol('CurrentStepControl');
-% C.rig.setParams('interTrialInterval',0);
-% C.protocol.setParams('-q',...
-%     'preDurInSec',.5,...
-%     'stimDurInSec',.5,...
-%     'steps',[-.25 .25 .5 1]* 100,... % [3 10]
-%     'postDurInSec',1.5);
-% C.run(3)
+%% ContinuousFB2T - run continuously
+% setup the acquisition side first
+
+%% Seal
+setacqpref('MC700AGUIstatus','mode','VClamp');
+setacqpref('MC700AGUIstatus','VClamp_gain','20');
+
+C.setProtocol('SealAndLeakControl');
+C.tag('R_input')
+C.run
+C.untag('R_input')
+
+%% Switch to current clamp, single electrode:
+setacqpref('MC700AGUIstatus','mode','IClamp');
+setacqpref('MC700AGUIstatus','IClamp_gain','100');
+
+%% Current Step 
+setacqpref('MC700AGUIstatus','mode','IClamp');
+setacqpref('MC700AGUIstatus','IClamp_gain','100');
+
+C.rig.applyDefaults;
+
+C.setProtocol('CurrentStepControl');
+C.rig.setParams('interTrialInterval',0);
+C.protocol.setParams('-q',...
+    'preDurInSec',.5,...
+    'stimDurInSec',.5,...
+    'steps',[-.25 .25 .5 1]* 100,... % [3 10]
+    'postDurInSec',1.5);
+C.run(3)
 
 
-% LEDArduinoFlash_Control - 
+%% LEDArduinoFlash_Control - 
+setacqpref('MC700AGUIstatus','mode','IClamp');
+setacqpref('MC700AGUIstatus','IClamp_gain','100');
+
 C.rig.applyDefaults;
 C.setProtocol('LEDFlashTriggerPiezoControl');
 C.rig.devices.epi.abort
@@ -67,20 +69,15 @@ C.protocol.setParams('-q',...
 C.protocol.randomize();
 
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
+C.rig.devices.amplifier.setParams('testFreq',10,'testcnt',0)
 C.rig.setParams('interTrialInterval',2,'iTIInterval',2);
 C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);
 
 C.clearTags
 C.tag('flex') % flex extend
 C.run(1)
-%%
-% *** Not in control: probe trial ***
-% C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',0)
-% C.clearTags
-% C.tag('out of control')
-% C.run(1)
 
-% Rest trials
+%% Rest trials
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
 C.rig.setParams('interTrialInterval',2,'iTIInterval',2);
 % C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3,'enforcedRestCount',6);

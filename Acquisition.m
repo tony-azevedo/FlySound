@@ -41,6 +41,8 @@ classdef Acquisition < handle
             global acqprefdir
             acqprefdir = 'C:\Users\tony\Code\FlySound\Preferences';
             
+            obj.setupDaqDevices;
+            
             if ~isfield(obj.userData,'CameraBaslerPCState')
                 obj.userData.CameraBaslerPCState = 0;
                 h = findall(0,'type','uicontrol','tag','start_button');
@@ -222,7 +224,89 @@ classdef Acquisition < handle
                 '%d.mat'];
         end
         
-        
+        function acqDevices = setupDaqDevices(obj)
+            % This function is the main function for ensuring that the
+            % correct daq devices are connected and working.
+            % This function is hard coded and will need to be edited for a
+            % new installation
+            fprintf('Setting up daq devices\n')
+            ah = getacqpref('AcquisitionHardware');
+            % ch = getacqpref('ControlHardware');
+            
+            daqs = daq.getDevices;
+            if ~isfield(ah,'rigDev') || strcmp(ah.rigDev,'')
+                daq.getDevices;
+                yesorno = questdlg('No rigs have been setup. Proceed?');
+                switch yesorno
+                    case 'Yes'
+                        setacqpref('AcquisitionHardware','rigDev','')
+                        setacqpref('AcquisitionHardware','modeDev','')
+                        setacqpref('AcquisitionHardware','gainDev','')
+                        setacqpref('AcquisitionHardware','triggeredDev','')
+                        setacqpref('ControlHardware','rigDev','')
+                        
+                    otherwise
+                        error('Check daq devices, change setupDaqDevices function, then proceed')
+                end
+            end     
+            ah = getacqpref('AcquisitionHardware');
+            ch = getacqpref('ControlHardware');
+
+            % This is the hard coded part
+            for d = 1:length(daqs)
+                % The USB device is the acquisition rig
+                if ~isempty(regexp(daqs(d).Description,'USB','once'))
+                    if ~strcmp(daqs(d).ID, ah.rigDev)
+                        yesorno = questdlg(['Change Rig Device from ',ah.rigDev,' to ',daqs(d).ID,'?']);
+                        switch yesorno
+                            case 'Yes'
+                                setacqpref('AcquisitionHardware','rigDev',daqs(d).ID)
+                                setacqpref('AcquisitionHardware','modeDev',daqs(d).ID)
+                                setacqpref('AcquisitionHardware','gainDev',daqs(d).ID)
+                            otherwise
+                                error('Check daq devices, change setupDaqDevices function, then proceed')
+                        end
+                    else
+                        continue
+                    end
+                elseif length(daqs(d).Subsystems(2).ChannelNames)==4
+                    % The device with 4 ao channels is the control rig    
+                    if ~strcmp(daqs(d).ID, ch.rigDev)
+                        yesorno = questdlg(['Change Control Rig Device from ',ch.rigDev,' to ',daqs(d).ID,'?']);
+                        switch yesorno
+                            case 'Yes'
+                                setacqpref('ControlHardware','rigDev',daqs(d).ID)
+                            otherwise
+                                error('Check daq devices, change setupDaqDevices function, then proceed')
+                        end
+                    else
+                        continue
+                    end
+                elseif length(daqs(d).Subsystems(2).ChannelNames)==2
+                    % The device with the most outputs is the triggered piezo rig
+                    if ~strcmp(daqs(d).ID, ah.triggeredDev)
+                        yesorno = questdlg(['Change triggered device from ',ah.triggeredDev,' to ',daqs(d).ID,'?']);
+                        switch yesorno
+                            case 'Yes'
+                                setacqpref('AcquisitionHardware','triggeredDev',daqs(d).ID)
+                            otherwise
+                                error('Check daq devices, change setupDaqDevices function, then proceed')
+                        end
+                    else
+                        continue
+                    end
+                end
+            end
+            % review settings:
+            acqDevices.rigDev = getacqpref('AcquisitionHardware','rigDev');
+            acqDevices.modeDev = getacqpref('AcquisitionHardware','modeDev');
+            acqDevices.gainDev = getacqpref('AcquisitionHardware','gainDev');
+            acqDevices.triggeredDev = getacqpref('AcquisitionHardware','triggeredDev');
+            acqDevices.cntrlRigDev = getacqpref('ControlHardware','rigDev');
+            fprintf('Acquisition Hardware settings:\n')
+            disp(acqDevices)
+            
+        end
         
         function setIdentifiers(obj,varargin)
 
@@ -474,8 +558,26 @@ classdef Acquisition < handle
         function updateFileNames(obj)%,metprop,propevnt)
             % UPDATE 181003: installed an MVMe SSD drive, supposedly a ton
             % faster to save to. Now putting everything there.
-            obj.D = ['F:\Acquisition\',datestr(date,'yymmdd'),'\',...
-                datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
+            
+            % UPDATE 211210: Computer died, have to reinstall, so now making it somewhat
+            % easier to update.
+            
+            AcqDir = getacqpref('USERDIRECTORY','AcquisitionDir');
+            if isempty(AcqDir)
+                AcqDir = uigetdir('D:','Select Acquisition folder or directory');
+                if isempty(regexp(AcqDir,'Acquisition','once'))
+                    drv =  fileparts(AcqDir);
+                    AcqDir = drv(1:3);
+                    if ~exist(fullfile(AcqDir,'Acquisition'),'dir')
+                        mkdir(fullfile(AcqDir,'Acquisition'))
+                    end
+                    AcqDir = fullfile(AcqDir,'Acquisition');
+                end
+                setacqpref('USERDIRECTORY','AcquisitionDir',AcqDir);
+                AcqDir = getacqpref('USERDIRECTORY','AcquisitionDir');
+            end
+            obj.D = fullfile(AcqDir,datestr(date,'yymmdd'),...
+                [datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber]);
             if ~isempty(obj.rig)
                 obj.saveAcquisition();
                 if isa(obj.rig,'ContinuousRig')
@@ -483,7 +585,7 @@ classdef Acquisition < handle
                 end
             end
         end
-        
+                
         function setRig(obj,varargin)
             
             % Main Amp (amplifier1Device) may have changed
@@ -862,7 +964,7 @@ classdef Acquisition < handle
             if ~isdir(obj.D)
                 mkdir(obj.D);
             end
-
+            cd(obj.D)
             name = [obj.D,'\', class(obj),'_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber];
             acqStruct.flygenotype = obj.flygenotype;

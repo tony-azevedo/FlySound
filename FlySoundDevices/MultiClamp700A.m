@@ -283,7 +283,7 @@ classdef MultiClamp700A < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            % try rmacqpref('defaultsMultiClamp700B'), catch, end
+            % try rmacqpref('defaultsMultiClamp700A'), catch, end
             
             % Don't know why, but I've found that the command sensitivity
             % in the Multiclamp software was wrong! Check that!
@@ -296,7 +296,7 @@ classdef MultiClamp700A < Device
             obj.params.daqCurrentOffset = 0.0000;
             obj.params.daqout_to_current_offset = 0;  % b, add to DAQ voltage to get the right offset
 
-            obj.params.cmdsensitivity = 20; % 100 mV/V
+            obj.params.cmdsensitivity = 20; % 20 mV/V
             obj.params.headstageresistorVC = 500e6; % 50e6, 5e9
 
             obj.params.daqout_to_voltage = 1/obj.params.cmdsensitivity; % m, multiply DAQ voltage to get mV injected (combines voltage divider and input factor) ie 1 V should give 2mV
@@ -307,6 +307,9 @@ classdef MultiClamp700A < Device
             obj.params.scaledcurrentoffset = 0; 
             obj.params.scaledvoltagescale_over_gain = 1/1000; % 10Vm [mV/V] * gainsetting (Look at multiclamp prim output window
             obj.params.scaledvoltageoffset = 0; 
+            obj.params.testcnt = 0;
+            obj.params.testFreq = 0;
+
             obj.params = obj.getDefaults;
         end
     end

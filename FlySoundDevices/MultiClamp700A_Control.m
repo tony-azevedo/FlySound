@@ -37,6 +37,7 @@ classdef MultiClamp700A_Control < Device
             obj.getmode;
             obj.setGainSession;
             obj.getgain;
+            obj.countTests;
         end
         
         function obj = setOrder(obj,varargin)
@@ -262,6 +263,18 @@ classdef MultiClamp700A_Control < Device
             varargout = {[obj.mode '_gain']};
         end
 
+        function countTests(obj)
+            if obj.params.testFreq > 0
+                if obj.params.testcnt == 0
+                    % Reset test if testcnt has counted down
+                    obj.params.testcnt = obj.params.testFreq;
+                end
+                obj.params.testcnt = obj.params.testcnt -1;
+            else
+                obj.params.testcnt = 1;
+            end
+        end
+
     end
     
     methods (Static)
@@ -282,7 +295,7 @@ classdef MultiClamp700A_Control < Device
         function defineParameters(obj)
             % create an amplifier class that implements these
             % http://www.a-msystems.com/pub/manuals/2400manual.pdf page 42
-            % try rmacqpref('defaultsMultiClamp700B'), catch, end
+            % try rmacqpref('defaultsMultiClamp700A_Control'), catch, end
             
             % Don't know why, but I've found that the command sensitivity
             % in the Multiclamp software was wrong! Check that!
@@ -306,6 +319,9 @@ classdef MultiClamp700A_Control < Device
             obj.params.scaledcurrentoffset = 0; 
             obj.params.scaledvoltagescale_over_gain = 1/1000; % 10Vm [mV/V] * gainsetting (Look at multiclamp prim output window
             obj.params.scaledvoltageoffset = 0; 
+            obj.params.testcnt = 0;
+            obj.params.testFreq = 0;
+            
             obj.params = obj.getDefaults;
         end
     end
