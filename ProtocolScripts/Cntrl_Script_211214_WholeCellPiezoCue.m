@@ -75,7 +75,7 @@ C.rig.setParams('waitForLED', 1,'LEDTimeout',10,'blueOnCount',3,'blueOffCount',3
 
 C.clearTags
 C.tag('flex') % flex extend
-C.run(1)
+C.run(11)
 
 %% Rest trials
 C.rig.devices.epi.setParams('routineToggle',0,'controlToggle',1,'blueToggle',0)
