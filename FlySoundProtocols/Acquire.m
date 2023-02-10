@@ -34,7 +34,7 @@ classdef Acquire < FlySoundProtocol
     methods (Access = protected)
                                                        
         function defineParameters(obj)
-            obj.params.sampratein = 10000;
+            obj.params.sampratein = 50000;
             obj.params.samprateout = 10000;
             
             obj.params.stimDurInSec = .8;

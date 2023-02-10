@@ -1,4 +1,3 @@
-% Deliver continous voltage steps,check the seal and the input resistance
 classdef AcquireWithEpiFeedback < FlySoundProtocol
     
     properties (Constant)

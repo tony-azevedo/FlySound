@@ -56,7 +56,9 @@ classdef EpiOrLEDRig < ControlRig
             obj.aoSession.Rate = protocol.params.samprateout;
             
             obj.setUpITITimer();
-            [on_cntr, off_cntr] = obj.setUpWaitTimers();
+            if obj.params.waitForLED
+                [on_cntr, off_cntr] = obj.setUpWaitTimers();
+            end
             notify(obj,'StartRun_Control');
             
             for n = 1:repeats
