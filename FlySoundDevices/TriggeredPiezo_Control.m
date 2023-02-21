@@ -95,6 +95,14 @@ classdef TriggeredPiezo_Control < Device
             obj.plotStimulus()
         end
 
+        function plotStimulus(obj)
+            cla(obj.stimshowax);
+            plot(obj.stimshowax,obj.stimulus)
+            obj.stimshowax.XLim = [1 length(obj.stimulus)];
+            obj.stimshowax.YLim = [0 10];
+            figure(obj.stimshowfig)
+        end
+
         function stim = getStimulus(obj)
             stim = obj.stimulus;
         end
@@ -155,13 +163,5 @@ classdef TriggeredPiezo_Control < Device
             obj.params.displacementOffset = 5;
         end
         
-        function plotStimulus(obj)
-            cla(obj.stimshowax);
-            plot(obj.stimshowax,obj.stimulus)
-            obj.stimshowax.XLim = [1 length(obj.stimulus)];
-            obj.stimshowax.YLim = [0 10];
-            figure(obj.stimshowfig)
-        end
-
     end
 end

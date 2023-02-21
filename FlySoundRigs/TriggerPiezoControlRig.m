@@ -1,13 +1,13 @@
-classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig 
+classdef TriggerPiezoControlRig < EPhysControlRig
     % current hierarchy:
     
     properties (Constant)
-        rigName = 'LEDArduinoTriggerPiezoControlRig';
+        rigName = 'TriggerPiezoControlRig';
         IsContinuous = false;
     end
     
     methods
-        function obj = LEDArduinoTriggerPiezoControlRig(varargin)
+        function obj = TriggerPiezoControlRig(varargin)
             obj.addDevice('triggeredpiezo','TriggeredPiezo_Control');
         end
         
@@ -17,7 +17,7 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
             obj.devices.amplifier.getgain;
             try in = obj.subrun(protocol,varargin{:}); % run this protected method below
             catch e
-                obj.devices.epi.abort
+                % obj.devices.epi.abort
                 e.rethrow
             end
         end
@@ -75,22 +75,19 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
             obj.aoSession.Rate = protocol.params.samprateout;
             
-            obj.setUpITITimer();
-            [on_cntr, off_cntr] = obj.setUpWaitTimers();
             notify(obj,'StartRun_Control');
             
             for n = 1:repeats
                 while protocol.hasNext()
                     
-                    if obj.params.waitForLED
-                        [on_cntr, off_cntr] = obj.handleTrialFailures(on_cntr,off_cntr);
-                        if on_cntr<0
-                            protocol.reset
-                            return
-                        end
-                    end
                     obj.setAOSession(protocol);
-                    obj.devices.triggeredpiezo.setStimulus(protocol.cue);
+                    obj.devices.triggeredpiezo.setStimulus(protocol.cue); 
+                    % "cue" refers to a triggered piezo stimulus that
+                    % occurs before th light turns on in the leg
+                    % positioning experiment, i.e. a stimulus that could be
+                    % used as a conditioned stimulus (cue) that the light
+                    % is about to turn on. Stick to this terminology in any
+                    % protocol that uses this rig.
                     
                     % setup the data logger
                     notify(obj,'StartTrial_Control',PassProtocolData(protocol));
@@ -109,22 +106,6 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
                     notify(obj,'IncreaseTrialNum_Control');
                     obj.params.trialnum = obj.params.trialnum+1;
                     
-                    % options for what to do if light is still on. Else,
-                    % just leave the led on
-                    if obj.params.turnoffLED
-                        obj.itiWait()
-                        notify(obj,'EndTimer_Control')
-                    elseif obj.params.waitForLED
-                        LEDstate = in(end,obj.ardout_col);
-                        if ~LEDstate && obj.devices.epi.params.blueToggle
-                            on_cntr = 0;
-                            off_cntr = off_cntr + 1;
-                            obj.itiWait()
-                        elseif LEDstate
-                            [on_cntr, off_cntr] = obj.waitForLEDOff(on_cntr,off_cntr);
-                        end
-                    end
-                    
                     obj.devices.triggeredpiezo.stop;
 
                 end
@@ -136,10 +117,10 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
                 t = timerfind('Name','ITItimer');
                 delete(t)
             end
-            if obj.params.waitForLED
-                wflt = timerfind('Name','LEDTimeoutTimer');
-                delete(wflt)
-            end
+%             if obj.params.waitForLED
+%                 wflt = timerfind('Name','LEDTimeoutTimer');
+%                 delete(wflt)
+%             end
         end
     end
 end

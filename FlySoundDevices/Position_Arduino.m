@@ -78,7 +78,7 @@ classdef Position_Arduino < Device
         end
                 
         function defineParameters(obj)
-            obj.params.gain = 1280/4096; % this assumes a window width of 1280, should actually poll a 
+            obj.params.gain = 1280/4096; % this assumes a window width of 1280, should actually poll Pyas to get the width of the window 
             obj.params.offset = 4096/2; % this assumes a window width of 1280, should actually poll a 
         end
     end

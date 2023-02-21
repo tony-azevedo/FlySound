@@ -31,6 +31,16 @@ C.protocol.setParams('-q',...
 %C.protocol.setParams('sampratein', 10000,'samprateout',10000)
 C.run(10)
 
+%% Piezo Ramp step
+
+% C.setProtocol('TriggeredPiezoRampControl');
+% C.rig.setParams('interTrialInterval',2);
+% C.protocol.setParams('-q',...
+%     'preDurInSec',.5,...
+%     'stimDurInSec',.3,...%'steps',[-.25 .25 .5 1]* 100,... % [3 10]
+%     'postDurInSec',4.26);
+% %C.protocol.setParams('sampratein', 10000,'samprateout',10000)
+% C.run(10)
 
 
 %% turn on the LED for testing
