@@ -9,6 +9,7 @@ classdef TriggerPiezoControlRig < EPhysControlRig
     methods
         function obj = TriggerPiezoControlRig(varargin)
             obj.addDevice('triggeredpiezo','TriggeredPiezo_Control');
+            obj.addDevice('refchan','ReferenceChannelControl')
         end
         
         function in = run(obj,protocol,varargin)
