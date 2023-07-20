@@ -29,7 +29,7 @@ classdef TriggeredPiezo_Control < Device
     end
     
     events
-        %InsufficientFunds, notify(BA,'InsufficientFunds')
+        
     end
     
     methods
