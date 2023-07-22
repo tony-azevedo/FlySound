@@ -262,8 +262,7 @@ classdef EpiOrLEDRig < ControlRig
                 
                 % Counter for trials with no movement
                 on_cntr = 0;
-                % logical flag indicating fly moved after turning on blue
-                % led
+                % counter for movement trials after toggling blue Epi
                 off_cntr = 0;
             end
         end
