@@ -32,6 +32,7 @@ classdef EpiOrLEDRig < ControlRig
             addlistener(obj.devices.epi,'ControlFlag',@obj.setArduinoControl);
             addlistener(obj.devices.epi,'RoutineFlag',@obj.setArduinoControl);
             addlistener(obj.devices.epi,'BlueFlag',@obj.setArduinoControl);
+            addlistener(obj.devices.epi,'IRPWMFlag',@obj.setArduinoControl);
             addlistener(obj.devices.epi,'Abort',@obj.turnOffEpi);
             addlistener(obj,'EndRun_Control',@obj.turnOffEpi);
             addlistener(obj,'EndTimer_Control',@obj.turnOffEpi);
@@ -268,6 +269,11 @@ classdef EpiOrLEDRig < ControlRig
         end
         
         function [on_cntr, off_cntr] = handleTrialFailures(obj,on_cntr,off_cntr)
+            
+            if obj.params.ignoreTrialFailures
+                on_cntr = 1; off_cntr = 1;
+                return
+            end
             if ~obj.devices.epi.params.blueToggle && on_cntr >= obj.params.blueOnCount
                 % turn on the blue led
                 obj.devices.epi.setParams('blueToggle',1)
@@ -344,6 +350,7 @@ classdef EpiOrLEDRig < ControlRig
             obj.params.blueOffCount = 4;    % failed trials before turning on blue LED
             obj.params.blueOnCount = 4;     % successful trials before turnin off blue LED (succes is moving and turnning off light)
             obj.params.enforcedRestCount = 10;   % number of failed trials before aborting
+            obj.params.ignoreTrialFailures = false;
         end
         
     end

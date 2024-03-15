@@ -20,6 +20,7 @@ classdef LED_Arduino_Control < Device
         ControlFlag
         RoutineFlag
         BlueFlag
+        IRPWMFlag
     end
     
     methods
@@ -29,9 +30,9 @@ classdef LED_Arduino_Control < Device
             obj.inputLabels = {};
             obj.inputUnits = {};
             obj.inputPorts = [];
-            obj.digitalOutputLabels = {'epittl','abort','control','routine','bluettl'};
-            obj.digitalOutputUnits = {'Bit','Bit','Bit','Bit','Bit'};
-            obj.digitalOutputPorts = [7,6,5,4,3];
+            obj.digitalOutputLabels = {'epittl','abort','control','routine','bluettl','irlaserttl'};
+            obj.digitalOutputUnits = {'Bit','Bit','Bit','Bit','Bit','Bit'};
+            obj.digitalOutputPorts = [7,6,5,4,3,0];  % ,'Port2/Line0'];
             obj.digitalInputLabels = {'arduino_output'}; %,'trial_duration'};
             obj.digitalInputUnits = {'Bit'};
             obj.digitalInputPorts = [2];
@@ -67,6 +68,7 @@ classdef LED_Arduino_Control < Device
             out.control = 0.*out.epittl+obj.params.controlToggle;
             out.routine = 0.*out.epittl+obj.params.routineToggle;
             out.bluettl = 0.*out.epittl+obj.params.blueToggle;
+            out.irlaserttl = 0.*out.epittl+obj.params.irlaserToggle;
         end
         
         function setParams(obj,varargin)
@@ -100,6 +102,7 @@ classdef LED_Arduino_Control < Device
             obj.params.controlToggle = 0;
             obj.params.routineToggle = 0;
             obj.params.blueToggle = 0;
+            obj.params.irlaserToggle = 0;
             obj.params.target = [340 80];
             obj.params.duinoPWM = 64;
         end
