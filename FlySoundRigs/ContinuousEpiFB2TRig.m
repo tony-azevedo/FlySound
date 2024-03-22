@@ -56,7 +56,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
     
         
         function run(obj,protocol,varargin)
-            if obj.aoSession.IsRunning
+            if obj.daq.IsRunning
                 return
             end
             obj.devices.amplifier_1.getmode;
@@ -66,12 +66,13 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             obj.devices.amplifier_2.getgain;
             %obj.setOutputs;
 
-            obj.aoSession.Rate = protocol.params.samprateout;
-            obj.aoSession.wait;
+            obj.daq.Rate = protocol.params.samprateout;
+            % obj.daq.wait;
 
-            obj.setAOSession(protocol);
-            obj.listener = obj.aoSession.addlistener('DataRequired',...
-                @(src,event) src.queueOutputData(obj.outputs.datacolumns));
+            obj.setdaq(protocol);
+            obj.daq.ScansRequiredFcn = @obj.writeMoreData;
+            % obj.listener = obj.daq.addlistener('DataRequired',...
+            %     @(src,event) src.queueOutputData(obj.outputs.datacolumns));
             obj.setAnalogInputs;
             obj.setDigitalInputs;
             obj.mapInputNamesToInColumns;
@@ -85,39 +86,44 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
 
             obj.writeHeader
             
-            obj.savelistener = obj.aoSession.addlistener('DataAvailable',@obj.saveData);
+            % obj.savelistener = obj.daq.addlistener('DataAvailable',@obj.saveData);
+            obj.daq.ScansAvailableFcn = @obj.saveData;
 
             notify(obj,'StartRun');
 
-            obj.aoSession.IsContinuous = true;
+            obj.daq.IsContinuous = true;
 
             obj.count = 0;
             notify(obj,'SaveData');
-            obj.aoSession.startBackground;    
-            %obj.aoSession.startForeground;    
+            obj.daq.startBackground;    
+            %obj.daq.startForeground;    
 
         end
         
-        function setAOSession(obj,protocol)
+        function writeMoreData(obj)
+            write(obj.daq,obj.outputs.datacolumns)
+        end
+
+        function setdaq(obj,protocol)
             % figure out what the stim vector should be
             obj.transformOutputs(protocol.next());
             
             columnsforfirsttime = obj.outputs.datacolumns;
             % the first time through, wait the preperiod to turn on epi
             for ch = 1:length(obj.outputchannelidx)
-                if strcmp('epittl',obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
+                if strcmp('epittl',obj.daq.Channels(obj.outputchannelidx(ch)).Name)
                     epioffcolumn = obj.outputs.datacolumns(:,ch);
                     epioffcolumn(1:protocol.params.preDurInSec*protocol.params.samprateout) = 0;
                     columnsforfirsttime(:,ch) = epioffcolumn;
                 end
             end
-            obj.aoSession.queueOutputData(columnsforfirsttime);
+            obj.daq.queueOutputData(columnsforfirsttime);
         end
 
         
         function stop(obj)
-            obj.aoSession.stop;
-            obj.aoSession.wait;
+            obj.daq.stop;
+            obj.daq.wait;
             obj.devices.epi.abort
             delete(obj.savelistener)
             try 
@@ -191,7 +197,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
                 fprintf(1,'\n');
                 obj.count = 0;
             end
-            %obj.aoSession.stop;
+            %obj.daq.stop;
         end
         
         function [ain_int16,din] = transformInputs(obj,in)
@@ -206,8 +212,8 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             chids = obj.inputchannelidx;
             [~,o] = sort(chids);
             for ch = length(o):-1:1
-                if startsWith(obj.aoSession.Channels(chids(ch)).Name,'b_')
-                    obj.inputs.data.(obj.aoSession.Channels(chids(ch)).Name) = in(:,o(ch));
+                if startsWith(obj.daq.Channels(chids(ch)).Name,'b_')
+                    obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in(:,o(ch));
                 end
             end
             obj.inputs.data = obj.devices.forceprobe.transformInputs(obj.inputs.data,'int12');
@@ -230,9 +236,9 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             % enters scaled output (always ai0) for either V or I
             in = ones(size(chids));
             for ch = length(o):-1:1
-                gain.(obj.aoSession.Channels(chids(ch)).Name) = in(:,o(ch));
-                if isa(obj.aoSession.Channels(chids(ch)),'daq.ni.AnalogInputVoltageChannel')
-                    range.(obj.aoSession.Channels(chids(ch)).Name) = abs(obj.aoSession.Channels(chids(ch)).Range.Min);
+                gain.(obj.daq.Channels(chids(ch)).Name) = in(:,o(ch));
+                if isa(obj.daq.Channels(chids(ch)),'daq.ni.AnalogInputVoltageChannel')
+                    range.(obj.daq.Channels(chids(ch)).Name) = abs(obj.daq.Channels(chids(ch)).Range.Min);
                 end
             end
             % Probe position range
@@ -271,7 +277,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             % Now set the abort channel on briefly before turning it back
             % off
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
                 
@@ -281,16 +287,16 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             end
             output_a = output;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'abort')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'abort')
                     output_a(chidx) = 1;
                 end
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
                     output_a(chidx) = 0;
                     output(chidx) = 0;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            obj.aoSession.outputSingleScan(output);
+            obj.daq.write(output_a);
+            obj.daq.write(output);
             
             fprintf(1,'LED Off\n')
         end
@@ -298,7 +304,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
         function turnOnEpi(obj,callingobj,evntdata,varargin)
             % Now set epittl channel on
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
             else
@@ -306,12 +312,12 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             end
             output_a = output;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
                     output_a(chidx) = 1;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            obj.aoSession.outputSingleScan(output);
+            obj.daq.write(output_a);
+            obj.daq.write(output);
             fprintf(1,'LED On\n')
         end
         
@@ -319,7 +325,7 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
         function setArduinoControl(obj,callingobj,evntdata,varargin)
             % Now set the control channel
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
                 
@@ -330,12 +336,12 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             output_a = output;
             ardparams = callingobj.getParams;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'control')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'control')
                     output_a(chidx) = ardparams.controlToggle;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            % obj.aoSession.outputSingleScan(output);
+            obj.daq.write(output_a);
+            % obj.daq.outputSingleScan(output);
         end
         
         function delete(obj)
@@ -380,15 +386,15 @@ classdef ContinuousEpiFB2TRig < ContinuousRig & TwoAmpRig
             obj.dichannelidx = false(size(o));
             % Find the columns with analog input, plus an extra
             for ch = length(o):-1:1
-                if any(contains(obj.aiXChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
-                        || strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
+                if any(contains(obj.aiXChannelNames, obj.daq.Channels(chids(ch)).Name)) ...
+                        || strcmp('b_sign', obj.daq.Channels(chids(ch)).Name)
                     obj.aixchannelidx(ch) = true;
                 end
-                if any(contains(obj.diXChannelNames, obj.aoSession.Channels(chids(ch)).Name))
+                if any(contains(obj.diXChannelNames, obj.daq.Channels(chids(ch)).Name))
                     obj.dixchannelidx(ch) = true;
                 end
-                if any(contains(obj.diChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
-                        && ~strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
+                if any(contains(obj.diChannelNames, obj.daq.Channels(chids(ch)).Name)) ...
+                        && ~strcmp('b_sign', obj.daq.Channels(chids(ch)).Name)
                     obj.dichannelidx(ch) = true;
                 end
             end

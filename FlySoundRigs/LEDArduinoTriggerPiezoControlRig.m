@@ -73,7 +73,7 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
             obj.setTestDisplay();
             
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
-            obj.aoSession.Rate = protocol.params.samprateout;
+            obj.daq.Rate = protocol.params.samprateout;
             
             obj.setUpITITimer();
             [on_cntr, off_cntr] = obj.setUpWaitTimers();
@@ -89,18 +89,15 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
                             return
                         end
                     end
-                    obj.setAOSession(protocol);
+                    obj.setDaq(protocol);
                     obj.devices.triggeredpiezo.setStimulus(protocol.cue);
                     
                     % setup the data logger
                     notify(obj,'StartTrial_Control',PassProtocolData(protocol));
                     obj.devices.triggeredpiezo.start;
                     
-                    in = obj.aoSession.startForeground; % both amp and signal monitor input
-                    wait(obj.aoSession);
+                    in = obj.daq.readwrite(obj.outputs.datacolumns); % both amp and signal monitor input
 
-                    % setup log data
-                    % obj.transformInputs(in);
                     notify(obj,'EndTrial_Control');
                                         
                     notify(obj,'SaveData_Control');
@@ -115,7 +112,7 @@ classdef LEDArduinoTriggerPiezoControlRig < EPhysControlRig & EpiOrLEDRig
                         obj.itiWait()
                         notify(obj,'EndTimer_Control')
                     elseif obj.params.waitForLED
-                        LEDstate = in(end,obj.ardout_col);
+                        LEDstate = in.arduino_output(end);
                         if ~LEDstate && obj.devices.epi.params.blueToggle
                             on_cntr = 0;
                             off_cntr = off_cntr + 1;

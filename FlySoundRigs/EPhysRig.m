@@ -43,13 +43,13 @@ classdef EPhysRig < Rig
             acqhardware = getacqpref('AcquisitionHardware');
             if isfield(acqhardware,'Amplifier') ...
                     && ~strcmp(acqhardware.Amplifier,'MultiClamp700B')...
-                    && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P');
+                    && ~strcmp(acqhardware.Amplifier,'AxoPatch200B_2P')
                 obj.addDevice('amplifier',acqhardware.Amplifier);
             elseif ~isfield(acqhardware,'Amplifier')
                 ampDevices = {'MultiClamp700A','MultiClamp700AAux'};
                 obj.addDevice('amplifier',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
             elseif strcmp(acqhardware.Amplifier,'AxoPatch200B_2P')
-                obj.addDevice('amplifier',acqhardware.Amplifier,'Session',obj.aiSession);
+                obj.addDevice('amplifier',acqhardware.Amplifier,'Session',obj.daq);
             elseif strcmp(acqhardware.Amplifier,'MultiClamp700B')
                 obj.addDevice('amplifier',ampDevices{strcmp(ampDevices,p.Results.amplifier1Device)});
             end
@@ -67,9 +67,9 @@ classdef EPhysRig < Rig
         function changeSessionsFromMode(obj,amplifier,evnt)
             for i = 1:length(amplifier.outputPorts)
                 % configure AO
-                for c = 1:length(obj.aoSession.Channels)
-                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
-                        ch = obj.aoSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end
@@ -80,9 +80,9 @@ classdef EPhysRig < Rig
             end
             
             for i = 1:length(amplifier.inputPorts)
-                for c = 1:length(obj.aiSession.Channels)
-                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
-                        ch = obj.aiSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end

@@ -29,7 +29,7 @@ classdef ControlRig < handle
         devices
         % aiSession
         inputchannelidx
-        aoSession
+        daq
         outputchannelidx
         outputs
         inputs
@@ -59,8 +59,8 @@ classdef ControlRig < handle
                 disp(getacqpref('ControlHardware'));
                 error('The control hardware preferences were not set. Check the above preferences for accuracy')
             end
-            if isempty(obj.aoSession)
-                obj.aoSession = daq.createSession('ni');
+            if isempty(obj.daq)
+                obj.daq = daq('ni');
             else
                 fprintf(1,'%s: Daq object already created\n',obj.rigName);
             end
@@ -90,7 +90,7 @@ classdef ControlRig < handle
             obj.setTestDisplay();
             
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
-            obj.aoSession.Rate = protocol.params.samprateout;
+            obj.daq.Rate = protocol.params.samprateout;
             
             if obj.params.interTrialInterval >0
                 t = timerfind('Name','ITItimer');
@@ -105,15 +105,19 @@ classdef ControlRig < handle
             notify(obj,'StartRun_Control');
             for n = 1:repeats
                 while protocol.hasNext()
-                    obj.setAOSession(protocol);
+                    obj.setDaq(protocol);
                     
                     % setup the data logger
                     notify(obj,'StartTrial_Control',PassProtocolData(protocol));
                     % start the videoinput object
                     % notify(obj,'StartTrialCamera');
                     
-                    in = obj.aoSession.startForeground; % both amp and signal monitor input
-                    wait(obj.aoSession);
+                    if isempty(obj.inputs)
+                        obj.daq.write(obj.outputs.datacolumns);
+                        in = [];
+                    else
+                        in = obj.daq.readwrite(obj.outputs.datacolumns); % both amp and signal monitor input
+                    end
                     notify(obj,'EndTrial_Control');
                     
                     % disp(obj.aiSession)
@@ -134,13 +138,12 @@ classdef ControlRig < handle
             notify(obj,'EndRun_Control');
         end
                         
-        function setAOSession(obj,protocol)
+        function setDaq(obj,protocol)
             % figure out what the stim vector should be
             obj.transformOutputs(protocol.next());
-            obj.aoSession.wait;
-            obj.aoSession.queueOutputData(obj.outputs.datacolumns);
+            
             % in case you need to flip a bit or something
-            obj.aoSession.UserData.CurrentOutput = obj.outputs.datacolumns(end,:);
+            obj.daq.UserData.CurrentOutput = obj.outputs.datacolumns(end,:);
         end
                         
         function transformOutputs(obj,out)
@@ -207,8 +210,8 @@ classdef ControlRig < handle
             end
             
             for ch = 1:length(obj.outputchannelidx)
-                if isfield(out,obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
-                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(obj.outputchannelidx(ch)).Name);
+                if isfield(out,obj.daq.Channels(obj.outputchannelidx(ch)).Name)
+                    obj.outputs.datacolumns(:,ch) = out.(obj.daq.Channels(obj.outputchannelidx(ch)).Name);
                 end
             end
         end
@@ -257,18 +260,18 @@ classdef ControlRig < handle
         
         function setDisplay(obj,fig,evnt,varargin)
             if isempty(obj.TrialDisplay) || ~ishghandle(obj.TrialDisplay) 
-                scrsz = get(0,'ScreenSize');
+                % scrsz = get(0,'ScreenSize');
                 obj.TrialDisplay = figure(...
                     'Position',[8 320 560 420],...
                     'NumberTitle', 'off',...
-                    'Name', 'Rig Display');%,...'DeleteFcn',@obj.setDisplay);
+                    'Name', 'Rig Display');
             end
         end
         
         function setTestDisplay(obj,fig,evnt,varargin)
             if isempty(obj.TestDisplay) || ~ishghandle(obj.TestDisplay)
                 obj.TestDisplay = findobj('type','figure','Name', 'Test Display');
-                if isempty(obj.TestDisplay);                
+                if isempty(obj.TestDisplay)                
                     obj.TestDisplay = figure(...
                         'Position',[8 832 560 165],...
                         'NumberTitle', 'off',...
@@ -278,7 +281,7 @@ classdef ControlRig < handle
                 ax = subplot(1,1,1,'parent',obj.TestDisplay);
                 bl = findobj(ax,'tag','baseline');
                 if isempty(bl)
-                    line([now,now+5],[0 0],'color',[.8 .8 .8],'parent',ax,'tag','baseline');
+                    line([datetime('now'),datetime('now')+5],[0 0],'color',[.8 .8 .8],'parent',ax,'tag','baseline');
                 end
                 set(ax,'XTickLabel',{[]});
                 ylabel('R (m -IC, c - VC)')
@@ -306,15 +309,13 @@ classdef ControlRig < handle
             for i = 1:length(dnames)              
                 rigStruct.devices.(dnames{i}) = obj.devices.(dnames{i}).deviceName;
             end
-            rigStruct.timestamp = now;
+            rigStruct.timestamp = datetime('now');
         end
         
         function delete(obj)
             close(obj.TrialDisplay)
-            fprintf('SESSIONS RELEASED\n');
             fprintf('%s DELETED\n',obj.rigName);
-            release(obj.aoSession);
-            delete(obj.aoSession);
+            delete(obj.daq);
             delete@handle(obj)
         end
     end
@@ -348,7 +349,7 @@ classdef ControlRig < handle
                 for i = 1:length(dev.outputPorts)
                     % configure AO
                     fprintf('\t\t%s\n',dev.outputLabels{i}) 
-                    ch = obj.aoSession.addAnalogOutputChannel(rigDev,dev.outputPorts(i), 'Voltage');
+                    ch = obj.daq.addoutput(rigDev,dev.outputPorts(i), 'Voltage');
                     ch.TerminalConfig = 'SingleEnded';
                     ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
@@ -359,7 +360,7 @@ classdef ControlRig < handle
                 
                 for i = 1:length(dev.digitalOutputPorts)
                     fprintf('\t\t%s\n',dev.digitalOutputLabels{i}) 
-                    ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
+                    ch = obj.daq.addoutput(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'Digital');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
                     obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
@@ -368,7 +369,7 @@ classdef ControlRig < handle
                     for i = 1:length(dev.digitalInputPorts)
                         fprintf('\t\t%s\t',dev.digitalInputLabels{i})
                         tic
-                        ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
+                        ch = obj.daq.addinput(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'Digital');
                         toc
                         ch.Name = dev.digitalInputLabels{i};
                         obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
@@ -385,11 +386,11 @@ classdef ControlRig < handle
             obj.outputs.datavalues = [];
             obj.outputchannelidx = [];
             obj.inputchannelidx = [];
-            for ch = 1:length(obj.aoSession.Channels)
-                aord = obj.aoSession.Channels(ch).ID(1);
+            for ch = 1:length(obj.daq.Channels)
+                aord = obj.daq.Channels(ch).ID(1);
                 switch aord
                     case 'p'
-                        switch obj.aoSession.Channels(ch).MeasurementType
+                        switch obj.daq.Channels(ch).MeasurementType
                             case 'OutputOnly'
                                 obj.outputs.datavalues(end+1) = 0;
                                 obj.outputchannelidx(end+1) = ch;
@@ -401,7 +402,7 @@ classdef ControlRig < handle
                                 error('Not able to deal with Bidirectional Digital channels')
                         end
                     case 'a'
-                         switch obj.aoSession.Channels(ch).ID(2)
+                         switch obj.daq.Channels(ch).ID(2)
                              case 'o'
                                 obj.outputs.datavalues(end+1) = 0;
                                 obj.outputchannelidx(end+1) = ch;
@@ -416,12 +417,12 @@ classdef ControlRig < handle
         
         function [chNames,avsd] = getChannelNames(obj)
             for ch = 1:length(obj.outputchannelidx)
-                chNames.out{ch} = obj.aoSession.Channels(obj.outputchannelidx(ch)).Name;
-                avsd.out(ch) = strcmp('ao',obj.aoSession.Channels(obj.outputchannelidx(ch)).ID(1:2));
+                chNames.out{ch} = obj.daq.Channels(obj.outputchannelidx(ch)).Name;
+                avsd.out(ch) = strcmp('ao',obj.daq.Channels(obj.outputchannelidx(ch)).ID(1:2));
             end
             for ch = 1:length(obj.inputchannelidx)
-                chNames.in{ch} = obj.aoSession.Channels(obj.inputchannelidx(ch)).Name;
-                avsd.in(ch) = strcmp('ai',obj.aoSession.Channels(obj.inputchannelidx(ch)).ID(1:2));
+                chNames.in{ch} = obj.daq.Channels(obj.inputchannelidx(ch)).Name;
+                avsd.in(ch) = strcmp('ai',obj.daq.Channels(obj.inputchannelidx(ch)).ID(1:2));
             end
 
         end

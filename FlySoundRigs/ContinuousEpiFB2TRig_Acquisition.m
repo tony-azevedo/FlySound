@@ -60,7 +60,7 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
     
         
         function run(obj,protocol,varargin)
-            if obj.aoSession.IsRunning
+            if obj.daq.Running
                 return
             end
             if ~isempty(fopen('all'))
@@ -82,12 +82,11 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             obj.devices.amplifier_2.getgain;
             %obj.setOutputs;
 
-            obj.aoSession.Rate = protocol.params.samprateout;
-            obj.aoSession.wait;
+            obj.daq.Rate = protocol.params.samprateout;
 
-            obj.setAOSession(protocol);
-            obj.listener = obj.aoSession.addlistener('DataRequired',...
-                @(src,event) src.queueOutputData(obj.outputs.datacolumns));
+            obj.setDaq(protocol);
+
+            obj.daq.ScansRequiredFcn = @obj.writeMoreData;
             obj.setAnalogInputs;
             obj.setDigitalInputs;
             obj.mapInputNamesToInColumns;
@@ -109,41 +108,47 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
 
             obj.writeHeader
             
-            obj.savelistener = obj.aoSession.addlistener('DataAvailable',@obj.saveData);
+            % obj.savelistener = obj.daq.addlistener('DataAvailable',@obj.saveData);
+            obj.daq.ScansAvailableFcnCount = obj.daq.Rate;
+            obj.daq.ScansAvailableFcn = @obj.saveData;
 
             notify(obj,'StartRun');
-
-            obj.aoSession.IsContinuous = true;
 
             obj.count = 0;
             notify(obj,'SaveData');
             
             msgbox('Use Pyas to send the target values','Target');
-            obj.aoSession.startBackground;    
-            %obj.aoSession.startForeground;    
+
+            obj.daq.start("Continuous")
 
         end
         
-        function setAOSession(obj,protocol)
+        function writeMoreData(obj,source,event)
+            write(obj.daq,obj.outputs.datacolumns)
+        end
+
+        function setDaq(obj,protocol)
             % figure out what the stim vector should be
+            obj.daq.flush()
             obj.transformOutputs(protocol.next());
             
             columnsforfirsttime = obj.outputs.datacolumns;
             % the first time through, wait the preperiod to turn on epi
             for ch = 1:length(obj.outputchannelidx)
-                if strcmp('epittl',obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
+                if strcmp('epittl',obj.daq.Channels(obj.outputchannelidx(ch)).Name)
                     epioffcolumn = obj.outputs.datacolumns(:,ch);
                     epioffcolumn(1:protocol.params.preDurInSec*protocol.params.samprateout) = 0;
                     columnsforfirsttime(:,ch) = epioffcolumn;
                 end
             end
-            obj.aoSession.queueOutputData(columnsforfirsttime);
+            obj.daq.preload(columnsforfirsttime);
         end
 
         
         function stop(obj)
-            obj.aoSession.stop;
-            obj.aoSession.wait;
+            obj.daq.stop;
+            obj.daq.flush;
+            % obj.daq.wait;
             % obj.devices.epi.abort
             delete(obj.savelistener)
             try 
@@ -210,8 +215,9 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             % fwrite(obj.fid_digital,inputs,'char');
         end
             
-        function saveData(obj,~,event)
-            [ain,din] = obj.transformInputs(event.Data);
+        function saveData(obj,temp,event)
+            in = event.Source.read;
+            [ain,din] = obj.transformInputs(in.Data);
             fwrite(obj.fid_analog,ain','int16');
             fwrite(obj.fid_digital,din','ubit1');
             fprintf(1,'*');
@@ -220,33 +226,36 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
                 fprintf(1,'\n');
                 obj.count = 0;
             end
-            %obj.aoSession.stop;
+            % obj.stop;
         end
         
-        function [ain_int16,din] = transformInputs(obj,in)
+        function [ain_int16,din] = transformInputs(obj,in2)
             % In this overwritten function, I need to maitain the 16
             % values of the input, but also transorm the probe_position.
             % I do not need to calculate gains
             persistent range
             if isempty(range)
-                range = repmat(obj.aiXRange,size(in,1),1);
+                range = repmat(obj.aiXRange,size(in2,1),1);
+            elseif size(range,1) ~= size(in2,1)
+                range = repmat(obj.aiXRange,size(in2,1),1);
             end
             
             chids = obj.inputchannelidx;
             [~,o] = sort(chids);
             for ch = length(o):-1:1
-                if startsWith(obj.aoSession.Channels(chids(ch)).Name,'b_')
-                    obj.inputs.data.(obj.aoSession.Channels(chids(ch)).Name) = in(:,o(ch));
+                if startsWith(obj.daq.Channels(chids(ch)).Name,'b_')
+                    obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in2(:,o(ch));
+                    %obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in.(obj.daq.Channels(chids(ch)).Name);
                 end
             end
             obj.inputs.data = obj.devices.forceprobe.transformInputs(obj.inputs.data,'int12');
             
-            ain = in(:,obj.aixchannelidx); % obj.aix has an additional channel for probeposition
+            ain = in2(:,obj.aixchannelidx); % obj.aix has an additional channel for probeposition
             ain_int16 = int16(ain ./ range * 2^15);
             ain_int16(:,strcmp(obj.aiXChannelNames,'probe_position')) = int16(obj.inputs.data.probe_position);
             
             
-            din = in(:,obj.dixchannelidx);
+            din = in2(:,obj.dixchannelidx);
             % If you want to keep all the bits for int12 probe position
             %din = in(:,obj.dichannelidx);
         end
@@ -261,9 +270,9 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             % enters scaled output (always ai0) for either V or I
             in = ones(size(chids));
             for ch = length(o):-1:1
-                gain.(obj.aoSession.Channels(chids(ch)).Name) = in(:,o(ch));
-                if isa(obj.aoSession.Channels(chids(ch)),'daq.ni.AnalogInputVoltageChannel')
-                    range.(obj.aoSession.Channels(chids(ch)).Name) = abs(obj.aoSession.Channels(chids(ch)).Range.Min);
+                gain.(obj.daq.Channels(chids(ch)).Name) = in(:,o(ch));
+                if isa(obj.daq.Channels(chids(ch)),'daq.ni.AnalogInputVoltageChannel')
+                    range.(obj.daq.Channels(chids(ch)).Name) = abs(obj.daq.Channels(chids(ch)).Range.Min);
                 end
             end
             % Probe position range
@@ -340,15 +349,15 @@ classdef ContinuousEpiFB2TRig_Acquisition < ContinuousRig & TwoAmpRig
             obj.dichannelidx = false(size(o));
             % Find the columns with analog input, plus an extra
             for ch = length(o):-1:1
-                if any(contains(obj.aiXChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
-                        || strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
+                if any(contains(obj.aiXChannelNames, obj.daq.Channels(chids(ch)).Name)) ...
+                        || strcmp('b_sign', obj.daq.Channels(chids(ch)).Name)
                     obj.aixchannelidx(ch) = true;
                 end
-                if any(contains(obj.diXChannelNames, obj.aoSession.Channels(chids(ch)).Name))
+                if any(contains(obj.diXChannelNames, obj.daq.Channels(chids(ch)).Name))
                     obj.dixchannelidx(ch) = true;
                 end
-                if any(contains(obj.diChannelNames, obj.aoSession.Channels(chids(ch)).Name)) ...
-                        && ~strcmp('b_sign', obj.aoSession.Channels(chids(ch)).Name)
+                if any(contains(obj.diChannelNames, obj.daq.Channels(chids(ch)).Name)) ...
+                        && ~strcmp('b_sign', obj.daq.Channels(chids(ch)).Name)
                     obj.dichannelidx(ch) = true;
                 end
             end

@@ -60,19 +60,19 @@ classdef ContinuousInRig < ContinuousRig & EPhysRig
     
         
         function run(obj,protocol,varargin)
-            if obj.aoSession.IsRunning
+            if obj.daq.IsRunning
                 return
             end
             obj.devices.amplifier.getmode;
             obj.devices.amplifier.getgain;
             %obj.setOutputs;
 
-            obj.aoSession.Rate = protocol.params.samprateout;
-            obj.aoSession.wait;
+            obj.daq.Rate = protocol.params.samprateout;
 
-            obj.setAOSession(protocol);
-            obj.listener = obj.aoSession.addlistener('DataRequired',...
-                @(src,event) src.queueOutputData(obj.outputs.datacolumns));
+            obj.setDaq(protocol);
+            % obj.listener = obj.daq.addlistener('DataRequired',...
+            %     @(src,event) src.queueOutputData(obj.outputs.datacolumns));
+            obj.daq.ScansRequiredFcn = @obj.writeMoreData;
            
             obj.name = [obj.D,'\',obj.protocol.protocolName,'_ContRaw_', ...
                 datestr(date,'yymmdd'),'_F',obj.flynumber,'_C',obj.cellnumber,'_' num2str(obj.n) '.bin'];
@@ -98,26 +98,31 @@ classdef ContinuousInRig < ContinuousRig & EPhysRig
             inl = fwrite(obj.fid,length(inputs),'uint');
             in = fwrite(obj.fid,inputs,'char');
             
-            obj.savelistener = obj.aoSession.addlistener('DataAvailable',@obj.saveData);
-            % obj.listener = obj.aoSession.addlistener('ErrorOccurred',...
+            obj.savelistener = obj.daq.addlistener('DataAvailable',@obj.saveData);
+            obj.daq.ScansAvailableFcn = @obj.saveData;
+            % obj.listener = obj.daq.addlistener('ErrorOccurred',...
             %     @(src,event) error('What the fuck?!'));
 
             notify(obj,'StartRun');
 
-            obj.aoSession.IsContinuous = true;
+            obj.daq.IsContinuous = true;
 
-            obj.aoSession.startBackground;    
+            obj.daq.start("Continuous");    
         end
         
-        function setAOSession(obj,protocol)
+        function writeMoreData(obj)
+            write(obj.daq,obj.outputs.datacolumns)
+        end
+
+        function setDaq(obj,protocol)
             % figure out what the stim vector should be
             obj.transformOutputs(protocol.next());
-            obj.aoSession.queueOutputData(obj.outputs.datacolumns);
+            obj.daq.preload(obj.outputs.datacolumns);
         end
 
         
         function stop(obj)
-            obj.aoSession.stop;
+            obj.daq.stop;
             delete(obj.savelistener)
             try 
                 fclose(obj.fid);
@@ -145,7 +150,7 @@ classdef ContinuousInRig < ContinuousRig & EPhysRig
             % go from highest channel id to lowest (ai7 -> ai0).  This
             % enters scaled output (always ai0) for either V or I
             for ch = length(o):-1:1
-                obj.inputs.data.(obj.aiSession.Channels(chids(ch)).Name) = in(:,o(ch));
+                obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in(:,o(ch));
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -155,7 +160,7 @@ classdef ContinuousInRig < ContinuousRig & EPhysRig
                 end
             end
             for ch = length(o):-1:1
-                in(:,o(ch))=obj.inputs.data.(obj.aiSession.Channels(chids(ch)).Name);
+                in(:,o(ch))=obj.inputs.data.(obj.daq.Channels(chids(ch)).Name);
             end
         end
         

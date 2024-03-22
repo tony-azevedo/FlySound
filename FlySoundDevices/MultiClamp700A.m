@@ -93,7 +93,7 @@ classdef MultiClamp700A < Device
         
         function varargout = transformInputs(obj,inputstruct,varargin)
             inlabels = fieldnames(inputstruct);
-            units = {};
+            units = cell(size(inlabels));
             for il = 1:length(inlabels)
                 if sum(strcmp(obj.inputLabels,inlabels{il}))
                     if ~isempty(strfind(inlabels{il},'voltage')) && ...

@@ -54,7 +54,7 @@ classdef EpiOrLEDRig < ControlRig
             obj.setTestDisplay();
             
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
-            obj.aoSession.Rate = protocol.params.samprateout;
+            obj.daq.Rate = protocol.params.samprateout;
             
             obj.setUpITITimer();
             if obj.params.waitForLED
@@ -73,13 +73,12 @@ classdef EpiOrLEDRig < ControlRig
                         end
                     end
                     
-                    obj.setAOSession(protocol);
+                    obj.setDaq(protocol);
                     
                     % setup the data logger
                     notify(obj,'StartTrial_Control',PassProtocolData(protocol));
                     
-                    in = obj.aoSession.startForeground; % both amp and signal monitor input
-                    wait(obj.aoSession);
+                    in = obj.daq.readwrite(obj.outputs.datacolumns); % both amp and signal monitor input
                     
                     % setup log data
                     % obj.transformInputs(in);
@@ -97,7 +96,7 @@ classdef EpiOrLEDRig < ControlRig
                         obj.itiWait()
                         notify(obj,'EndTimer_Control')
                     elseif obj.params.waitForLED
-                        LEDstate = in(end,obj.ardout_col);
+                        LEDstate = in.arduino_output(end); %,obj.ardout_col);
                         if ~LEDstate && obj.devices.epi.params.blueToggle
                             on_cntr = 0;
                             off_cntr = off_cntr + 1;
@@ -125,7 +124,7 @@ classdef EpiOrLEDRig < ControlRig
             % Now set the abort channel on briefly before turning it back
             % off
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
                 
@@ -135,16 +134,16 @@ classdef EpiOrLEDRig < ControlRig
             end
             output_a = output;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'abort')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'abort')
                     output_a(chidx) = 1;
                 end
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
                     output_a(chidx) = 0;
                     output(chidx) = 0;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            obj.aoSession.outputSingleScan(output);
+            obj.daq.write(output_a);
+            obj.daq.write(output);
             
             fprintf(1,'LED Off\n')
         end
@@ -152,7 +151,7 @@ classdef EpiOrLEDRig < ControlRig
         function turnOnEpi(obj,callingobj,evntdata,varargin)
             % Now set epittl channel on
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
             else
@@ -160,19 +159,19 @@ classdef EpiOrLEDRig < ControlRig
             end
             output_a = output;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,'epittl')
                     output_a(chidx) = 1;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            obj.aoSession.outputSingleScan(output);
+            obj.daq.write(output_a);
+            obj.daq.write(output);
             fprintf(1,'LED On\n')
         end
         
         function setArduinoControl(obj,callingobj,evntdata,varargin)
             % Now set the control channel
             
-            output = obj.aoSession.UserData;
+            output = obj.daq.UserData;
             if isempty(output)
                 output = zeros(1,length(obj.outputchannelidx));
             else
@@ -181,22 +180,21 @@ classdef EpiOrLEDRig < ControlRig
             output_a = output;
             ardparams = callingobj.getParams;
             for chidx = 1:length(obj.outputchannelidx)
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,...
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,...
                         'control')
                     output_a(chidx) = ardparams.controlToggle;
                 end
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,...
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,...
                         'routine')
                     output_a(chidx) = ardparams.routineToggle;
                 end
-                if contains(obj.aoSession.Channels(obj.outputchannelidx(chidx)).Name,...
+                if contains(obj.daq.Channels(obj.outputchannelidx(chidx)).Name,...
                         'bluettl')
                     output_a(chidx) = ardparams.blueToggle;
                 end
             end
-            obj.aoSession.outputSingleScan(output_a);
-            % obj.aoSession.outputSingleScan(output);
-            obj.aoSession.UserData.CurrentOutput = output_a;
+            obj.daq.write(output_a);
+            obj.daq.UserData.CurrentOutput = output_a;
         end
         
         function setParams(obj,varargin)
@@ -314,8 +312,8 @@ classdef EpiOrLEDRig < ControlRig
                 wait(wflt)
                 
                 elapsedtime = elapsedtime+wflt.StartDelay;
-                in = inputSingleScan(obj.aoSession);
-                LEDstate = in(end,obj.ardout_col);
+                in = obj.daq.read;
+                LEDstate = in.arduino_output(end);
                 if ~LEDstate
                     fprintf(1,'Fly turned LED off in %g s\n',elapsedtime)
                     on_cntr = 0;

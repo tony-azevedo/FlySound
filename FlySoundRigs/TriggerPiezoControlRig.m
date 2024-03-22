@@ -74,14 +74,14 @@ classdef TriggerPiezoControlRig < EPhysControlRig
             obj.setTestDisplay();
             
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
-            obj.aoSession.Rate = protocol.params.samprateout;
+            obj.daq.Rate = protocol.params.samprateout;
             
             notify(obj,'StartRun_Control');
             
             for n = 1:repeats
                 while protocol.hasNext()
                     
-                    obj.setAOSession(protocol);
+                    obj.setDaq(protocol);
                     obj.devices.triggeredpiezo.setStimulus(protocol.cue); 
                     % "cue" refers to a triggered piezo stimulus that
                     % occurs before th light turns on in the leg
@@ -94,8 +94,7 @@ classdef TriggerPiezoControlRig < EPhysControlRig
                     notify(obj,'StartTrial_Control',PassProtocolData(protocol));
                     obj.devices.triggeredpiezo.start;
                     
-                    in = obj.aoSession.startForeground; % both amp and signal monitor input
-                    wait(obj.aoSession);
+                    in = obj.daq.readwrite(obj.data.datacolumns); % both amp and signal monitor input
 
                     % setup log data
                     % obj.transformInputs(in);

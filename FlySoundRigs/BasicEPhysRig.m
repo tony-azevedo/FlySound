@@ -32,7 +32,7 @@ classdef BasicEPhysRig < EPhysRig
     methods
         function obj = BasicEPhysRig(varargin)
             obj = obj@EPhysRig(varargin{:});
-            rigDev = getacqpref('AcquisitionHardware','rigDev');
+            % rigDev = getacqpref('AcquisitionHardware','rigDev');
         end
         
         function setDisplay(obj,fig,evnt,varargin)
@@ -104,7 +104,7 @@ classdef BasicEPhysRig < EPhysRig
             
             out = protocol.getStimulus;
             outlabels = fieldnames(out);
-            chnames = obj.getChannelNames;
+            % chnames = obj.getChannelNames;
             if ~isempty(outlabels)
                 if strcmp(obj.devices.amplifier.mode,'VClamp')
                     outvec = out.voltage;

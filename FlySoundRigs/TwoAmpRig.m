@@ -57,13 +57,6 @@ classdef TwoAmpRig < Rig
             addlistener(obj.devices.amplifier_2,'ModeChange',@obj.changeSessionsFromMode);
             addlistener(obj.devices.extEMGAmplifier,'ModeChange',@obj.changeSessionsFromMode);
 
-%             rigDev = getacqpref('AcquisitionHardware','rigDev');
-%             triggerChannelIn = getacqpref('AcquisitionHardware','triggerChannelIn');
-%             triggerChannelOut = getacqpref('AcquisitionHardware','triggerChannelOut');
-%             
-%             obj.aiSession.addTriggerConnection([rigDev '/' triggerChannelIn],'External','StartTrigger');
-%             obj.aoSession.addTriggerConnection('External',[rigDev '/' triggerChannelOut],'StartTrigger');
-
         end
         
         function in = run(obj,protocol,varargin)
@@ -72,9 +65,6 @@ classdef TwoAmpRig < Rig
 
             obj.devices.amplifier_2.getmode;
             obj.devices.amplifier_2.getgain;
-            
-%             obj.devices.extEMGAmplifier.getmode;
-%             obj.devices.extEMGAmplifier.getgain;
             
             in = run@Rig(obj,protocol,varargin{:});
         end        
@@ -264,8 +254,8 @@ classdef TwoAmpRig < Rig
             end
             
             for ch = 1:length(obj.outputchannelidx)
-                if isfield(out,obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
-                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(obj.outputchannelidx(ch)).Name);
+                if isfield(out,obj.daq.Channels(obj.outputchannelidx(ch)).Name)
+                    obj.outputs.datacolumns(:,ch) = out.(obj.daq.Channels(obj.outputchannelidx(ch)).Name);
                 end
             end
         end
@@ -276,7 +266,7 @@ classdef TwoAmpRig < Rig
             % go from highest channel id to lowest (ai7 -> ai0).  This
             % enters scaled output (always ai0) for either V or I
             for ch = length(o):-1:1
-                obj.inputs.data.(obj.aiSession.Channels(chids(ch)).Name) = in(:,o(ch));
+                obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in.(obj.daq.Channels(chids(ch)).Name);
             end
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
@@ -316,12 +306,12 @@ classdef TwoAmpRig < Rig
                     end
                     
                     ax = findobj(obj.TestDisplay,'type','axes');
-                    line(now,R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
-                    if ~isnan(access), line(now,access,'linestyle','none','marker','+','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax); end
+                    line(datetime('now'),R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
+                    if ~isnan(access), line(datetime('now'),access,'linestyle','none','marker','+','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax); end
                     
                     bl = findobj(ax,'tag','baseline');
                     x = get(bl,'xdata');
-                    x = [x(1) now];
+                    x = [x(1) datetime('now')];
                     set(bl,'xdata',x);
                 end
             end
@@ -336,9 +326,9 @@ classdef TwoAmpRig < Rig
         function changeSessionsFromMode(obj,amplifier,evnt)
             for i = 1:length(amplifier.outputPorts)
                 % configure AO
-                for c = 1:length(obj.aoSession.Channels)
-                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
-                        ch = obj.aoSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end
@@ -352,9 +342,9 @@ classdef TwoAmpRig < Rig
             obj.outputs.datacolumns = obj.outputs.datavalues;
             
             for i = 1:length(amplifier.inputPorts)
-                for c = 1:length(obj.aiSession.Channels)
-                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
-                        ch = obj.aiSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end

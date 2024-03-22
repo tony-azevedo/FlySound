@@ -27,9 +27,9 @@ classdef Rig < handle
     
     properties (SetAccess = protected)
         devices
-        aiSession
+        daq
+        % aiSession
         inputchannelidx
-        aoSession
         outputchannelidx
         outputs
         inputs
@@ -63,8 +63,8 @@ classdef Rig < handle
                 error('The acquisition hardware preferences were not set. Check the above preferences for accuracy')
             end
             % for now ao Session is the master session
-            obj.aoSession = daq.createSession('ni');            
-            obj.aiSession = obj.aoSession;
+            obj.daq = daq('ni');            
+            % obj.aiSession = obj.daq;
             obj.defineParameters();
             obj.params = obj.getDefaults();
         end
@@ -91,7 +91,7 @@ classdef Rig < handle
             obj.setTestDisplay();
             
             protocol.setParams('-q','samprateout',protocol.params.sampratein);
-            obj.aoSession.Rate = protocol.params.samprateout;
+            obj.daq.Rate = protocol.params.samprateout;
             
             if obj.params.interTrialInterval >0
                 t = timerfind('Name','ITItimer');
@@ -106,21 +106,20 @@ classdef Rig < handle
             notify(obj,'StartRun');
             for n = 1:repeats
                 while protocol.hasNext()
-                    obj.setAOSession(protocol);
+                    
+                    obj.transformOutputs(protocol.next());
+                    obj.daq.UserData.CurrentOutput = obj.outputs.datacolumns(end,:);
                     
                     % setup the data logger
                     notify(obj,'StartTrial',PassProtocolData(protocol));
                     % start the videoinput object
                     notify(obj,'StartTrialCamera');
                     
-                    if ~double(obj.aiSession.ScansQueued)
-                        error('No data is queued')
-                    end
-                    in = obj.aiSession.startForeground; % both amp and signal monitor input
-                    wait(obj.aiSession);
+                    in = obj.daq.readwrite(obj.outputs.datacolumns); % both amp and signal monitor input
+                    % wait(obj.daq);
                     notify(obj,'EndTrial');
                     
-                    %disp(obj.aiSession)
+                    %disp(obj.daq)
                     obj.transformInputs(in);
                     if obj.params.interTrialInterval >0
                         t = timerfind('Name','ITItimer');
@@ -135,15 +134,6 @@ classdef Rig < handle
                 protocol.reset;
             end
             notify(obj,'EndRun');
-        end
-                        
-        function setAOSession(obj,protocol)
-            % figure out what the stim vector should be
-            obj.transformOutputs(protocol.next());
-            obj.aoSession.wait;
-            obj.aoSession.queueOutputData(obj.outputs.datacolumns);
-            % in case you need to flip a bit or something
-            obj.aoSession.UserData.CurrentOutput = obj.outputs.datacolumns(end,:);
         end
                         
         function transformOutputs(obj,out)
@@ -203,8 +193,8 @@ classdef Rig < handle
             end
             
             for ch = 1:length(obj.outputchannelidx)
-                if isfield(out,obj.aoSession.Channels(obj.outputchannelidx(ch)).Name)
-                    obj.outputs.datacolumns(:,ch) = out.(obj.aoSession.Channels(obj.outputchannelidx(ch)).Name);
+                if isfield(out,obj.daq.Channels(obj.outputchannelidx(ch)).Name)
+                    obj.outputs.datacolumns(:,ch) = out.(obj.daq.Channels(obj.outputchannelidx(ch)).Name);
                 end
             end
         end
@@ -215,8 +205,9 @@ classdef Rig < handle
             % go from highest channel id to lowest (ai7 -> ai0).  This
             % enters scaled output (always ai0) for either V or I
             for ch = length(o):-1:1
-                obj.inputs.data.(obj.aiSession.Channels(chids(ch)).Name) = in(:,o(ch));
+                obj.inputs.data.(obj.daq.Channels(chids(ch)).Name) = in.(obj.daq.Channels(chids(ch)).Name);
             end
+
             devs = fieldnames(obj.devices);
             for d = 1:length(devs)
                 dev = obj.devices.(devs{d});
@@ -253,12 +244,12 @@ classdef Rig < handle
                 end
                 
                 ax = findobj(obj.TestDisplay,'type','axes');
-                line(now,R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
-                if ~isnan(access), line(now,access,'linestyle','none','marker','+','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax); end
+                line(datetime('now'),R,'linestyle','none','marker','o','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax);
+                if ~isnan(access), line(datetime('now'),access,'linestyle','none','marker','+','markersize',3,'markerfacecolor',colr,'markeredgecolor',colr,'parent',ax); end
 
                 bl = findobj(ax,'tag','baseline');
                 x = get(bl,'xdata');
-                x = [x(1) now];
+                x = [x(1), datetime('now')];
                 set(bl,'xdata',x);       
                 end
             end
@@ -333,7 +324,7 @@ classdef Rig < handle
                 ax = subplot(1,1,1,'parent',obj.TestDisplay);
                 bl = findobj(ax,'tag','baseline');
                 if isempty(bl)
-                    line([now,now+5],[0 0],'color',[.8 .8 .8],'parent',ax,'tag','baseline');
+                    line([datetime('now'),datetime('now')+5],[0 0],'color',[.8 .8 .8],'parent',ax,'tag','baseline');
                 end
                 set(ax,'XTickLabel',{[]});
                 ylabel('R (m -IC, c - VC)')
@@ -368,12 +359,17 @@ classdef Rig < handle
             close(obj.TrialDisplay)
             fprintf('SESSIONS RELEASED\n');
             fprintf('%s DELETED\n',obj.rigName);
-            release(obj.aiSession);
-            release(obj.aoSession);
-            delete(obj.aiSession);
-            delete(obj.aoSession);
+            % release(obj.daq);
+            % release(obj.daq);
+            delete(obj.daq);
+            delete(obj.daq);
             delete@handle(obj)
         end
+                
+        function displayTrial(obj)
+            
+        end
+
     end
     
     methods (Access = protected)
@@ -404,7 +400,7 @@ classdef Rig < handle
                 for i = 1:length(dev.outputPorts)
                     % configure AO
                     fprintf('\t\t%s\n',dev.outputLabels{i}) 
-                    ch = obj.aoSession.addAnalogOutputChannel(rigDev,dev.outputPorts(i), 'Voltage');
+                    ch = obj.daq.addoutput(rigDev,dev.outputPorts(i), 'Voltage');
                     ch.Name = dev.outputLabels{i};
                     obj.outputs.portlabels{dev.outputPorts(i)+1} = dev.outputLabels{i};
                     obj.outputs.device{dev.outputPorts(i)+1} = dev;
@@ -414,7 +410,7 @@ classdef Rig < handle
                 
                 for i = 1:length(dev.digitalOutputPorts)
                     fprintf('\t\t%s\n',dev.digitalOutputLabels{i}) 
-                    ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'OutputOnly');
+                    ch = obj.daq.addoutput(rigDev,['Port0/Line' num2str(dev.digitalOutputPorts(i))], 'Digital');
                     ch.Name = dev.digitalOutputLabels{i};
                     obj.outputs.digitalPortlabels{dev.digitalOutputPorts(i)+1} = dev.digitalOutputLabels{i};
                     obj.outputs.device{dev.digitalOutputPorts(i)+getacqpref('AcquisitionHardware','AnalogOutN')+1} = dev;
@@ -422,7 +418,7 @@ classdef Rig < handle
                 
                 for i = 1:length(dev.inputPorts)
                     fprintf('\t\t%s\n',dev.inputLabels{i}) 
-                    ch = obj.aoSession.addAnalogInputChannel(rigDev,dev.inputPorts(i), 'Voltage');
+                    ch = obj.daq.addinput(rigDev,dev.inputPorts(i), 'Voltage');
                     ch.InputType = 'SingleEnded';
                     ch.Name = dev.inputLabels{i};
                     obj.inputs.portlabels{dev.inputPorts(i)+1} = dev.inputLabels{i};
@@ -433,7 +429,7 @@ classdef Rig < handle
                 for i = 1:length(dev.digitalInputPorts)
                     fprintf('\t\t%s\t',dev.digitalInputLabels{i}) 
                     tic
-                    ch = obj.aoSession.addDigitalChannel(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'InputOnly');
+                    ch = obj.daq.addinput(rigDev,['Port0/Line' num2str(dev.digitalInputPorts(i))], 'Digital');
                     toc
                     ch.Name = dev.digitalInputLabels{i};
                     obj.inputs.digitalPortlabels{dev.digitalInputPorts(i)+1} = dev.digitalInputLabels{i};
@@ -450,11 +446,11 @@ classdef Rig < handle
             obj.outputs.datavalues = [];
             obj.outputchannelidx = [];
             obj.inputchannelidx = [];
-            for ch = 1:length(obj.aoSession.Channels)
-                aord = obj.aoSession.Channels(ch).ID(1);
+            for ch = 1:length(obj.daq.Channels)
+                aord = obj.daq.Channels(ch).ID(1);
                 switch aord
                     case 'p'
-                        switch obj.aoSession.Channels(ch).MeasurementType
+                        switch obj.daq.Channels(ch).MeasurementType
                             case 'OutputOnly'
                                 obj.outputs.datavalues(end+1) = 0;
                                 obj.outputchannelidx(end+1) = ch;
@@ -464,7 +460,7 @@ classdef Rig < handle
                                 error('Not able to deal with Bidirectional Digital channels')
                         end
                     case 'a'
-                         switch obj.aoSession.Channels(ch).ID(2)
+                         switch obj.daq.Channels(ch).ID(2)
                              case 'o'
                                 obj.outputs.datavalues(end+1) = 0;
                                 obj.outputchannelidx(end+1) = ch;
@@ -479,12 +475,12 @@ classdef Rig < handle
         
         function [chNames,avsd] = getChannelNames(obj)
             for ch = 1:length(obj.outputchannelidx)
-                chNames.out{ch} = obj.aoSession.Channels(obj.outputchannelidx(ch)).Name;
-                avsd.out(ch) = strcmp('ao',obj.aoSession.Channels(obj.outputchannelidx(ch)).ID(1:2));
+                chNames.out{ch} = obj.daq.Channels(obj.outputchannelidx(ch)).Name;
+                avsd.out(ch) = strcmp('ao',obj.daq.Channels(obj.outputchannelidx(ch)).ID(1:2));
             end
             for ch = 1:length(obj.inputchannelidx)
-                chNames.in{ch} = obj.aoSession.Channels(obj.inputchannelidx(ch)).Name;
-                avsd.in(ch) = strcmp('ai',obj.aoSession.Channels(obj.inputchannelidx(ch)).ID(1:2));
+                chNames.in{ch} = obj.daq.Channels(obj.inputchannelidx(ch)).Name;
+                avsd.in(ch) = strcmp('ai',obj.daq.Channels(obj.inputchannelidx(ch)).ID(1:2));
             end
         end
         

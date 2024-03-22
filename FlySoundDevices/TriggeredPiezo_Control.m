@@ -21,7 +21,7 @@ classdef TriggeredPiezo_Control < Device
     end
     
     properties (SetAccess = protected)
-        aoSession
+        daq
         triggerconnect
         stimulus
         stimshowfig
@@ -52,18 +52,18 @@ classdef TriggeredPiezo_Control < Device
             obj.triggerPort = ['PFI1'];
             
             obj.trigDev = getacqpref('AcquisitionHardware','triggeredDev');
-            obj.aoSession = daq.createSession('ni');
+            obj.daq = daq('ni');
             
-            ch = obj.aoSession.addAnalogOutputChannel(obj.trigDev,obj.triggeredOutputPort(1), 'Voltage');
+            ch = obj.daq.addoutput(obj.trigDev,obj.triggeredOutputPort(1), 'Voltage');
             ch.Name = obj.triggeredOutputLabel{1};
             %obj.outputs.portlabels{obj.triggeredOutputPort(1)+1} = obj.triggeredOutputLabel{1};
             %obj.outputs.device{obj.triggeredOutputPort(1)+1} = obj;
 
-            obj.triggerconnect = obj.aoSession.addTriggerConnection('External',[obj.trigDev '/' obj.triggerPort],'StartTrigger');
-            obj.aoSession.ExternalTriggerTimeout = Inf;
-            obj.aoSession.NotifyWhenScansQueuedBelow = 1000;
-            obj.triggerconnect.TriggerCondition = 'FallingEdge';
-            addlistener(obj.aoSession,'DataRequired', @obj.reloadPiezo);
+            % obj.triggerconnect = obj.daq.addTriggerConnection('External',[obj.trigDev '/' obj.triggerPort],'StartTrigger');
+            obj.triggerconnect = obj.daq.addtrigger("Digital","StartTrigger","External",[obj.trigDev '/' obj.triggerPort]);
+            obj.daq.DigitalTriggerTimeout = Inf;
+            obj.triggerconnect.Condition = 'FallingEdge';
+
             obj.setupDevice()
             obj.plotStimulus()
         end
@@ -75,19 +75,19 @@ classdef TriggeredPiezo_Control < Device
         end
         
         function start(obj,in,varargin)
-            obj.aoSession.TriggersPerRun = 2;
             obj.resetPiezo            
-            startBackground(obj.aoSession);
+            obj.daq.NumDigitalTriggersPerRun = 2;
+            obj.daq.start;
         end
         
         function resetPiezo(obj)
-            obj.aoSession.stop;
-            obj.aoSession.queueOutputData(obj.stimulus)
-            obj.aoSession.NotifyWhenScansQueuedBelow = round(numel(obj.stimulus)/2);
+            obj.daq.stop;
+            obj.daq.preload(obj.stimulus)
+            obj.daq.ScansRequiredFcnCount = ceil(obj.daq.Rate/2);
         end
 
         function reloadPiezo(obj,src,event)
-            obj.aoSession.queueOutputData(obj.stimulus)
+            obj.daq.preload(obj.stimulus)
         end
         
         function setStimulus(obj,stim)
@@ -110,7 +110,7 @@ classdef TriggeredPiezo_Control < Device
         function stop(obj,in,varargin)
             % fprintf(1,'TriggeredPiezo Running?: %d\n',obj.aoSession.IsRunning);
             % fprintf(1,'Remaining trigger: %d of %d\n',obj.aoSession.TriggersRemaining,obj.aoSession.TriggersPerRun);
-            obj.aoSession.stop;
+            obj.daq.stop;
         end
         
         function setuplistener(obj,rig)
@@ -118,7 +118,7 @@ classdef TriggeredPiezo_Control < Device
             addlistener(rig,'DataSaved',@obj.stop)
         end
         
-        function setSession(obj,in,varargin)
+        function setDaq(obj,in,varargin)
             
         end
 
@@ -135,7 +135,9 @@ classdef TriggeredPiezo_Control < Device
     
     methods (Access = protected)
         function setupDevice(obj)
-            obj.aoSession.Rate = obj.params.samprateout;
+            obj.daq.Rate = obj.params.samprateout;
+            obj.daq.ScansRequiredFcnCount = ceil(obj.daq.Rate/2);
+            obj.daq.ScansRequiredFcn = @obj.reloadPiezo;
 
             stimpnts = round(obj.params.samprateout*obj.params.cueStimDurInSec);
             

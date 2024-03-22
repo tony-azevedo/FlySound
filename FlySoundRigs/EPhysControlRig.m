@@ -56,9 +56,9 @@ classdef EPhysControlRig < ControlRig
         function changeSessionsFromMode(obj,amplifier,evnt)
             for i = 1:length(amplifier.outputPorts)
                 % configure AO
-                for c = 1:length(obj.aoSession.Channels)
-                    if strcmp(obj.aoSession.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
-                        ch = obj.aoSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ao' num2str(amplifier.outputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end
@@ -69,9 +69,9 @@ classdef EPhysControlRig < ControlRig
             end
             
             for i = 1:length(amplifier.inputPorts)
-                for c = 1:length(obj.aiSession.Channels)
-                    if strcmp(obj.aiSession.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
-                        ch = obj.aiSession.Channels(c);
+                for c = 1:length(obj.daq.Channels)
+                    if strcmp(obj.daq.Channels(c).ID,['ai' num2str(amplifier.inputPorts(i))])
+                        ch = obj.daq.Channels(c);
                         break
                     end
                 end
